@@ -91,3 +91,52 @@ SELECT
 FROM messages m
 LEFT JOIN ratings          r  ON r.message_id  = m.id
 LEFT JOIN service_requests sr ON sr.message_id = m.id;
+
+-- ── Vector knowledge base (RAG documents) ─────────────────────────────────────
+-- Requires the pgvector extension. Enable it first in Supabase:
+-- Dashboard → Database → Extensions → search "vector" → Enable
+
+CREATE EXTENSION IF NOT EXISTS vector;
+
+CREATE TABLE IF NOT EXISTS documents (
+  id         BIGSERIAL   PRIMARY KEY,
+  doc_name   TEXT        NOT NULL,
+  content    TEXT        NOT NULL,
+  embedding  vector(1536) NOT NULL,  -- text-embedding-3-small produces 1536-dim vectors
+  created_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
+);
+
+-- HNSW index for fast approximate nearest-neighbour search
+CREATE INDEX IF NOT EXISTS documents_embedding_idx
+  ON documents USING hnsw (embedding vector_cosine_ops);
+
+ALTER TABLE documents ENABLE ROW LEVEL SECURITY;
+
+CREATE POLICY "anon can insert documents"
+  ON documents FOR INSERT TO anon WITH CHECK (true);
+
+CREATE POLICY "anon can select documents"
+  ON documents FOR SELECT TO anon USING (true);
+
+-- RPC function used by /api/chat for RAG retrieval
+CREATE OR REPLACE FUNCTION match_documents(
+  query_embedding vector(1536),
+  match_count     int DEFAULT 5
+)
+RETURNS TABLE (
+  id         bigint,
+  doc_name   text,
+  content    text,
+  similarity float
+)
+LANGUAGE sql STABLE
+AS $$
+  SELECT
+    id,
+    doc_name,
+    content,
+    1 - (embedding <=> query_embedding) AS similarity
+  FROM documents
+  ORDER BY embedding <=> query_embedding
+  LIMIT match_count;
+$$;

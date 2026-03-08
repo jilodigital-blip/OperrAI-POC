@@ -1,5 +1,5 @@
 const OPENAI_API_KEY    = process.env.OPENAI_API_KEY    || '';
-const SUPABASE_URL      = process.env.SUPABASE_URL      || '';
+const SUPABASE_URL      = process.env.SUPABASE_URL      || 'https://qjajoayybuvxvpgysoih.supabase.co';
 const SUPABASE_ANON_KEY = process.env.SUPABASE_ANON_KEY || '';
 const INGEST_SECRET     = process.env.INGEST_SECRET     || '';
 
@@ -49,7 +49,7 @@ module.exports = async (req, res) => {
   const embedData = await embedResp.json();
   const embedding = embedData.data[0].embedding;
 
-  // Insert into Supabase
+  // Insert into Supabase (documents table must exist — run schema.sql first)
   const sbResp = await fetch(`${SUPABASE_URL}/rest/v1/documents`, {
     method: 'POST',
     headers: {
