@@ -1181,11 +1181,12 @@
           body: new FormData(form)
         });
 
-        if (response.ok) {
+        const data = await response.json();
+        if (data.success) {
           form.classList.add('hidden');
           success.classList.remove('hidden');
         } else {
-          throw new Error('Server error');
+          throw new Error(data.message || 'Submission failed');
         }
       } catch (err) {
         submitBtn.disabled = false;
