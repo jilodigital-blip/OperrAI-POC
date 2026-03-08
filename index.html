@@ -1154,12 +1154,12 @@
       e.preventDefault();
 
       // Basic client-side validation
-      const name    = form.name.value.trim();
-      const email   = form.email.value.trim();
-      const message = form.message.value.trim();
+      const name    = form.elements['name'].value.trim();
+      const email   = form.elements['email'].value.trim();
+      const message = form.elements['message'].value.trim();
       if (!name || !email || !message) {
         // Highlight empty required fields
-        [form.name, form.email, form.message].forEach(field => {
+        [form.elements['name'], form.elements['email'], form.elements['message']].forEach(field => {
           if (!field.value.trim()) {
             field.style.borderColor = '#e05d5d';
             field.addEventListener('input', () => {
