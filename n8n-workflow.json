@@ -74,7 +74,7 @@
           "parameters": [
             {
               "name": "Authorization",
-              "value": "=Bearer {{ $env.OPENAI_API_KEY }}"
+              "value": "={{ 'Bearer ' + $env.OPENAI_API_KEY }}"
             },
             {
               "name": "Content-Type",
@@ -107,7 +107,7 @@
             },
             {
               "name": "Authorization",
-              "value": "=Bearer {{ $env.SUPABASE_ANON_KEY }}"
+              "value": "={{ 'Bearer ' + $env.SUPABASE_ANON_KEY }}"
             },
             {
               "name": "Content-Type",
@@ -146,7 +146,7 @@
           "parameters": [
             {
               "name": "Authorization",
-              "value": "=Bearer {{ $env.OPENAI_API_KEY }}"
+              "value": "={{ 'Bearer ' + $env.OPENAI_API_KEY }}"
             },
             {
               "name": "Content-Type",
