@@ -8,6 +8,7 @@
   "routes": [
     { "src": "/api/(.*)", "dest": "/api/$1" },
     { "src": "/ev-poc",   "dest": "/ev-poc.html" },
+    { "src": "/ingest",   "dest": "/ingest.html" },
     { "src": "/login",    "dest": "/login.html" },
     { "src": "/(.*)",     "dest": "/index.html" }
   ]
