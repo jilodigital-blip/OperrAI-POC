@@ -953,7 +953,8 @@
         </div>
 
         <div class="contact-wrapper reveal">
-          <form id="contact-form" action="https://formspree.io/f/mvzwgqwr" method="POST" novalidate>
+          <form id="contact-form" novalidate>
+            <input type="hidden" name="access_key" value="27688618-158a-477e-98ed-21cf53fc4ad2" />
             <div class="form-row">
               <div class="form-group">
                 <label for="name">Full Name</label>
@@ -1174,7 +1175,7 @@
       submitBtn.disabled = true;
 
       try {
-        const response = await fetch('https://formspree.io/f/mvzwgqwr', {
+        const response = await fetch('https://api.web3forms.com/submit', {
           method: 'POST',
           headers: { 'Accept': 'application/json' },
           body: new FormData(form)
