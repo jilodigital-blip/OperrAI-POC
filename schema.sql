@@ -54,13 +54,40 @@ CREATE POLICY "anon can insert ratings"
 CREATE POLICY "anon can select ratings"
   ON ratings FOR SELECT TO anon USING (true);
 
+-- ── Channel column (added for chat vs email tracking) ─────────────────────────
+ALTER TABLE messages ADD COLUMN IF NOT EXISTS channel TEXT NOT NULL DEFAULT 'chat'
+  CHECK (channel IN ('chat', 'email'));
+
+-- ── Service requests: created when L2 Supervisor rates a response "Poor" ───────
+CREATE TABLE IF NOT EXISTS service_requests (
+  id          UUID        PRIMARY KEY DEFAULT gen_random_uuid(),
+  message_id  UUID        REFERENCES messages (id) ON DELETE CASCADE,
+  ticket_id   TEXT        NOT NULL,
+  question    TEXT        NOT NULL,
+  channel     TEXT        NOT NULL DEFAULT 'chat',
+  status      TEXT        NOT NULL DEFAULT 'open',
+  created_at  TIMESTAMPTZ NOT NULL DEFAULT NOW()
+);
+
+ALTER TABLE service_requests ENABLE ROW LEVEL SECURITY;
+
+CREATE POLICY "anon_sr_insert" ON service_requests FOR INSERT TO anon WITH CHECK (true);
+CREATE POLICY "anon_sr_select" ON service_requests FOR SELECT TO anon USING (true);
+
+-- ── Update rated_by_model default (now Gemini 2.5 Pro) ────────────────────────
+ALTER TABLE ratings ALTER COLUMN rated_by_model SET DEFAULT 'gemini-2.5-pro';
+
 -- ── Convenience view (optional, for direct SQL inspection) ────────────────────
 CREATE OR REPLACE VIEW dashboard_summary AS
 SELECT
-  COUNT(DISTINCT m.id)                           AS total_questions,
-  COUNT(DISTINCT m.question_hash)                AS unique_questions,
-  ROUND(AVG(m.response_time_ms))                 AS avg_response_time_ms,
-  ROUND(AVG(r.accuracy_score)::NUMERIC, 2)       AS avg_accuracy_score,
-  COUNT(r.id)                                    AS rated_count
+  COUNT(DISTINCT m.id)                                AS total_questions,
+  COUNT(DISTINCT m.question_hash)                     AS unique_questions,
+  ROUND(AVG(m.response_time_ms))                      AS avg_response_time_ms,
+  ROUND(AVG(r.accuracy_score)::NUMERIC, 2)            AS avg_accuracy_score,
+  COUNT(r.id)                                         AS rated_count,
+  COUNT(CASE WHEN m.channel = 'chat'  THEN 1 END)     AS chat_questions,
+  COUNT(CASE WHEN m.channel = 'email' THEN 1 END)     AS email_questions,
+  COUNT(DISTINCT sr.id)                               AS blocked_count
 FROM messages m
-LEFT JOIN ratings r ON r.message_id = m.id;
+LEFT JOIN ratings          r  ON r.message_id  = m.id
+LEFT JOIN service_requests sr ON sr.message_id = m.id;
