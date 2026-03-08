@@ -1,0 +1,357 @@
+{
+  "name": "OperrAI — Supervisor-Worker Agentic Workflow",
+  "nodes": [
+    {
+      "parameters": {
+        "httpMethod": "POST",
+        "path": "operrai-chat",
+        "responseMode": "responseNode",
+        "options": {}
+      },
+      "id": "node-01",
+      "name": "Webhook",
+      "type": "n8n-nodes-base.webhook",
+      "typeVersion": 2,
+      "position": [200, 300],
+      "webhookId": "operrai-chat"
+    },
+    {
+      "parameters": {
+        "mode": "manual",
+        "duplicateItem": false,
+        "assignments": {
+          "assignments": [
+            {
+              "id": "a1",
+              "name": "question",
+              "value": "={{ $json.body.question.trim().toLowerCase() }}",
+              "type": "string"
+            },
+            {
+              "id": "a2",
+              "name": "question_raw",
+              "value": "={{ $json.body.question.trim() }}",
+              "type": "string"
+            },
+            {
+              "id": "a3",
+              "name": "sessionId",
+              "value": "={{ $json.body.sessionId || '' }}",
+              "type": "string"
+            },
+            {
+              "id": "a4",
+              "name": "channel",
+              "value": "={{ $json.body.channel === 'email' ? 'email' : 'chat' }}",
+              "type": "string"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "id": "node-02",
+      "name": "Normalize Input",
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [440, 300]
+    },
+    {
+      "parameters": {
+        "jsCode": "const crypto = require('crypto');\nconst input = $input.first().json;\nconst hash = crypto\n  .createHash('sha256')\n  .update(input.question)\n  .digest('hex');\nreturn [{ json: { ...input, question_hash: hash } }];"
+      },
+      "id": "node-03",
+      "name": "Generate Hash",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [680, 300]
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "https://api.openai.com/v1/embeddings",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "Authorization",
+              "value": "=Bearer {{ $env.OPENAI_API_KEY }}"
+            },
+            {
+              "name": "Content-Type",
+              "value": "application/json"
+            }
+          ]
+        },
+        "sendBody": true,
+        "contentType": "raw",
+        "rawContentType": "application/json",
+        "body": "={{ JSON.stringify({ model: 'text-embedding-3-small', input: $('Generate Hash').first().json.question_raw }) }}",
+        "options": {}
+      },
+      "id": "node-04",
+      "name": "OpenAI Embed",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [920, 300]
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "={{ $env.SUPABASE_URL + '/rest/v1/rpc/match_documents' }}",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "apikey",
+              "value": "={{ $env.SUPABASE_ANON_KEY }}"
+            },
+            {
+              "name": "Authorization",
+              "value": "=Bearer {{ $env.SUPABASE_ANON_KEY }}"
+            },
+            {
+              "name": "Content-Type",
+              "value": "application/json"
+            }
+          ]
+        },
+        "sendBody": true,
+        "contentType": "raw",
+        "rawContentType": "application/json",
+        "body": "={{ JSON.stringify({ query_embedding: $('OpenAI Embed').first().json.data[0].embedding, match_count: 5 }) }}",
+        "options": {}
+      },
+      "id": "node-05",
+      "name": "Supabase Vector Search",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [1160, 300]
+    },
+    {
+      "parameters": {
+        "jsCode": "// Supabase returns an array directly as the response body\nlet chunks = $input.first().json;\nif (!Array.isArray(chunks)) {\n  chunks = chunks ? [chunks] : [];\n}\n\n// Build RAG context from retrieved chunks\nconst contextText = chunks.length > 0\n  ? chunks.map((c, i) => `[Source ${i + 1}: ${c.doc_name}]\\n${c.content}`).join('\\n\\n---\\n\\n')\n  : 'No relevant documents found in the knowledge base.';\n\n// Build sources list for the final response\nconst sources = chunks.map(c => ({\n  doc_name: c.doc_name,\n  relevance_score: Math.round((c.similarity || 0) * 100) / 100\n}));\n\n// Carry forward all upstream fields\nconst prev = $('Generate Hash').first().json;\n\nreturn [{\n  json: {\n    ...prev,\n    context: contextText,\n    sources: sources\n  }\n}];"
+      },
+      "id": "node-06",
+      "name": "Build Context",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [1400, 300]
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "https://api.openai.com/v1/chat/completions",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "Authorization",
+              "value": "=Bearer {{ $env.OPENAI_API_KEY }}"
+            },
+            {
+              "name": "Content-Type",
+              "value": "application/json"
+            }
+          ]
+        },
+        "sendBody": true,
+        "contentType": "raw",
+        "rawContentType": "application/json",
+        "body": "={{ (function() {\n  const channel = $json.channel;\n  const formatInstruction = channel === 'email'\n    ? 'FORMAT: Write a formal professional email response. Include a polite greeting, well-structured paragraphs, and a professional sign-off. Be thorough, detailed, and warm.'\n    : 'FORMAT: Be concise and direct. Respond in under 150 words. Use simple, clear language. No greetings needed.';\n  const systemPrompt = `You are an expert customer support agent for Ather Energy EV scooters.\\nAnswer ONLY using the provided knowledge base context below. Do not hallucinate or invent facts.\\nIf the context does not contain the answer, honestly say: \"I don't have enough information on this topic. Please contact our support team.\"\\n\\n${formatInstruction}\\n\\nKnowledge Base Context:\\n${$json.context}`;\n  return JSON.stringify({\n    model: 'gpt-4o',\n    max_tokens: channel === 'email' ? 1024 : 512,\n    temperature: 0.3,\n    messages: [\n      { role: 'system', content: systemPrompt },\n      { role: 'user', content: $json.question_raw }\n    ]\n  });\n})() }}",
+        "options": {}
+      },
+      "id": "node-07",
+      "name": "GPT-4o L1 Worker",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [1640, 300]
+    },
+    {
+      "parameters": {
+        "jsCode": "// Extract the L1 answer text from GPT-4o response\nconst gptResponse = $input.first().json;\nconst l1Answer = gptResponse?.choices?.[0]?.message?.content?.trim() || 'No response generated.';\n\n// Carry forward all upstream fields\nconst prev = $('Build Context').first().json;\n\nreturn [{\n  json: {\n    ...prev,\n    l1_answer: l1Answer\n  }\n}];"
+      },
+      "id": "node-08",
+      "name": "Extract L1 Answer",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [1880, 300]
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "={{ 'https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-pro:generateContent?key=' + $env.GEMINI_API_KEY }}",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "Content-Type",
+              "value": "application/json"
+            }
+          ]
+        },
+        "sendBody": true,
+        "contentType": "raw",
+        "rawContentType": "application/json",
+        "body": "={{ (function() {\n  const prompt = `You are a strict QA evaluator for an AI customer support system.\\n\\nEvaluate whether the AI answer correctly and accurately addresses the customer question.\\nCheck for: hallucinations, incorrect facts, missing critical information, or off-topic responses.\\n\\nCustomer Question:\\n${$json.question_raw}\\n\\nAI Answer:\\n${$json.l1_answer}\\n\\nKnowledge Base Context Used:\\n${$json.context}\\n\\nRespond ONLY with valid JSON — no markdown, no explanation, nothing else:\\n{\"score\": <integer 0-10>, \"label\": \"<Excellent|Good|Acceptable|Poor>\", \"rationale\": \"<one concise sentence>\"}\\n\\nScoring Guide:\\n- 9-10 = Excellent: Fully accurate, complete, well-grounded in context\\n- 7-8  = Good: Accurate with minor omissions\\n- 5-6  = Acceptable: Mostly correct but noticeable gaps or mild issues\\n- 0-4  = Poor: Inaccurate, hallucinated facts, off-topic, or harmful`;\n  return JSON.stringify({\n    contents: [{ parts: [{ text: prompt }] }],\n    generationConfig: { temperature: 0.1, maxOutputTokens: 256 }\n  });\n})() }}",
+        "options": {}
+      },
+      "id": "node-09",
+      "name": "Gemini L2 Supervisor",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [2120, 300]
+    },
+    {
+      "parameters": {
+        "jsCode": "const geminiResponse = $input.first().json;\nconst rawText = geminiResponse?.candidates?.[0]?.content?.parts?.[0]?.text?.trim() || '';\n\nlet rating;\ntry {\n  // Strip markdown code fences if Gemini wraps output\n  const cleaned = rawText\n    .replace(/^```json\\s*/i, '')\n    .replace(/```\\s*$/, '')\n    .trim();\n  rating = JSON.parse(cleaned);\n  // Validate label is one of the expected values\n  if (!['Excellent', 'Good', 'Acceptable', 'Poor'].includes(rating.label)) {\n    rating.label = 'Acceptable';\n  }\n  rating.score = Math.max(0, Math.min(10, Number(rating.score) || 5));\n} catch (e) {\n  // Safe fallback — do not block on parse failure\n  rating = {\n    score: 5,\n    label: 'Acceptable',\n    rationale: 'L2 parse error — defaulting to Acceptable. Raw: ' + rawText.slice(0, 100)\n  };\n}\n\nconst prev = $('Extract L1 Answer').first().json;\n\nreturn [{\n  json: {\n    ...prev,\n    accuracy_score: rating.score,\n    accuracy_label: rating.label,\n    accuracy_rationale: rating.rationale,\n    blocked: rating.label === 'Poor'\n  }\n}];"
+      },
+      "id": "node-10",
+      "name": "Parse L2 Response",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [2360, 300]
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "strict"
+          },
+          "conditions": [
+            {
+              "id": "quality-check",
+              "leftValue": "={{ $json.accuracy_label }}",
+              "rightValue": "Poor",
+              "operator": {
+                "type": "string",
+                "operation": "notEquals"
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      },
+      "id": "node-11",
+      "name": "Quality Gate",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.2,
+      "position": [2600, 300]
+    },
+    {
+      "parameters": {
+        "respondWith": "json",
+        "responseBody": "={{ { answer: $json.l1_answer, sources: $json.sources, accuracy_score: $json.accuracy_score, accuracy_label: $json.accuracy_label, accuracy_rationale: $json.accuracy_rationale, blocked: false, ticket_id: null } }}",
+        "options": {
+          "responseCode": 200
+        }
+      },
+      "id": "node-12",
+      "name": "Respond — Pass",
+      "type": "n8n-nodes-base.respondToWebhook",
+      "typeVersion": 1.1,
+      "position": [2840, 180]
+    },
+    {
+      "parameters": {
+        "jsCode": "const now = new Date();\nconst dateStr = now.toISOString().slice(0, 10).replace(/-/g, ''); // e.g. 20260308\nconst rand = String(Math.floor(Math.random() * 90000) + 10000);  // 5-digit\nconst ticketId = `SR-${dateStr}-${rand}`;\n\nreturn [{ json: { ...$input.first().json, ticket_id: ticketId } }];"
+      },
+      "id": "node-13",
+      "name": "Generate SR Ticket",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [2840, 420]
+    },
+    {
+      "parameters": {
+        "respondWith": "json",
+        "responseBody": "={{ { answer: null, sources: [], accuracy_score: $json.accuracy_score, accuracy_label: $json.accuracy_label, accuracy_rationale: $json.accuracy_rationale, blocked: true, ticket_id: $json.ticket_id } }}",
+        "options": {
+          "responseCode": 200
+        }
+      },
+      "id": "node-14",
+      "name": "Respond — Fail (SR)",
+      "type": "n8n-nodes-base.respondToWebhook",
+      "typeVersion": 1.1,
+      "position": [3080, 420]
+    }
+  ],
+  "connections": {
+    "Webhook": {
+      "main": [
+        [{ "node": "Normalize Input", "type": "main", "index": 0 }]
+      ]
+    },
+    "Normalize Input": {
+      "main": [
+        [{ "node": "Generate Hash", "type": "main", "index": 0 }]
+      ]
+    },
+    "Generate Hash": {
+      "main": [
+        [{ "node": "OpenAI Embed", "type": "main", "index": 0 }]
+      ]
+    },
+    "OpenAI Embed": {
+      "main": [
+        [{ "node": "Supabase Vector Search", "type": "main", "index": 0 }]
+      ]
+    },
+    "Supabase Vector Search": {
+      "main": [
+        [{ "node": "Build Context", "type": "main", "index": 0 }]
+      ]
+    },
+    "Build Context": {
+      "main": [
+        [{ "node": "GPT-4o L1 Worker", "type": "main", "index": 0 }]
+      ]
+    },
+    "GPT-4o L1 Worker": {
+      "main": [
+        [{ "node": "Extract L1 Answer", "type": "main", "index": 0 }]
+      ]
+    },
+    "Extract L1 Answer": {
+      "main": [
+        [{ "node": "Gemini L2 Supervisor", "type": "main", "index": 0 }]
+      ]
+    },
+    "Gemini L2 Supervisor": {
+      "main": [
+        [{ "node": "Parse L2 Response", "type": "main", "index": 0 }]
+      ]
+    },
+    "Parse L2 Response": {
+      "main": [
+        [{ "node": "Quality Gate", "type": "main", "index": 0 }]
+      ]
+    },
+    "Quality Gate": {
+      "main": [
+        [{ "node": "Respond — Pass", "type": "main", "index": 0 }],
+        [{ "node": "Generate SR Ticket", "type": "main", "index": 0 }]
+      ]
+    },
+    "Generate SR Ticket": {
+      "main": [
+        [{ "node": "Respond — Fail (SR)", "type": "main", "index": 0 }]
+      ]
+    }
+  },
+  "active": false,
+  "settings": {
+    "executionOrder": "v1"
+  },
+  "pinData": {},
+  "versionId": "operrai-v1",
+  "meta": {
+    "templateCredsSetupCompleted": true,
+    "instanceId": "operrai-poc"
+  },
+  "id": "operrai-workflow-001",
+  "tags": []
+}
