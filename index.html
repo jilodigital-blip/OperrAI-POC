@@ -1192,7 +1192,7 @@
         submitBtn.disabled = false;
         submitBtn.style.background = '#e05d5d';
         submitBtn.style.borderColor = '#e05d5d';
-        submitBtn.textContent = 'Failed — please try again';
+        submitBtn.textContent = err.message || 'Failed — please try again';
         setTimeout(() => {
           submitBtn.style.background = '';
           submitBtn.style.borderColor = '';
