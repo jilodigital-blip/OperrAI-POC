@@ -1,0 +1,324 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Client Access — OperrAI</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Syne:wght@400;600;700;800&family=DM+Sans:ital,opsz,wght@0,9..40,300;0,9..40,400;0,9..40,500;1,9..40,300&display=swap" rel="stylesheet" />
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    :root {
+      --gold: #D4AF37;
+      --gold-dim: rgba(212,175,55,0.12);
+      --ink: #0A0A0A;
+      --card-bg: #111111;
+      --border: rgba(255,255,255,0.07);
+      --muted: #6B7280;
+      --font-heading: 'Syne', sans-serif;
+      --font-body: 'DM Sans', sans-serif;
+    }
+
+    html, body {
+      height: 100%;
+      background: var(--ink);
+      color: #fff;
+      font-family: var(--font-body);
+    }
+
+    body {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      min-height: 100vh;
+      padding: 2rem 1rem;
+    }
+
+    /* Background grid */
+    body::before {
+      content: '';
+      position: fixed;
+      inset: 0;
+      background-image:
+        linear-gradient(rgba(212,175,55,0.03) 1px, transparent 1px),
+        linear-gradient(90deg, rgba(212,175,55,0.03) 1px, transparent 1px);
+      background-size: 60px 60px;
+      pointer-events: none;
+      z-index: 0;
+    }
+
+    .login-wrap {
+      position: relative;
+      z-index: 1;
+      width: 100%;
+      max-width: 420px;
+    }
+
+    /* Logo */
+    .logo {
+      display: block;
+      text-align: center;
+      font-family: var(--font-heading);
+      font-size: 1.75rem;
+      font-weight: 800;
+      color: #fff;
+      text-decoration: none;
+      letter-spacing: -0.02em;
+      margin-bottom: 2.5rem;
+    }
+    .logo span { color: var(--gold); }
+
+    /* Card */
+    .card {
+      background: var(--card-bg);
+      border: 1px solid var(--border);
+      border-radius: 16px;
+      padding: 2.5rem 2rem;
+    }
+
+    .card-header {
+      margin-bottom: 2rem;
+    }
+
+    .badge {
+      display: inline-block;
+      font-size: 0.7rem;
+      font-weight: 600;
+      letter-spacing: 0.1em;
+      text-transform: uppercase;
+      color: var(--gold);
+      background: var(--gold-dim);
+      border: 1px solid rgba(212,175,55,0.2);
+      padding: 0.3rem 0.75rem;
+      border-radius: 100px;
+      margin-bottom: 1rem;
+    }
+
+    .card-header h1 {
+      font-family: var(--font-heading);
+      font-size: 1.5rem;
+      font-weight: 700;
+      line-height: 1.3;
+      margin-bottom: 0.5rem;
+    }
+
+    .card-header p {
+      font-size: 0.9rem;
+      color: var(--muted);
+      line-height: 1.5;
+    }
+
+    /* Form */
+    .field {
+      margin-bottom: 1.25rem;
+    }
+
+    label {
+      display: block;
+      font-size: 0.8rem;
+      font-weight: 500;
+      letter-spacing: 0.04em;
+      color: rgba(255,255,255,0.6);
+      margin-bottom: 0.5rem;
+      text-transform: uppercase;
+    }
+
+    input[type="text"],
+    input[type="password"] {
+      width: 100%;
+      background: rgba(255,255,255,0.04);
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      padding: 0.75rem 1rem;
+      font-family: var(--font-body);
+      font-size: 0.95rem;
+      color: #fff;
+      outline: none;
+      transition: border-color 0.2s;
+    }
+
+    input[type="text"]:focus,
+    input[type="password"]:focus {
+      border-color: rgba(212,175,55,0.5);
+    }
+
+    input::placeholder { color: rgba(255,255,255,0.2); }
+
+    .btn-login {
+      width: 100%;
+      padding: 0.875rem 1.5rem;
+      background: var(--gold);
+      border: none;
+      border-radius: 8px;
+      font-family: var(--font-heading);
+      font-size: 0.95rem;
+      font-weight: 700;
+      color: var(--ink);
+      cursor: pointer;
+      transition: opacity 0.2s, transform 0.1s;
+      margin-top: 0.5rem;
+      letter-spacing: 0.02em;
+    }
+
+    .btn-login:hover { opacity: 0.9; }
+    .btn-login:active { transform: scale(0.98); }
+    .btn-login:disabled { opacity: 0.5; cursor: not-allowed; }
+
+    /* Error / Status */
+    .alert {
+      display: none;
+      align-items: center;
+      gap: 0.6rem;
+      padding: 0.75rem 1rem;
+      border-radius: 8px;
+      font-size: 0.875rem;
+      margin-bottom: 1.25rem;
+    }
+    .alert.error {
+      display: flex;
+      background: rgba(239,68,68,0.1);
+      border: 1px solid rgba(239,68,68,0.3);
+      color: #FCA5A5;
+    }
+    .alert.info {
+      display: flex;
+      background: var(--gold-dim);
+      border: 1px solid rgba(212,175,55,0.2);
+      color: var(--gold);
+    }
+
+    /* Spinner */
+    .spinner {
+      display: inline-block;
+      width: 16px;
+      height: 16px;
+      border: 2px solid rgba(10,10,10,0.3);
+      border-top-color: var(--ink);
+      border-radius: 50%;
+      animation: spin 0.7s linear infinite;
+      flex-shrink: 0;
+    }
+    @keyframes spin { to { transform: rotate(360deg); } }
+
+    /* Footer */
+    .back-link {
+      display: block;
+      text-align: center;
+      margin-top: 1.75rem;
+      font-size: 0.85rem;
+      color: var(--muted);
+      text-decoration: none;
+      transition: color 0.2s;
+    }
+    .back-link:hover { color: rgba(255,255,255,0.7); }
+
+    @media (max-width: 480px) {
+      .card { padding: 2rem 1.25rem; }
+    }
+  </style>
+</head>
+<body>
+  <div class="login-wrap">
+    <a href="/" class="logo">Operr<span>AI</span></a>
+
+    <div class="card">
+      <div class="card-header">
+        <div class="badge">Client Access Portal</div>
+        <h1>Welcome back</h1>
+        <p>Enter your credentials to access the interactive demo.</p>
+      </div>
+
+      <div id="alert" class="alert" role="alert"></div>
+
+      <form id="loginForm" novalidate>
+        <div class="field">
+          <label for="username">Access ID</label>
+          <input type="text" id="username" name="username" placeholder="Enter your access ID"
+            autocomplete="username" required />
+        </div>
+        <div class="field">
+          <label for="password">Passphrase</label>
+          <input type="password" id="password" name="password" placeholder="Enter your passphrase"
+            autocomplete="current-password" required />
+        </div>
+        <button type="submit" class="btn-login" id="submitBtn">Access Demo</button>
+      </form>
+    </div>
+
+    <a href="/" class="back-link">← Back to OperrAI</a>
+  </div>
+
+  <script>
+    // Redirect if already logged in
+    (function () {
+      const token = localStorage.getItem('operr_token');
+      if (token) {
+        try {
+          const payload = JSON.parse(atob(token.split('.')[1].replace(/-/g, '+').replace(/_/g, '/')));
+          if (payload.exp > Math.floor(Date.now() / 1000)) {
+            window.location.href = '/ev-poc';
+          }
+        } catch { /* invalid token, stay on login */ }
+      }
+    })();
+
+    const form = document.getElementById('loginForm');
+    const alertEl = document.getElementById('alert');
+    const submitBtn = document.getElementById('submitBtn');
+
+    function showAlert(type, message) {
+      alertEl.className = `alert ${type}`;
+      alertEl.innerHTML = type === 'info'
+        ? `<span class="spinner"></span><span>${message}</span>`
+        : `<span>⚠</span><span>${message}</span>`;
+    }
+
+    function hideAlert() {
+      alertEl.className = 'alert';
+    }
+
+    form.addEventListener('submit', async (e) => {
+      e.preventDefault();
+      const username = document.getElementById('username').value.trim();
+      const password = document.getElementById('password').value;
+
+      if (!username || !password) {
+        showAlert('error', 'Please enter your Access ID and Passphrase.');
+        return;
+      }
+
+      submitBtn.disabled = true;
+      showAlert('info', 'Verifying credentials…');
+
+      try {
+        const resp = await fetch('/api/auth', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ username, password }),
+        });
+
+        const data = await resp.json();
+
+        if (resp.ok && data.token) {
+          localStorage.setItem('operr_token', data.token);
+          showAlert('info', 'Access granted. Redirecting…');
+          setTimeout(() => { window.location.href = '/ev-poc'; }, 600);
+        } else if (resp.status === 429) {
+          showAlert('error', data.error || 'Too many attempts. Please wait.');
+          submitBtn.disabled = false;
+        } else {
+          showAlert('error', 'Invalid credentials. Please try again.');
+          document.getElementById('password').value = '';
+          submitBtn.disabled = false;
+        }
+      } catch {
+        showAlert('error', 'Connection error. Please check your internet and try again.');
+        submitBtn.disabled = false;
+      }
+    });
+  </script>
+</body>
+</html>
