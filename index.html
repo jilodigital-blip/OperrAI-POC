@@ -727,7 +727,6 @@
       .footer-nav { flex-wrap: wrap; gap: 1rem 1.5rem; }
     }
   </style>
-  <script src="https://cdn.jsdelivr.net/npm/@emailjs/browser@4/dist/email.min.js"></script>
 </head>
 <body>
 
@@ -954,7 +953,7 @@
         </div>
 
         <div class="contact-wrapper reveal">
-          <form id="contact-form" novalidate>
+          <form id="contact-form" action="https://formspree.io/f/mvzwgqwr" method="POST" novalidate>
             <div class="form-row">
               <div class="form-group">
                 <label for="name">Full Name</label>
@@ -1147,8 +1146,6 @@
     }
 
     /* ── 5. Contact form ────────────────────────────────────────────────── */
-    emailjs.init('YOUR_PUBLIC_KEY');
-
     const form      = document.getElementById('contact-form');
     const submitBtn = document.getElementById('submit-btn');
     const success   = document.getElementById('form-success');
@@ -1177,9 +1174,18 @@
       submitBtn.disabled = true;
 
       try {
-        await emailjs.sendForm('YOUR_SERVICE_ID', 'YOUR_TEMPLATE_ID', form);
-        form.classList.add('hidden');
-        success.classList.remove('hidden');
+        const response = await fetch('https://formspree.io/f/mvzwgqwr', {
+          method: 'POST',
+          headers: { 'Accept': 'application/json' },
+          body: new FormData(form)
+        });
+
+        if (response.ok) {
+          form.classList.add('hidden');
+          success.classList.remove('hidden');
+        } else {
+          throw new Error('Server error');
+        }
       } catch (err) {
         submitBtn.disabled = false;
         submitBtn.style.background = '#e05d5d';
