@@ -74,7 +74,7 @@
           "parameters": [
             {
               "name": "Authorization",
-              "value": "={{ 'Bearer ' + $env.OPENAI_API_KEY }}"
+              "value": "Bearer PASTE_YOUR_OPENAI_API_KEY_HERE"
             },
             {
               "name": "Content-Type",
@@ -97,17 +97,17 @@
     {
       "parameters": {
         "method": "POST",
-        "url": "={{ $env.SUPABASE_URL + '/rest/v1/rpc/match_documents' }}",
+        "url": "https://PASTE_YOUR_SUPABASE_PROJECT_ID.supabase.co/rest/v1/rpc/match_documents",
         "sendHeaders": true,
         "headerParameters": {
           "parameters": [
             {
               "name": "apikey",
-              "value": "={{ $env.SUPABASE_ANON_KEY }}"
+              "value": "PASTE_YOUR_SUPABASE_ANON_KEY_HERE"
             },
             {
               "name": "Authorization",
-              "value": "={{ 'Bearer ' + $env.SUPABASE_ANON_KEY }}"
+              "value": "Bearer PASTE_YOUR_SUPABASE_ANON_KEY_HERE"
             },
             {
               "name": "Content-Type",
@@ -146,7 +146,7 @@
           "parameters": [
             {
               "name": "Authorization",
-              "value": "={{ 'Bearer ' + $env.OPENAI_API_KEY }}"
+              "value": "Bearer PASTE_YOUR_OPENAI_API_KEY_HERE"
             },
             {
               "name": "Content-Type",
@@ -179,7 +179,7 @@
     {
       "parameters": {
         "method": "POST",
-        "url": "={{ 'https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-pro:generateContent?key=' + $env.GEMINI_API_KEY }}",
+        "url": "https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-pro:generateContent?key=PASTE_YOUR_GEMINI_API_KEY_HERE",
         "sendHeaders": true,
         "headerParameters": {
           "parameters": [
@@ -203,7 +203,7 @@
     },
     {
       "parameters": {
-        "jsCode": "const geminiResponse = $input.first().json;\nconst rawText = geminiResponse?.candidates?.[0]?.content?.parts?.[0]?.text?.trim() || '';\n\nlet rating;\ntry {\n  // Strip markdown code fences if Gemini wraps output\n  const cleaned = rawText\n    .replace(/^```json\\s*/i, '')\n    .replace(/```\\s*$/, '')\n    .trim();\n  rating = JSON.parse(cleaned);\n  // Validate label is one of the expected values\n  if (!['Excellent', 'Good', 'Acceptable', 'Poor'].includes(rating.label)) {\n    rating.label = 'Acceptable';\n  }\n  rating.score = Math.max(0, Math.min(10, Number(rating.score) || 5));\n} catch (e) {\n  // Safe fallback — do not block on parse failure\n  rating = {\n    score: 5,\n    label: 'Acceptable',\n    rationale: 'L2 parse error — defaulting to Acceptable. Raw: ' + rawText.slice(0, 100)\n  };\n}\n\nconst prev = $('Extract L1 Answer').first().json;\n\nreturn [{\n  json: {\n    ...prev,\n    accuracy_score: rating.score,\n    accuracy_label: rating.label,\n    accuracy_rationale: rating.rationale,\n    blocked: rating.label === 'Poor'\n  }\n}];"
+        "jsCode": "const geminiResponse = $input.first().json;\nconst rawText = geminiResponse?.candidates?.[0]?.content?.parts?.[0]?.text?.trim() || '';\n\nlet rating;\ntry {\n  const cleaned = rawText\n    .replace(/^```json\\s*/i, '')\n    .replace(/```\\s*$/, '')\n    .trim();\n  rating = JSON.parse(cleaned);\n  if (!['Excellent', 'Good', 'Acceptable', 'Poor'].includes(rating.label)) {\n    rating.label = 'Acceptable';\n  }\n  rating.score = Math.max(0, Math.min(10, Number(rating.score) || 5));\n} catch (e) {\n  rating = {\n    score: 5,\n    label: 'Acceptable',\n    rationale: 'L2 parse error — defaulting to Acceptable. Raw: ' + rawText.slice(0, 100)\n  };\n}\n\nconst prev = $('Extract L1 Answer').first().json;\n\nreturn [{\n  json: {\n    ...prev,\n    accuracy_score: rating.score,\n    accuracy_label: rating.label,\n    accuracy_rationale: rating.rationale,\n    blocked: rating.label === 'Poor'\n  }\n}];"
       },
       "id": "node-10",
       "name": "Parse L2 Response",
@@ -256,7 +256,7 @@
     },
     {
       "parameters": {
-        "jsCode": "const now = new Date();\nconst dateStr = now.toISOString().slice(0, 10).replace(/-/g, ''); // e.g. 20260308\nconst rand = String(Math.floor(Math.random() * 90000) + 10000);  // 5-digit\nconst ticketId = `SR-${dateStr}-${rand}`;\n\nreturn [{ json: { ...$input.first().json, ticket_id: ticketId } }];"
+        "jsCode": "const now = new Date();\nconst dateStr = now.toISOString().slice(0, 10).replace(/-/g, '');\nconst rand = String(Math.floor(Math.random() * 90000) + 10000);\nconst ticketId = `SR-${dateStr}-${rand}`;\n\nreturn [{ json: { ...$input.first().json, ticket_id: ticketId } }];"
       },
       "id": "node-13",
       "name": "Generate SR Ticket",
