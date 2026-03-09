@@ -26,6 +26,8 @@ const API_HANDLERS = {
   '/api/chat':      './api/chat.js',
   '/api/dashboard': './api/dashboard.js',
   '/api/ingest':    './api/ingest.js',
+  '/api/admin':     './api/admin.js',
+  '/api/feedback':  './api/feedback.js',
 };
 
 const MIME = {
