@@ -10,6 +10,7 @@
     { "src": "/ev-poc",   "dest": "/ev-poc.html" },
     { "src": "/ingest",   "dest": "/ingest.html" },
     { "src": "/login",    "dest": "/login.html" },
+    { "src": "/admin",    "dest": "/admin.html" },
     { "src": "/(.*)",     "dest": "/index.html" }
   ]
 }

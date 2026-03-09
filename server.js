@@ -52,6 +52,18 @@ const server = http.createServer(async (req, res) => {
       // Clear require cache in dev so edits reload without restart
       delete require.cache[require.resolve(handlerPath)];
       const handler = require(handlerPath);
+      // Shim Express-style helpers onto the plain Node res object
+      if (!res.status) {
+        res.status = (code) => { res._statusCode = code; res.statusCode = code; return res; };
+      }
+      if (!res.json) {
+        res.json = (obj) => {
+          if (!res.headersSent) {
+            res.writeHead(res.statusCode || 200, { 'Content-Type': 'application/json' });
+          }
+          res.end(JSON.stringify(obj));
+        };
+      }
       await handler(req, res);
     } catch (err) {
       console.error(`[API error] ${url}:`, err.message);
