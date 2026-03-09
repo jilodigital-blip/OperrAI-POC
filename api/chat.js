@@ -77,9 +77,9 @@ async function supabaseRPC(fn, params, supabaseUrl, supabaseKey) {
   return await resp.json();
 }
 
-// ── Agentic pipeline: Embed → RAG → GPT-4o L1 → Gemini L2 → Quality Gate ─────
+// ── Agentic pipeline: Embed → RAG → Gemini L1 → OpenAI L2 → Quality Gate ──────
 
-async function callAgenticPipeline(question, channel, { openaiKey, claudeKey, supabaseUrl, supabaseKey }) {
+async function callAgenticPipeline(question, channel, { openaiKey, geminiKey, supabaseUrl, supabaseKey }) {
   // ── L0: Embed ──────────────────────────────────────────────────────────────
   if (!openaiKey) throw new Error('OPENAI_API_KEY is not configured');
   const embedResp = await fetch('https://api.openai.com/v1/embeddings', {
@@ -133,7 +133,8 @@ async function callAgenticPipeline(question, channel, { openaiKey, claudeKey, su
     relevance_score: c.similarity !== null ? Math.round((c.similarity || 0) * 100) / 100 : null,
   }));
 
-  // ── L1: GPT-4o Worker ──────────────────────────────────────────────────────
+  // ── L1: Gemini Worker ──────────────────────────────────────────────────────
+  if (!geminiKey) throw new Error('GEMINI_API_KEY is not configured');
   const formatInstruction = channel === 'email'
     ? 'FORMAT: Write a formal professional email response with greeting and sign-off. Be thorough and warm.'
     : 'FORMAT: Be concise and direct. Under 150 words. No greeting needed.';
@@ -146,30 +147,29 @@ ${formatInstruction}
 Knowledge Base Context:
 ${context}`;
 
-  const l1Resp = await fetch('https://api.openai.com/v1/chat/completions', {
-    method: 'POST',
-    headers: {
-      'Authorization': `Bearer ${openaiKey}`,
-      'Content-Type': 'application/json',
-    },
-    body: JSON.stringify({
-      model: 'gpt-4o',
-      max_tokens: channel === 'email' ? 1024 : 512,
-      temperature: 0.3,
-      messages: [
-        { role: 'system', content: systemPrompt },
-        { role: 'user',   content: question },
-      ],
-    }),
-    signal: AbortSignal.timeout(30000),
-  });
-  if (!l1Resp.ok) throw new Error(`GPT-4o returned ${l1Resp.status}`);
+  const l1Resp = await fetch(
+    `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent?key=${geminiKey}`,
+    {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        systemInstruction: { parts: [{ text: systemPrompt }] },
+        contents: [{ role: 'user', parts: [{ text: question }] }],
+        generationConfig: {
+          temperature: 0.3,
+          maxOutputTokens: channel === 'email' ? 1024 : 512,
+        },
+      }),
+      signal: AbortSignal.timeout(30000),
+    }
+  );
+  if (!l1Resp.ok) throw new Error(`Gemini L1 returned ${l1Resp.status}`);
   const l1Data = await l1Resp.json();
-  const l1Answer = l1Data.choices?.[0]?.message?.content?.trim() || 'No response generated.';
+  const l1Answer = l1Data?.candidates?.[0]?.content?.parts?.[0]?.text?.trim() || 'No response generated.';
 
-  // ── L2: Claude Opus 4.6 Supervisor ────────────────────────────────────────
+  // ── L2: OpenAI GPT-4o Supervisor ──────────────────────────────────────────
   let rating = { score: 5, label: 'Acceptable', rationale: 'Quality evaluator not configured — defaulting to Acceptable.' };
-  if (claudeKey) {
+  if (openaiKey) {
     const evalPrompt = `You are a strict QA evaluator for an AI customer support system.
 Evaluate whether the AI answer correctly addresses the customer question.
 Check for: hallucinations, incorrect facts, missing critical info, or off-topic responses.
@@ -190,24 +190,26 @@ Respond ONLY with valid JSON (no markdown):
 Scoring: 9-10=Excellent, 7-8=Good, 5-6=Acceptable, 0-4=Poor`;
 
     try {
-      const claudeResp = await fetch('https://api.anthropic.com/v1/messages', {
+      const l2Resp = await fetch('https://api.openai.com/v1/chat/completions', {
         method: 'POST',
         headers: {
-          'x-api-key': claudeKey,
-          'anthropic-version': '2023-06-01',
-          'content-type': 'application/json',
+          'Authorization': `Bearer ${openaiKey}`,
+          'Content-Type': 'application/json',
         },
         body: JSON.stringify({
-          model: 'claude-opus-4-6',
+          model: 'gpt-4o',
           max_tokens: 256,
           temperature: 0.1,
-          messages: [{ role: 'user', content: evalPrompt }],
+          messages: [
+            { role: 'system', content: 'You are a strict QA evaluator. Respond only with valid JSON.' },
+            { role: 'user',   content: evalPrompt },
+          ],
         }),
         signal: AbortSignal.timeout(20000),
       });
-      if (claudeResp.ok) {
-        const claudeData = await claudeResp.json();
-        const raw = claudeData?.content?.[0]?.text?.trim() || '';
+      if (l2Resp.ok) {
+        const l2Data = await l2Resp.json();
+        const raw = l2Data?.choices?.[0]?.message?.content?.trim() || '';
         const cleaned = raw.replace(/^```json\s*/i, '').replace(/```\s*$/, '').trim();
         const parsed = JSON.parse(cleaned);
         rating = {
@@ -217,11 +219,11 @@ Scoring: 9-10=Excellent, 7-8=Good, 5-6=Acceptable, 0-4=Poor`;
           rationale: parsed.rationale || '',
         };
       } else {
-        console.error('Claude L2 evaluator returned HTTP', claudeResp.status);
+        console.error('OpenAI L2 evaluator returned HTTP', l2Resp.status);
       }
     } catch (err) {
-      console.error('Claude L2 evaluation failed:', err.message);
-      // Keep default rating on Claude failure — do not block the response
+      console.error('OpenAI L2 evaluation failed:', err.message);
+      // Keep default rating on OpenAI failure — do not block the response
     }
   }
 
@@ -251,7 +253,7 @@ module.exports = async (req, res) => {
   // Read env vars inside handler to avoid stale module-scope cache on Vercel
   const JWT_SECRET        = process.env.JWT_SECRET        || 'operrai-poc-secret-change-in-prod';
   const OPENAI_API_KEY    = process.env.OPENAI_API_KEY    || '';
-  const ANTHROPIC_API_KEY = process.env.ANTHROPIC_API_KEY || '';
+  const GEMINI_API_KEY    = process.env.GEMINI_API_KEY    || '';
   const SUPABASE_URL      = process.env.SUPABASE_URL      || '';
   const SUPABASE_ANON_KEY = process.env.SUPABASE_ANON_KEY || '';
 
@@ -275,7 +277,7 @@ module.exports = async (req, res) => {
   if (!question?.trim()) return res.status(400).json({ error: 'Question is required' });
 
   const startTime = Date.now();
-  const envVars = { openaiKey: OPENAI_API_KEY, claudeKey: ANTHROPIC_API_KEY, supabaseUrl: SUPABASE_URL, supabaseKey: SUPABASE_ANON_KEY };
+  const envVars = { openaiKey: OPENAI_API_KEY, geminiKey: GEMINI_API_KEY, supabaseUrl: SUPABASE_URL, supabaseKey: SUPABASE_ANON_KEY };
 
   let result;
   try {
@@ -318,7 +320,7 @@ module.exports = async (req, res) => {
       accuracy_score,
       accuracy_label,
       rating_rationale: accuracy_rationale,
-      rated_by_model:   ANTHROPIC_API_KEY ? 'claude-opus-4-6' : 'default',
+      rated_by_model:   OPENAI_API_KEY ? 'gpt-4o' : 'default',
     }, SUPABASE_URL, SUPABASE_ANON_KEY).catch(() => {});
   }
 
