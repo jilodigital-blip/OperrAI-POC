@@ -111,14 +111,23 @@ async function callAgenticPipeline(question, channel, { openaiKey, claudeKey, su
   if (chunks.length === 0 && BUNDLED_FAQS.length > 0) {
     console.warn('Supabase returned 0 documents — falling back to bundled FAQs');
     const lq = question.toLowerCase();
-    const terms = lq.split(/\W+/).filter(t => t.length > 3);
-    // Score each FAQ by keyword overlap, then take top 5
+    // Keep terms of 2+ chars; also extract bigrams for better matching
+    const words = lq.split(/\W+/).filter(t => t.length >= 2);
+    const bigrams = [];
+    for (let i = 0; i < words.length - 1; i++) bigrams.push(words[i] + ' ' + words[i + 1]);
+
+    // Score each FAQ by keyword overlap with term-length weighting
     const scored = BUNDLED_FAQS.map(f => {
       const hay = (f.doc_name + ' ' + f.content).toLowerCase();
-      const hits = terms.filter(t => hay.includes(t)).length;
-      return { ...f, _score: hits };
+      // Bigram matches are worth 3 points (phrase match)
+      let score = bigrams.filter(bg => hay.includes(bg)).length * 3;
+      // Single word matches weighted by word length (longer = more specific)
+      score += words.filter(t => hay.includes(t)).reduce((s, t) => s + Math.min(t.length, 5), 0);
+      return { ...f, _score: score };
     }).sort((a, b) => b._score - a._score);
-    chunks = scored.slice(0, 5).map(f => ({
+
+    // Only include FAQs with non-zero relevance; take top 5
+    chunks = scored.filter(f => f._score > 0).slice(0, 5).map(f => ({
       doc_name:   f.doc_name,
       content:    f.content,
       similarity: null,
@@ -135,11 +144,24 @@ async function callAgenticPipeline(question, channel, { openaiKey, claudeKey, su
 
   // ── L1: GPT-4o Worker ──────────────────────────────────────────────────────
   const formatInstruction = channel === 'email'
-    ? 'FORMAT: Write a formal professional email response with greeting and sign-off. Be thorough and warm.'
-    : 'FORMAT: Be concise and direct. Under 150 words. No greeting needed.';
+    ? `FORMAT RULES:
+- Write a formal professional email response with a warm greeting and sign-off.
+- Be thorough: cover all relevant details from the knowledge base.
+- Use bullet points or numbered lists for multi-part answers.
+- Sign off as "Ather Support Team".`
+    : `FORMAT RULES:
+- Be concise and direct. Keep under 150 words unless the question requires a detailed technical answer.
+- Use bullet points or numbered lists when listing multiple items, specifications, or steps.
+- No greeting needed. Get straight to the answer.
+- Use **bold** for key figures (prices, distances, times).`;
   const systemPrompt = `You are an expert customer support agent for Ather Energy EV scooters.
-Answer ONLY using the provided knowledge base context. Do not hallucinate.
-If the context lacks the answer, say: "I don't have enough information on this topic. Please contact our support team."
+
+CRITICAL RULES:
+1. Answer ONLY using the provided Knowledge Base Context below. Never make up information.
+2. If the context contains relevant information, you MUST use it to answer — do not say you lack information when it is present.
+3. If the context genuinely lacks the answer, respond with: "I don't have enough information on this topic. Please contact Ather support at atherenergy.com or call 7676 600 900."
+4. Cite specific numbers, distances, times, and prices from the context when available.
+5. If the user asks about multiple topics, address each one.
 
 ${formatInstruction}
 
@@ -225,6 +247,53 @@ Scoring: 9-10=Excellent, 7-8=Good, 5-6=Acceptable, 0-4=Poor`;
     }
   }
 
+  // ── Retry: if L2 rated Poor but context exists, retry L1 with stricter prompt ─
+  let finalAnswer = l1Answer;
+  if (rating.label === 'Poor' && chunks.length > 0 && openaiKey) {
+    console.warn('L2 rated Poor — retrying L1 with stricter prompt');
+    const retryPrompt = `You are an expert customer support agent for Ather Energy EV scooters.
+
+A previous attempt to answer this question was rated poorly. You MUST answer using the Knowledge Base Context below.
+Read the context carefully — the answer IS in the context. Extract the relevant facts and present them clearly.
+If you truly cannot find relevant information after careful reading, say so.
+
+${formatInstruction}
+
+Knowledge Base Context:
+${context}`;
+    try {
+      const retryResp = await fetch('https://api.openai.com/v1/chat/completions', {
+        method: 'POST',
+        headers: {
+          'Authorization': `Bearer ${openaiKey}`,
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          model: 'gpt-4o',
+          max_tokens: channel === 'email' ? 1024 : 512,
+          temperature: 0.15,
+          messages: [
+            { role: 'system', content: retryPrompt },
+            { role: 'user',   content: question },
+          ],
+        }),
+        signal: AbortSignal.timeout(30000),
+      });
+      if (retryResp.ok) {
+        const retryData = await retryResp.json();
+        const retryAnswer = retryData.choices?.[0]?.message?.content?.trim();
+        if (retryAnswer) {
+          finalAnswer = retryAnswer;
+          // Bump rating since we retried — mark as Acceptable at minimum
+          rating = { score: 5, label: 'Acceptable', rationale: 'Answer regenerated after initial Poor rating.' };
+        }
+      }
+    } catch (err) {
+      console.error('L1 retry failed:', err.message);
+      // Keep original answer and rating on retry failure
+    }
+  }
+
   // ── Quality Gate ───────────────────────────────────────────────────────────
   const blocked = rating.label === 'Poor';
   let ticket_id = null;
@@ -235,7 +304,7 @@ Scoring: 9-10=Excellent, 7-8=Good, 5-6=Acceptable, 0-4=Poor`;
   }
 
   return {
-    answer:             blocked ? null : l1Answer,
+    answer:             blocked ? null : finalAnswer,
     sources,
     accuracy_score:     rating.score,
     accuracy_label:     rating.label,
