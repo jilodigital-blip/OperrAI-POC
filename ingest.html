@@ -68,8 +68,8 @@
   <!-- Bulk upload -->
   <div class="card">
     <label style="font-size:1rem;text-transform:none;color:var(--text);margin-bottom:0.5rem;">Bulk Upload (JSON)</label>
-    <p class="bulk-hint" style="margin-bottom:1rem;">Paste a JSON array of <code>{"doc_name":"…","content":"…"}</code> objects to upload multiple at once.</p>
-    <textarea id="bulkJson" placeholder='[{"doc_name":"FAQ 1","content":"…"},{"doc_name":"FAQ 2","content":"…"}]' style="min-height:120px;"></textarea>
+    <p class="bulk-hint" style="margin-bottom:1rem;">Paste a JSON array of <code>{"doc_id":"unique-slug","doc_name":"…","content":"Question: …\n\nAnswer: …"}</code> objects. <strong>doc_id</strong> is optional but recommended — it prevents duplicates on re-upload. Content should use <em>Question: …\n\nAnswer: …</em> format for best search quality.</p>
+    <textarea id="bulkJson" placeholder='[{"doc_id":"faq-slug","doc_name":"Category - Topic","content":"Question: …\n\nAnswer: …"},{"doc_id":"faq-slug-2","doc_name":"Category - Topic 2","content":"Question: …\n\nAnswer: …"}]' style="min-height:120px;"></textarea>
     <button class="btn" id="bulkBtn" onclick="uploadBulk()" style="background:#444;color:var(--text);">Bulk Upload</button>
   </div>
 
@@ -98,11 +98,11 @@
     return { secret, baseUrl };
   }
 
-  async function ingestOne(baseUrl, secret, doc_name, content) {
+  async function ingestOne(baseUrl, secret, doc_id, doc_name, content) {
     const resp = await fetch(`${baseUrl}/api/ingest`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ secret, doc_name, content }),
+      body: JSON.stringify({ secret, doc_id, doc_name, content }),
     });
     const data = await resp.json();
     if (!resp.ok) throw new Error(data.error || `HTTP ${resp.status}`);
@@ -122,7 +122,7 @@
     btn.textContent = 'Uploading…';
     log(`Uploading: "${doc_name}"…`);
     try {
-      const res = await ingestOne(cfg.baseUrl, cfg.secret, doc_name, content);
+      const res = await ingestOne(cfg.baseUrl, cfg.secret, '', doc_name, content);
       log(`Saved: "${res.doc_name}" (id: ${res.id})`, 'ok');
       document.getElementById('docName').value = '';
       document.getElementById('content').value = '';
@@ -152,11 +152,11 @@
 
     let ok = 0, fail = 0;
     for (let i = 0; i < docs.length; i++) {
-      const { doc_name, content } = docs[i];
+      const { doc_id, doc_name, content } = docs[i];
       if (!doc_name || !content) { log(`[${i+1}] Skipped — missing doc_name or content`, 'err'); fail++; continue; }
-      log(`[${i+1}/${docs.length}] Uploading: "${doc_name}"…`);
+      log(`[${i+1}/${docs.length}] Uploading: "${doc_id || doc_name}"…`);
       try {
-        const res = await ingestOne(cfg.baseUrl, cfg.secret, doc_name, content);
+        const res = await ingestOne(cfg.baseUrl, cfg.secret, doc_id || '', doc_name, content);
         log(`[${i+1}/${docs.length}] Saved: "${res.doc_name}"`, 'ok');
         ok++;
       } catch (e) {
