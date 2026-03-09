@@ -1,6 +1,6 @@
 -- ============================================================
--- OperrAI POC — Supabase Database Schema
--- Run this in your Supabase project: SQL Editor → New Query
+-- OperrAI POC — Supabase Database Schema  (Part 1 of 2)
+-- Run this first in: SQL Editor → New Query
 -- Project: https://qjajoayybuvxvpgysoih.supabase.co
 -- ============================================================
 
@@ -20,47 +20,58 @@ CREATE TABLE IF NOT EXISTS messages (
 CREATE INDEX IF NOT EXISTS messages_hash_idx    ON messages (question_hash);
 CREATE INDEX IF NOT EXISTS messages_created_idx ON messages (created_at DESC);
 
--- Ratings: accuracy assessment by Claude Opus 4.6 (inserted asynchronously)
+-- Ratings: accuracy assessment by Gemini 2.5 Pro (inserted asynchronously)
 CREATE TABLE IF NOT EXISTS ratings (
   id               UUID          PRIMARY KEY DEFAULT gen_random_uuid(),
   message_id       UUID          NOT NULL REFERENCES messages (id) ON DELETE CASCADE,
   accuracy_score   NUMERIC(4,2)  NOT NULL CHECK (accuracy_score BETWEEN 0 AND 10),
   accuracy_label   TEXT          NOT NULL CHECK (accuracy_label IN ('Excellent','Good','Acceptable','Poor')),
   rating_rationale TEXT,
-  rated_by_model   TEXT          NOT NULL DEFAULT 'claude-opus-4-6',
+  rated_by_model   TEXT          NOT NULL DEFAULT 'gemini-2.5-pro',
   rated_at         TIMESTAMPTZ   NOT NULL DEFAULT NOW()
 );
 
 CREATE UNIQUE INDEX IF NOT EXISTS ratings_message_unique ON ratings (message_id);
 
 -- ── Row Level Security ────────────────────────────────────────────────────────
--- The anon key used by the Vercel functions has INSERT + SELECT access.
--- Enable RLS and add policies so the anon role can read/write these tables.
-
 ALTER TABLE messages ENABLE ROW LEVEL SECURITY;
 ALTER TABLE ratings  ENABLE ROW LEVEL SECURITY;
 
--- Allow the anon role (used by SUPABASE_ANON_KEY) to insert + select messages
-CREATE POLICY "anon can insert messages"
-  ON messages FOR INSERT TO anon WITH CHECK (true);
+CREATE POLICY "anon can insert messages" ON messages FOR INSERT TO anon WITH CHECK (true);
+CREATE POLICY "anon can select messages" ON messages FOR SELECT TO anon USING (true);
+CREATE POLICY "anon can insert ratings"  ON ratings  FOR INSERT TO anon WITH CHECK (true);
+CREATE POLICY "anon can select ratings"  ON ratings  FOR SELECT TO anon USING (true);
 
-CREATE POLICY "anon can select messages"
-  ON messages FOR SELECT TO anon USING (true);
+-- ── Channel column ─────────────────────────────────────────────────────────────
+ALTER TABLE messages ADD COLUMN IF NOT EXISTS channel TEXT NOT NULL DEFAULT 'chat'
+  CHECK (channel IN ('chat', 'email'));
 
--- Allow the anon role to insert + select ratings
-CREATE POLICY "anon can insert ratings"
-  ON ratings FOR INSERT TO anon WITH CHECK (true);
+-- ── Service requests ───────────────────────────────────────────────────────────
+CREATE TABLE IF NOT EXISTS service_requests (
+  id          UUID        PRIMARY KEY DEFAULT gen_random_uuid(),
+  message_id  UUID        REFERENCES messages (id) ON DELETE CASCADE,
+  ticket_id   TEXT        NOT NULL,
+  question    TEXT        NOT NULL,
+  channel     TEXT        NOT NULL DEFAULT 'chat',
+  status      TEXT        NOT NULL DEFAULT 'open',
+  created_at  TIMESTAMPTZ NOT NULL DEFAULT NOW()
+);
 
-CREATE POLICY "anon can select ratings"
-  ON ratings FOR SELECT TO anon USING (true);
+ALTER TABLE service_requests ENABLE ROW LEVEL SECURITY;
+CREATE POLICY "anon_sr_insert" ON service_requests FOR INSERT TO anon WITH CHECK (true);
+CREATE POLICY "anon_sr_select" ON service_requests FOR SELECT TO anon USING (true);
 
--- ── Convenience view (optional, for direct SQL inspection) ────────────────────
+-- ── Dashboard view ─────────────────────────────────────────────────────────────
 CREATE OR REPLACE VIEW dashboard_summary AS
 SELECT
-  COUNT(DISTINCT m.id)                           AS total_questions,
-  COUNT(DISTINCT m.question_hash)                AS unique_questions,
-  ROUND(AVG(m.response_time_ms))                 AS avg_response_time_ms,
-  ROUND(AVG(r.accuracy_score)::NUMERIC, 2)       AS avg_accuracy_score,
-  COUNT(r.id)                                    AS rated_count
+  COUNT(DISTINCT m.id)                                AS total_questions,
+  COUNT(DISTINCT m.question_hash)                     AS unique_questions,
+  ROUND(AVG(m.response_time_ms))                      AS avg_response_time_ms,
+  ROUND(AVG(r.accuracy_score)::NUMERIC, 2)            AS avg_accuracy_score,
+  COUNT(r.id)                                         AS rated_count,
+  COUNT(CASE WHEN m.channel = 'chat'  THEN 1 END)     AS chat_questions,
+  COUNT(CASE WHEN m.channel = 'email' THEN 1 END)     AS email_questions,
+  COUNT(DISTINCT sr.id)                               AS blocked_count
 FROM messages m
-LEFT JOIN ratings r ON r.message_id = m.id;
+LEFT JOIN ratings          r  ON r.message_id  = m.id
+LEFT JOIN service_requests sr ON sr.message_id = m.id;
