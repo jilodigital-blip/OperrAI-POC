@@ -2,7 +2,14 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
+  <meta name="theme-color" content="#0A0A0A" />
+  <meta name="mobile-web-app-capable" content="yes" />
+  <meta name="apple-mobile-web-app-capable" content="yes" />
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
+  <meta name="apple-mobile-web-app-title" content="OperrAI" />
+  <link rel="manifest" href="/manifest.json" />
+  <link rel="apple-touch-icon" href="/icons/icon-192.svg" />
   <title>AI POC Hub — Ather | OperrAI</title>
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
@@ -233,6 +240,7 @@
     /* ── Chat ────────────────────────────────────────────────── */
     .chat-messages {
       height: 420px;
+      min-height: 200px;
       overflow-y: auto;
       padding: 1.25rem;
       display: flex;
@@ -607,6 +615,12 @@
     @media (max-width: 640px) {
       .info-cards { grid-template-columns: 1fr; }
       .stats-grid { grid-template-columns: 1fr; }
+      .chat-messages {
+        height: calc(45dvh - 60px);
+        min-height: 180px;
+        max-height: 320px;
+      }
+      .main-grid { padding: 0 1rem 2rem; }
     }
 
     .info-card {
@@ -1312,6 +1326,19 @@
   loadDashboard();
   setInterval(loadDashboard, 30000);
   chatInput.focus();
+
+  // Mobile keyboard awareness — keep chat scrolled to bottom when keyboard opens
+  if (window.visualViewport) {
+    window.visualViewport.addEventListener('resize', () => {
+      chatMessages.scrollTop = chatMessages.scrollHeight;
+    });
+  }
+
+  if ('serviceWorker' in navigator) {
+    window.addEventListener('load', () => {
+      navigator.serviceWorker.register('/sw.js').catch(() => {});
+    });
+  }
 </script>
 </body>
 </html>
