@@ -9,7 +9,7 @@ async function readBody(req) {
 
 module.exports = async (req, res) => {
   const OPENAI_API_KEY    = process.env.OPENAI_API_KEY    || '';
-  const SUPABASE_URL      = process.env.SUPABASE_URL      || 'https://qjajoayybuvxvpgysoih.supabase.co';
+  const SUPABASE_URL      = process.env.SUPABASE_URL      || '';
   const SUPABASE_ANON_KEY = process.env.SUPABASE_ANON_KEY || '';
   const INGEST_SECRET     = process.env.INGEST_SECRET     || '';
 
@@ -44,8 +44,7 @@ module.exports = async (req, res) => {
     body: JSON.stringify({ model: 'text-embedding-3-small', input: content.trim() }),
   });
   if (!embedResp.ok) {
-    const err = await embedResp.text();
-    return res.status(502).json({ error: `OpenAI error: ${err}` });
+    return res.status(502).json({ error: 'Embedding service error. Please try again.' });
   }
   const embedData = await embedResp.json();
   const embedding = embedData.data[0].embedding;
@@ -62,8 +61,7 @@ module.exports = async (req, res) => {
     body: JSON.stringify({ doc_name: doc_name.trim(), content: content.trim(), embedding }),
   });
   if (!sbResp.ok) {
-    const err = await sbResp.text();
-    return res.status(502).json({ error: `Supabase error: ${err}` });
+    return res.status(502).json({ error: 'Database error. Please try again.' });
   }
   const saved = await sbResp.json();
   const id = Array.isArray(saved) ? saved[0]?.id : saved?.id;

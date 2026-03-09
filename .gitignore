@@ -1,0 +1,9 @@
+node_modules/
+.env
+.env.local
+.env*.local
+
+# Internal schema and workflow files — not for public repos
+schema.sql
+schema-vector.sql
+n8n-workflow.json
