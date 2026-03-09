@@ -25,9 +25,19 @@
     "content": "Question: What is covered under the Ather 450X vehicle warranty?\n\nAnswer: Ather provides a 3-year or 30,000 km vehicle warranty (whichever comes first) covering the frame, fork, suspension, and motor. Wear-and-tear items such as tyres, brake pads, and brake shoes are not covered. Warranty is void if the scooter is modified, involved in an accident, or serviced by an unauthorised service centre."
   },
   {
+    "doc_id": "warranty-claim",
+    "doc_name": "Warranty - How to Claim Warranty",
+    "content": "Question: How do I claim warranty for my Ather 450X?\n\nAnswer: To claim warranty, visit the nearest authorised Ather service centre with your vehicle registration certificate and purchase invoice. You can find service centres via the Ather app or at atherenergy.com/service-centres. The service team will diagnose the issue and, if covered under warranty, repair or replace the part at no cost. Warranty claims cannot be processed at third-party or general mechanic shops. For urgent issues, contact Ather support at 7676 600 900 or support@atherenergy.com."
+  },
+  {
     "doc_id": "service-maintenance",
     "doc_name": "Service & Maintenance - Schedule",
     "content": "Question: How often does the Ather 450X need servicing?\n\nAnswer: Ather recommends a service every 6 months or 5,000 km, whichever comes first. The first free service is at 750 km or 1 month. Unlike petrol scooters, the 450X has no engine oil, spark plugs, or air filter to replace. Regular maintenance covers brake inspection, tyre pressure check, throttle and brake cable check, and software updates. Always use an authorised Ather service centre — do not take the scooter to a general mechanic."
+  },
+  {
+    "doc_id": "service-centres",
+    "doc_name": "Service Centres - Locations & Contact",
+    "content": "Question: Where are the Ather service centres located? How do I find one near me?\n\nAnswer: Ather has authorised service centres in 100+ cities across India, including Bangalore, Chennai, Hyderabad, Mumbai, Pune, Delhi NCR, Kolkata, Ahmedabad, Kochi, and many more. To find the nearest service centre: open the Ather app → tap 'Service' → tap 'Find Service Centre', or visit atherenergy.com/service-centres and enter your city. You can also call Ather support at 7676 600 900. Service centres are open Monday–Saturday, 9 AM–6 PM. Doorstep service is available in select cities — check the app for availability in your area."
   },
   {
     "doc_id": "riding-modes",
@@ -53,5 +63,35 @@
     "doc_id": "purchase-booking",
     "doc_name": "Purchase & Test Ride - How to Buy",
     "content": "Question: How can I purchase the Ather 450X or book a test ride?\n\nAnswer: You can book a test ride through the Ather website (atherenergy.com) or the Ather app — test rides are free and available at all Ather Experience Centres. To purchase, visit any Ather Experience Centre or order online. A ₹2,000 fully refundable booking amount is required to confirm the order. Delivery typically takes 2–4 weeks. Ather Experience Centres are present in 100+ cities across India."
+  },
+  {
+    "doc_id": "cancellation-refund",
+    "doc_name": "Purchase - Cancellation & Refund Policy",
+    "content": "Question: Can I cancel my Ather 450X order? Will I get a refund?\n\nAnswer: Yes, you can cancel your Ather 450X order before delivery. The ₹2,000 booking amount is fully refundable if you cancel before the vehicle is registered in your name. To cancel, contact your Ather Experience Centre or call Ather support at 7676 600 900. Refunds are typically processed within 7–10 business days to the original payment method. After the vehicle has been delivered and registered, it cannot be returned."
+  },
+  {
+    "doc_id": "insurance",
+    "doc_name": "Insurance - Coverage & Requirements",
+    "content": "Question: What insurance does the Ather 450X come with? Is insurance mandatory?\n\nAnswer: Yes, third-party insurance is mandatory by law for the Ather 450X (as for all vehicles in India). Ather provides 1 year of third-party insurance bundled with the purchase. Comprehensive insurance (own damage + third-party) is strongly recommended and can be purchased through Ather's insurance partners at the time of purchase or renewed annually. The Ather app sends renewal reminders. For insurance claims, contact Ather support at 7676 600 900 — they will guide you through the process."
+  },
+  {
+    "doc_id": "accessories",
+    "doc_name": "Accessories - Helmets, Covers & Add-ons",
+    "content": "Question: What accessories are available for the Ather 450X?\n\nAnswer: Ather offers a range of official accessories including: ISI/DOT-certified Ather helmets (full-face and half-face), a custom-fit scooter body cover, a portable Ather Dot charger (for travel), handlebar grips, and a phone mount. Accessories can be purchased from any Ather Experience Centre, the Ather app, or the Ather website. Third-party accessories are compatible but may void warranty if they cause damage. Ather recommends using only certified helmets for safety."
+  },
+  {
+    "doc_id": "roadside-assistance",
+    "doc_name": "Roadside Assistance & Breakdown Support",
+    "content": "Question: What happens if my Ather 450X breaks down on the road? Is there roadside assistance?\n\nAnswer: Ather provides 24/7 roadside assistance across India. If your scooter breaks down, call Ather support at 7676 600 900 or use the SOS feature in the Ather app. Ather will dispatch a technician or arrange towing to the nearest service centre. If you run out of charge, Ather's emergency charging assistance can help in select cities. The Ather app also shows your real-time charge level and range, so you can plan ahead to avoid running out of battery."
+  },
+  {
+    "doc_id": "charging-tips",
+    "doc_name": "Charging - Tips & Best Practices",
+    "content": "Question: How should I charge my Ather 450X to maximise battery life?\n\nAnswer: For best battery longevity: charge regularly rather than letting the battery drain to 0%; avoid leaving the battery at 100% for extended periods; use the Ather Dot home charger for daily charging and reserve fast charging for travel. Do not use third-party or non-Ather chargers — this voids the battery warranty. Charging in extreme heat (above 45°C) or cold (below 0°C) should be avoided when possible. The Ather app shows detailed charging stats and can notify you when charging is complete."
+  },
+  {
+    "doc_id": "registration-documents",
+    "doc_name": "Registration & Documents",
+    "content": "Question: What documents are needed to register the Ather 450X? How long does registration take?\n\nAnswer: Ather handles the vehicle registration process on your behalf. Required documents: Aadhaar card (identity proof), address proof, passport-size photographs, and the purchase invoice. Ather submits the registration application to the RTO. A temporary registration is issued at delivery (valid for 30 days); the permanent RC (Registration Certificate) is delivered within 30–60 days. HSRP (High Security Registration Plate) is fixed at delivery. Some states may require you to visit the RTO in person — Ather will inform you if this applies in your city."
   }
 ]
