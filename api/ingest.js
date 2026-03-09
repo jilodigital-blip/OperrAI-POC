@@ -1,8 +1,3 @@
-const OPENAI_API_KEY    = process.env.OPENAI_API_KEY    || '';
-const SUPABASE_URL      = process.env.SUPABASE_URL      || 'https://qjajoayybuvxvpgysoih.supabase.co';
-const SUPABASE_ANON_KEY = process.env.SUPABASE_ANON_KEY || '';
-const INGEST_SECRET     = process.env.INGEST_SECRET     || '';
-
 async function readBody(req) {
   return new Promise((resolve) => {
     let data = '';
@@ -13,6 +8,11 @@ async function readBody(req) {
 }
 
 module.exports = async (req, res) => {
+  const OPENAI_API_KEY    = process.env.OPENAI_API_KEY    || '';
+  const SUPABASE_URL      = process.env.SUPABASE_URL      || 'https://qjajoayybuvxvpgysoih.supabase.co';
+  const SUPABASE_ANON_KEY = process.env.SUPABASE_ANON_KEY || '';
+  const INGEST_SECRET     = process.env.INGEST_SECRET     || '';
+
   res.setHeader('Access-Control-Allow-Origin', '*');
   res.setHeader('Access-Control-Allow-Methods', 'POST, OPTIONS');
   res.setHeader('Access-Control-Allow-Headers', 'Content-Type');
