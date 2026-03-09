@@ -69,7 +69,7 @@ async function supabaseRPC(fn, params, supabaseUrl, supabaseKey) {
 
 // ── Agentic pipeline: Embed → RAG → GPT-4o L1 → Gemini L2 → Quality Gate ─────
 
-async function callAgenticPipeline(question, channel, { openaiKey, geminiKey, supabaseUrl, supabaseKey }) {
+async function callAgenticPipeline(question, channel, { openaiKey, claudeKey, supabaseUrl, supabaseKey }) {
   // ── L0: Embed ──────────────────────────────────────────────────────────────
   if (!openaiKey) throw new Error('OPENAI_API_KEY is not configured');
   const embedResp = await fetch('https://api.openai.com/v1/embeddings', {
@@ -137,12 +137,13 @@ ${context}`;
   const l1Data = await l1Resp.json();
   const l1Answer = l1Data.choices?.[0]?.message?.content?.trim() || 'No response generated.';
 
-  // ── L2: Gemini Supervisor ──────────────────────────────────────────────────
-  let rating = { score: 7, label: 'Good', rationale: 'Gemini not configured — defaulting to Good.' };
-  if (geminiKey) {
-    const geminiPrompt = `You are a strict QA evaluator for an AI customer support system.
+  // ── L2: Claude Opus 4.6 Supervisor ────────────────────────────────────────
+  let rating = { score: 5, label: 'Acceptable', rationale: 'Quality evaluator not configured — defaulting to Acceptable.' };
+  if (claudeKey) {
+    const evalPrompt = `You are a strict QA evaluator for an AI customer support system.
 Evaluate whether the AI answer correctly addresses the customer question.
 Check for: hallucinations, incorrect facts, missing critical info, or off-topic responses.
+IMPORTANT: If the AI answer says it does not have information but the Knowledge Base Context clearly contains relevant information to answer the question, rate this as Poor.
 
 Customer Question:
 ${question}
@@ -159,21 +160,24 @@ Respond ONLY with valid JSON (no markdown):
 Scoring: 9-10=Excellent, 7-8=Good, 5-6=Acceptable, 0-4=Poor`;
 
     try {
-      const gemResp = await fetch(
-        `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-pro:generateContent?key=${geminiKey}`,
-        {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({
-            contents: [{ parts: [{ text: geminiPrompt }] }],
-            generationConfig: { temperature: 0.1, maxOutputTokens: 256 },
-          }),
-          signal: AbortSignal.timeout(20000),
-        }
-      );
-      if (gemResp.ok) {
-        const gemData = await gemResp.json();
-        const raw = gemData?.candidates?.[0]?.content?.parts?.[0]?.text?.trim() || '';
+      const claudeResp = await fetch('https://api.anthropic.com/v1/messages', {
+        method: 'POST',
+        headers: {
+          'x-api-key': claudeKey,
+          'anthropic-version': '2023-06-01',
+          'content-type': 'application/json',
+        },
+        body: JSON.stringify({
+          model: 'claude-opus-4-6',
+          max_tokens: 256,
+          temperature: 0.1,
+          messages: [{ role: 'user', content: evalPrompt }],
+        }),
+        signal: AbortSignal.timeout(20000),
+      });
+      if (claudeResp.ok) {
+        const claudeData = await claudeResp.json();
+        const raw = claudeData?.content?.[0]?.text?.trim() || '';
         const cleaned = raw.replace(/^```json\s*/i, '').replace(/```\s*$/, '').trim();
         const parsed = JSON.parse(cleaned);
         rating = {
@@ -182,9 +186,12 @@ Scoring: 9-10=Excellent, 7-8=Good, 5-6=Acceptable, 0-4=Poor`;
             ? parsed.label : 'Acceptable',
           rationale: parsed.rationale || '',
         };
+      } else {
+        console.error('Claude L2 evaluator returned HTTP', claudeResp.status);
       }
-    } catch {
-      // Keep default rating on Gemini failure — do not block the response
+    } catch (err) {
+      console.error('Claude L2 evaluation failed:', err.message);
+      // Keep default rating on Claude failure — do not block the response
     }
   }
 
@@ -212,10 +219,10 @@ Scoring: 9-10=Excellent, 7-8=Good, 5-6=Acceptable, 0-4=Poor`;
 
 module.exports = async (req, res) => {
   // Read env vars inside handler to avoid stale module-scope cache on Vercel
-  const JWT_SECRET      = process.env.JWT_SECRET      || 'operrai-poc-secret-change-in-prod';
-  const OPENAI_API_KEY  = process.env.OPENAI_API_KEY  || '';
-  const GEMINI_API_KEY  = process.env.GEMINI_API_KEY  || '';
-  const SUPABASE_URL    = process.env.SUPABASE_URL    || 'https://qjajoayybuvxvpgysoih.supabase.co';
+  const JWT_SECRET        = process.env.JWT_SECRET        || 'operrai-poc-secret-change-in-prod';
+  const OPENAI_API_KEY    = process.env.OPENAI_API_KEY    || '';
+  const ANTHROPIC_API_KEY = process.env.ANTHROPIC_API_KEY || '';
+  const SUPABASE_URL      = process.env.SUPABASE_URL      || 'https://qjajoayybuvxvpgysoih.supabase.co';
   const SUPABASE_ANON_KEY = process.env.SUPABASE_ANON_KEY || '';
 
   res.setHeader('Access-Control-Allow-Origin', '*');
@@ -238,7 +245,7 @@ module.exports = async (req, res) => {
   if (!question?.trim()) return res.status(400).json({ error: 'Question is required' });
 
   const startTime = Date.now();
-  const envVars = { openaiKey: OPENAI_API_KEY, geminiKey: GEMINI_API_KEY, supabaseUrl: SUPABASE_URL, supabaseKey: SUPABASE_ANON_KEY };
+  const envVars = { openaiKey: OPENAI_API_KEY, claudeKey: ANTHROPIC_API_KEY, supabaseUrl: SUPABASE_URL, supabaseKey: SUPABASE_ANON_KEY };
 
   let result;
   try {
@@ -281,7 +288,7 @@ module.exports = async (req, res) => {
       accuracy_score,
       accuracy_label,
       rating_rationale: accuracy_rationale,
-      rated_by_model:   GEMINI_API_KEY ? 'gemini-2.5-pro' : 'default',
+      rated_by_model:   ANTHROPIC_API_KEY ? 'claude-opus-4-6' : 'default',
     }, SUPABASE_URL, SUPABASE_ANON_KEY).catch(() => {});
   }
 
