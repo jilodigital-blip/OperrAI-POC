@@ -1,15 +1,11 @@
 const crypto = require('crypto');
 
-const JWT_SECRET = process.env.JWT_SECRET || 'operrai-poc-secret-change-in-prod';
-const SUPABASE_URL = process.env.SUPABASE_URL || 'https://qjajoayybuvxvpgysoih.supabase.co';
-const SUPABASE_ANON_KEY = process.env.SUPABASE_ANON_KEY || '';
-
-function verifyJWT(token) {
+function verifyJWT(token, secret) {
   try {
     const parts = token.split('.');
     if (parts.length !== 3) return null;
     const sig = crypto
-      .createHmac('sha256', JWT_SECRET)
+      .createHmac('sha256', secret)
       .update(`${parts[0]}.${parts[1]}`)
       .digest('base64')
       .replace(/=/g, '').replace(/\+/g, '-').replace(/\//g, '_');
@@ -22,12 +18,12 @@ function verifyJWT(token) {
   }
 }
 
-async function supabaseFetch(path) {
-  if (!SUPABASE_ANON_KEY) return [];
-  const resp = await fetch(`${SUPABASE_URL}/rest/v1/${path}`, {
+async function supabaseFetch(path, supabaseUrl, supabaseKey) {
+  if (!supabaseKey) return [];
+  const resp = await fetch(`${supabaseUrl}/rest/v1/${path}`, {
     headers: {
-      'apikey': SUPABASE_ANON_KEY,
-      'Authorization': `Bearer ${SUPABASE_ANON_KEY}`,
+      'apikey': supabaseKey,
+      'Authorization': `Bearer ${supabaseKey}`,
     },
   });
   if (!resp.ok) return [];
@@ -35,6 +31,11 @@ async function supabaseFetch(path) {
 }
 
 module.exports = async (req, res) => {
+  // Read env vars inside handler to avoid stale module-scope cache on Vercel
+  const JWT_SECRET      = process.env.JWT_SECRET      || 'operrai-poc-secret-change-in-prod';
+  const SUPABASE_URL    = process.env.SUPABASE_URL    || 'https://qjajoayybuvxvpgysoih.supabase.co';
+  const SUPABASE_ANON_KEY = process.env.SUPABASE_ANON_KEY || '';
+
   res.setHeader('Access-Control-Allow-Origin', '*');
   res.setHeader('Access-Control-Allow-Methods', 'GET, OPTIONS');
   res.setHeader('Access-Control-Allow-Headers', 'Content-Type, Authorization');
@@ -44,12 +45,14 @@ module.exports = async (req, res) => {
 
   const authHeader = req.headers['authorization'] || '';
   const token = authHeader.startsWith('Bearer ') ? authHeader.slice(7) : '';
-  if (!verifyJWT(token)) return res.status(401).json({ error: 'Unauthorized' });
+  if (!verifyJWT(token, JWT_SECRET)) return res.status(401).json({ error: 'Unauthorized' });
 
   try {
     // Fetch messages with their ratings joined
     const messages = await supabaseFetch(
-      'messages?select=id,question_hash,response_time_ms,sources,created_at,ratings(accuracy_score,accuracy_label)&order=created_at.desc&limit=500'
+      'messages?select=id,question_hash,response_time_ms,sources,created_at,ratings(accuracy_score,accuracy_label)&order=created_at.desc&limit=500',
+      SUPABASE_URL,
+      SUPABASE_ANON_KEY
     );
 
     if (!Array.isArray(messages) || messages.length === 0) {
