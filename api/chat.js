@@ -1,19 +1,13 @@
 const crypto = require('crypto');
 
-const JWT_SECRET      = process.env.JWT_SECRET      || 'operrai-poc-secret-change-in-prod';
-const OPENAI_API_KEY  = process.env.OPENAI_API_KEY  || '';
-const GEMINI_API_KEY  = process.env.GEMINI_API_KEY  || '';
-const SUPABASE_URL    = process.env.SUPABASE_URL    || 'https://qjajoayybuvxvpgysoih.supabase.co';
-const SUPABASE_ANON_KEY = process.env.SUPABASE_ANON_KEY || '';
-
 // ── JWT helpers ────────────────────────────────────────────────────────────────
 
-function verifyJWT(token) {
+function verifyJWT(token, secret) {
   try {
     const parts = token.split('.');
     if (parts.length !== 3) return null;
     const sig = crypto
-      .createHmac('sha256', JWT_SECRET)
+      .createHmac('sha256', secret)
       .update(`${parts[0]}.${parts[1]}`)
       .digest('base64')
       .replace(/=/g, '').replace(/\+/g, '-').replace(/\//g, '_');
@@ -41,13 +35,13 @@ async function readBody(req) {
 
 // ── Supabase REST helpers ──────────────────────────────────────────────────────
 
-async function supabaseInsert(table, row) {
-  if (!SUPABASE_ANON_KEY) return null;
-  const resp = await fetch(`${SUPABASE_URL}/rest/v1/${table}`, {
+async function supabaseInsert(table, row, supabaseUrl, supabaseKey) {
+  if (!supabaseKey) return null;
+  const resp = await fetch(`${supabaseUrl}/rest/v1/${table}`, {
     method: 'POST',
     headers: {
-      'apikey': SUPABASE_ANON_KEY,
-      'Authorization': `Bearer ${SUPABASE_ANON_KEY}`,
+      'apikey': supabaseKey,
+      'Authorization': `Bearer ${supabaseKey}`,
       'Content-Type': 'application/json',
       'Prefer': 'return=representation',
     },
@@ -58,12 +52,13 @@ async function supabaseInsert(table, row) {
   return Array.isArray(data) ? data[0] : data;
 }
 
-async function supabaseRPC(fn, params) {
-  const resp = await fetch(`${SUPABASE_URL}/rest/v1/rpc/${fn}`, {
+async function supabaseRPC(fn, params, supabaseUrl, supabaseKey) {
+  if (!supabaseKey) throw new Error('SUPABASE_ANON_KEY is not configured');
+  const resp = await fetch(`${supabaseUrl}/rest/v1/rpc/${fn}`, {
     method: 'POST',
     headers: {
-      'apikey': SUPABASE_ANON_KEY,
-      'Authorization': `Bearer ${SUPABASE_ANON_KEY}`,
+      'apikey': supabaseKey,
+      'Authorization': `Bearer ${supabaseKey}`,
       'Content-Type': 'application/json',
     },
     body: JSON.stringify(params),
@@ -74,13 +69,13 @@ async function supabaseRPC(fn, params) {
 
 // ── Agentic pipeline: Embed → RAG → GPT-4o L1 → Gemini L2 → Quality Gate ─────
 
-async function callAgenticPipeline(question, channel) {
+async function callAgenticPipeline(question, channel, { openaiKey, geminiKey, supabaseUrl, supabaseKey }) {
   // ── L0: Embed ──────────────────────────────────────────────────────────────
-  if (!OPENAI_API_KEY) throw new Error('OPENAI_API_KEY is not configured');
+  if (!openaiKey) throw new Error('OPENAI_API_KEY is not configured');
   const embedResp = await fetch('https://api.openai.com/v1/embeddings', {
     method: 'POST',
     headers: {
-      'Authorization': `Bearer ${OPENAI_API_KEY}`,
+      'Authorization': `Bearer ${openaiKey}`,
       'Content-Type': 'application/json',
     },
     body: JSON.stringify({ model: 'text-embedding-3-small', input: question }),
@@ -96,7 +91,7 @@ async function callAgenticPipeline(question, channel) {
     chunks = await supabaseRPC('match_documents', {
       query_embedding: embedding,
       match_count: 5,
-    });
+    }, supabaseUrl, supabaseKey);
   } catch {
     chunks = [];
   }
@@ -124,7 +119,7 @@ ${context}`;
   const l1Resp = await fetch('https://api.openai.com/v1/chat/completions', {
     method: 'POST',
     headers: {
-      'Authorization': `Bearer ${OPENAI_API_KEY}`,
+      'Authorization': `Bearer ${openaiKey}`,
       'Content-Type': 'application/json',
     },
     body: JSON.stringify({
@@ -144,7 +139,7 @@ ${context}`;
 
   // ── L2: Gemini Supervisor ──────────────────────────────────────────────────
   let rating = { score: 7, label: 'Good', rationale: 'Gemini not configured — defaulting to Good.' };
-  if (GEMINI_API_KEY) {
+  if (geminiKey) {
     const geminiPrompt = `You are a strict QA evaluator for an AI customer support system.
 Evaluate whether the AI answer correctly addresses the customer question.
 Check for: hallucinations, incorrect facts, missing critical info, or off-topic responses.
@@ -165,7 +160,7 @@ Scoring: 9-10=Excellent, 7-8=Good, 5-6=Acceptable, 0-4=Poor`;
 
     try {
       const gemResp = await fetch(
-        `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-pro:generateContent?key=${GEMINI_API_KEY}`,
+        `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-pro:generateContent?key=${geminiKey}`,
         {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
@@ -216,6 +211,13 @@ Scoring: 9-10=Excellent, 7-8=Good, 5-6=Acceptable, 0-4=Poor`;
 // ── Main handler ───────────────────────────────────────────────────────────────
 
 module.exports = async (req, res) => {
+  // Read env vars inside handler to avoid stale module-scope cache on Vercel
+  const JWT_SECRET      = process.env.JWT_SECRET      || 'operrai-poc-secret-change-in-prod';
+  const OPENAI_API_KEY  = process.env.OPENAI_API_KEY  || '';
+  const GEMINI_API_KEY  = process.env.GEMINI_API_KEY  || '';
+  const SUPABASE_URL    = process.env.SUPABASE_URL    || 'https://qjajoayybuvxvpgysoih.supabase.co';
+  const SUPABASE_ANON_KEY = process.env.SUPABASE_ANON_KEY || '';
+
   res.setHeader('Access-Control-Allow-Origin', '*');
   res.setHeader('Access-Control-Allow-Methods', 'POST, OPTIONS');
   res.setHeader('Access-Control-Allow-Headers', 'Content-Type, Authorization');
@@ -226,19 +228,21 @@ module.exports = async (req, res) => {
   // Auth check
   const authHeader = req.headers['authorization'] || '';
   const token = authHeader.startsWith('Bearer ') ? authHeader.slice(7) : '';
-  const claims = verifyJWT(token);
+  const claims = verifyJWT(token, JWT_SECRET);
   if (!claims) return res.status(401).json({ error: 'Unauthorized' });
 
-  const body = await readBody(req);
+  // Vercel pre-parses JSON bodies onto req.body; fall back to manual stream read
+  const body = req.body && typeof req.body === 'object' ? req.body : await readBody(req);
   const { question, sessionId, channel: rawChannel } = body;
   const channel = rawChannel === 'email' ? 'email' : 'chat';
   if (!question?.trim()) return res.status(400).json({ error: 'Question is required' });
 
   const startTime = Date.now();
+  const envVars = { openaiKey: OPENAI_API_KEY, geminiKey: GEMINI_API_KEY, supabaseUrl: SUPABASE_URL, supabaseKey: SUPABASE_ANON_KEY };
 
   let result;
   try {
-    result = await callAgenticPipeline(question.trim(), channel);
+    result = await callAgenticPipeline(question.trim(), channel, envVars);
   } catch (err) {
     console.error('Pipeline failed:', err.message);
     return res.status(502).json({ error: 'AI service temporarily unavailable. Please try again.' });
@@ -265,7 +269,7 @@ module.exports = async (req, res) => {
 
   let savedMessage = null;
   try {
-    savedMessage = await supabaseInsert('messages', messageRow);
+    savedMessage = await supabaseInsert('messages', messageRow, SUPABASE_URL, SUPABASE_ANON_KEY);
   } catch {
     // DB logging failure does not block the response
   }
@@ -278,7 +282,7 @@ module.exports = async (req, res) => {
       accuracy_label,
       rating_rationale: accuracy_rationale,
       rated_by_model:   GEMINI_API_KEY ? 'gemini-2.5-pro' : 'default',
-    }).catch(() => {});
+    }, SUPABASE_URL, SUPABASE_ANON_KEY).catch(() => {});
   }
 
   // Persist service request for blocked responses
@@ -289,7 +293,7 @@ module.exports = async (req, res) => {
       question:   question.trim(),
       channel,
       status:     'open',
-    }).catch(() => {});
+    }, SUPABASE_URL, SUPABASE_ANON_KEY).catch(() => {});
   }
 
   return res.status(200).json({

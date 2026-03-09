@@ -990,7 +990,12 @@
       const data = await resp.json();
 
       if (resp.ok) {
-        addAIMessage(data.answer, data.sources, data.responseTimeMs);
+        if (data.blocked) {
+          const ticketNote = data.ticketId ? ` Your reference number is <strong>${escapeHtml(data.ticketId)}</strong>.` : '';
+          addBlockedMessage(ticketNote);
+        } else {
+          addAIMessage(data.answer, data.sources, data.responseTimeMs);
+        }
         // Refresh dashboard after each answer
         setTimeout(loadDashboard, 3000);
       } else {
@@ -1013,6 +1018,18 @@
       <div class="bubble" style="border-color:rgba(239,68,68,0.3);color:rgba(255,255,255,0.6);">
         ⚠ ${escapeHtml(text)}
       </div>`;
+    chatMessages.insertBefore(msg, typingEl);
+    scrollToBottom();
+  }
+
+  function addBlockedMessage(ticketNote) {
+    const msg = document.createElement('div');
+    msg.className = 'msg ai';
+    msg.innerHTML = `
+      <div class="bubble" style="border-color:rgba(239,68,68,0.3);color:rgba(255,255,255,0.7);">
+        🎫 Your question requires specialist attention and has been escalated to our support team.${ticketNote} We'll be in touch shortly.
+      </div>
+      <div class="msg-meta">${formatTime(new Date())}</div>`;
     chatMessages.insertBefore(msg, typingEl);
     scrollToBottom();
   }
