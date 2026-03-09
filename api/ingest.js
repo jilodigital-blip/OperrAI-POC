@@ -22,7 +22,7 @@ module.exports = async (req, res) => {
 
   // Vercel pre-parses JSON bodies onto req.body; fall back to manual read
   const body = req.body && typeof req.body === 'object' ? req.body : await readBody(req);
-  const { secret, doc_name, content } = body;
+  const { secret, doc_id, doc_name, content } = body;
 
   // Guard with a secret so only you can ingest
   if (!INGEST_SECRET || secret !== INGEST_SECRET) {
@@ -31,6 +31,10 @@ module.exports = async (req, res) => {
   if (!doc_name?.trim() || !content?.trim()) {
     return res.status(400).json({ error: 'doc_name and content are required' });
   }
+
+  // Use provided doc_id or generate a slug from doc_name for upsert deduplication
+  const stableDocId = (doc_id?.trim()) ||
+    doc_name.trim().toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '');
   if (!OPENAI_API_KEY) return res.status(500).json({ error: 'OPENAI_API_KEY not configured' });
   if (!SUPABASE_ANON_KEY) return res.status(500).json({ error: 'SUPABASE_ANON_KEY not configured' });
 
@@ -50,16 +54,16 @@ module.exports = async (req, res) => {
   const embedData = await embedResp.json();
   const embedding = embedData.data[0].embedding;
 
-  // Insert into Supabase (documents table must exist — run schema.sql first)
-  const sbResp = await fetch(`${SUPABASE_URL}/rest/v1/documents`, {
+  // Upsert into Supabase — on_conflict=doc_id prevents duplicates when re-ingesting
+  const sbResp = await fetch(`${SUPABASE_URL}/rest/v1/documents?on_conflict=doc_id`, {
     method: 'POST',
     headers: {
       'apikey': SUPABASE_ANON_KEY,
       'Authorization': `Bearer ${SUPABASE_ANON_KEY}`,
       'Content-Type': 'application/json',
-      'Prefer': 'return=representation',
+      'Prefer': 'resolution=merge-duplicates,return=representation',
     },
-    body: JSON.stringify({ doc_name: doc_name.trim(), content: content.trim(), embedding }),
+    body: JSON.stringify({ doc_id: stableDocId, doc_name: doc_name.trim(), content: content.trim(), embedding }),
   });
   if (!sbResp.ok) {
     const err = await sbResp.text();
@@ -68,5 +72,5 @@ module.exports = async (req, res) => {
   const saved = await sbResp.json();
   const id = Array.isArray(saved) ? saved[0]?.id : saved?.id;
 
-  return res.status(200).json({ success: true, id, doc_name: doc_name.trim() });
+  return res.status(200).json({ success: true, id, doc_id: stableDocId, doc_name: doc_name.trim() });
 };

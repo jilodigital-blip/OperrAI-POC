@@ -1,4 +1,14 @@
 const crypto = require('crypto');
+const path   = require('path');
+const fs     = require('fs');
+
+// ── Bundled FAQ fallback (used when Supabase documents table is empty) ─────────
+let BUNDLED_FAQS = [];
+try {
+  BUNDLED_FAQS = JSON.parse(
+    fs.readFileSync(path.join(__dirname, '../ingest/faqs.json'), 'utf8')
+  );
+} catch { /* no local fallback available */ }
 
 // ── JWT helpers ────────────────────────────────────────────────────────────────
 
@@ -95,12 +105,32 @@ async function callAgenticPipeline(question, channel, { openaiKey, claudeKey, su
   } catch {
     chunks = [];
   }
+
+  // ── Fallback: use bundled FAQs when Supabase returns nothing ───────────────
+  // This ensures the demo works even before the knowledge base is seeded.
+  if (chunks.length === 0 && BUNDLED_FAQS.length > 0) {
+    console.warn('Supabase returned 0 documents — falling back to bundled FAQs');
+    const lq = question.toLowerCase();
+    const terms = lq.split(/\W+/).filter(t => t.length > 3);
+    // Score each FAQ by keyword overlap, then take top 5
+    const scored = BUNDLED_FAQS.map(f => {
+      const hay = (f.doc_name + ' ' + f.content).toLowerCase();
+      const hits = terms.filter(t => hay.includes(t)).length;
+      return { ...f, _score: hits };
+    }).sort((a, b) => b._score - a._score);
+    chunks = scored.slice(0, 5).map(f => ({
+      doc_name:   f.doc_name,
+      content:    f.content,
+      similarity: null,
+    }));
+  }
+
   const context = chunks.length > 0
     ? chunks.map((c, i) => `[Source ${i + 1}: ${c.doc_name}]\n${c.content}`).join('\n\n---\n\n')
     : 'No relevant documents found in the knowledge base.';
   const sources = chunks.map(c => ({
     doc_name: c.doc_name,
-    relevance_score: Math.round((c.similarity || 0) * 100) / 100,
+    relevance_score: c.similarity !== null ? Math.round((c.similarity || 0) * 100) / 100 : null,
   }));
 
   // ── L1: GPT-4o Worker ──────────────────────────────────────────────────────
