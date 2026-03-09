@@ -20,7 +20,8 @@ module.exports = async (req, res) => {
   if (req.method === 'OPTIONS') return res.status(200).end();
   if (req.method !== 'POST') return res.status(405).json({ error: 'Method not allowed' });
 
-  const body = await readBody(req);
+  // Vercel pre-parses JSON bodies onto req.body; fall back to manual read
+  const body = req.body && typeof req.body === 'object' ? req.body : await readBody(req);
   const { secret, doc_name, content } = body;
 
   // Guard with a secret so only you can ingest
