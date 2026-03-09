@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>AI Demo — EV Customer Support | OperrAI</title>
+  <title>AI POC Hub — Ather | OperrAI</title>
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
   <link href="https://fonts.googleapis.com/css2?family=Syne:wght@400;600;700;800&family=DM+Sans:ital,opsz,wght@0,9..40,300;0,9..40,400;0,9..40,500;1,9..40,300&display=swap" rel="stylesheet" />
@@ -658,6 +658,135 @@
       margin-bottom: 1rem;
       color: rgba(255,255,255,0.7);
     }
+
+    /* ── Light theme ─────────────────────────────────────────────────────── */
+    body.light-theme {
+      --ink: #F7F7F7;
+      --surface: #FFFFFF;
+      --surface2: #F0F0F0;
+      --border: rgba(0,0,0,0.07);
+      --border2: rgba(0,0,0,0.12);
+      --text: rgba(0,0,0,0.88);
+      --muted: #555555;
+      background: #F4F4F2;
+    }
+    body.light-theme::before {
+      background-image:
+        linear-gradient(rgba(212,175,55,0.06) 1px, transparent 1px),
+        linear-gradient(90deg, rgba(212,175,55,0.06) 1px, transparent 1px);
+    }
+    body.light-theme .topbar {
+      background: rgba(255,255,255,0.97);
+      border-bottom: 1px solid rgba(0,0,0,0.08);
+    }
+    body.light-theme .logo { color: #111; }
+    body.light-theme .logo span { color: var(--gold); }
+    body.light-theme .topbar-center { color: #333; }
+    body.light-theme .logout-btn { color: #555; border-color: rgba(0,0,0,0.15); }
+    body.light-theme .logout-btn:hover { background: rgba(0,0,0,0.05); color: #111; }
+    body.light-theme .card { background: #FFFFFF; border-color: rgba(0,0,0,0.09); }
+    body.light-theme .card-title { color: rgba(0,0,0,0.85); border-bottom-color: rgba(0,0,0,0.07); }
+    body.light-theme .hero-banner { background: linear-gradient(180deg, #eee 0%, #F4F4F2 100%); }
+    body.light-theme .section-badge { background: rgba(212,175,55,0.12); color: var(--gold); }
+    body.light-theme h1 { color: #111; }
+    body.light-theme .hero-desc { color: #555; }
+    body.light-theme .channel-pill { background: rgba(0,0,0,0.06); color: #444; }
+    body.light-theme .chat-welcome h3 { color: #111; }
+    body.light-theme .chat-welcome p { color: #666; }
+    body.light-theme .stat-label { color: #666; }
+    body.light-theme .stat-value { color: #111; }
+    body.light-theme .info-card { background: #FFFFFF; border-color: rgba(0,0,0,0.09); }
+    body.light-theme .info-card h3 { color: #111; }
+    body.light-theme .info-card ul li { color: #555; }
+    body.light-theme .panel-title { color: rgba(0,0,0,0.6); }
+    body.light-theme .chip { background: rgba(0,0,0,0.06); color: #444; }
+    body.light-theme .chip:hover { background: rgba(212,175,55,0.15); }
+    body.light-theme .source-item { background: rgba(0,0,0,0.04); color: #444; }
+    body.light-theme .refresh-note { color: #888; }
+    body.light-theme input, body.light-theme textarea { background: #F0F0F0; color: #111; border-color: rgba(0,0,0,0.12); }
+
+    /* ── Theme toggle button ─────────────────────────────────────────────── */
+    .theme-btn {
+      background: var(--surface);
+      border: 1px solid var(--border2);
+      border-radius: 8px;
+      color: var(--text);
+      cursor: pointer;
+      font-size: 1.05rem;
+      padding: 0.35rem 0.55rem;
+      line-height: 1;
+      transition: background 0.2s, border-color 0.2s;
+    }
+    .theme-btn:hover { background: var(--surface2); border-color: var(--gold-border); }
+
+    /* ── POC Selector ────────────────────────────────────────────────────── */
+    .poc-selector {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 1.25rem;
+      max-width: 960px;
+      margin: 0 auto;
+      padding: 2rem 2rem 0.5rem;
+    }
+    @media (max-width: 700px) {
+      .poc-selector { grid-template-columns: 1fr; }
+    }
+
+    .poc-box {
+      background: var(--surface);
+      border: 1px solid var(--border2);
+      border-radius: 14px;
+      padding: 1.5rem;
+      cursor: pointer;
+      transition: border-color 0.2s, transform 0.2s, box-shadow 0.2s;
+      position: relative;
+      overflow: hidden;
+    }
+    .poc-box:hover:not(.poc-box--disabled) {
+      border-color: var(--gold);
+      transform: translateY(-3px);
+      box-shadow: 0 8px 28px rgba(212,175,55,0.14);
+    }
+    .poc-box--active { border-color: var(--gold-border); }
+    .poc-box--disabled { cursor: default; opacity: 0.6; }
+
+    .poc-box-icon { font-size: 2rem; margin-bottom: 0.75rem; }
+    .poc-box-title {
+      font-family: var(--font-heading);
+      font-size: 1rem;
+      font-weight: 700;
+      color: var(--text);
+      margin-bottom: 0.4rem;
+    }
+    .poc-box-desc {
+      font-size: 0.8rem;
+      color: var(--muted);
+      line-height: 1.55;
+    }
+    .poc-box-cta {
+      display: inline-flex;
+      align-items: center;
+      gap: 0.35rem;
+      margin-top: 1rem;
+      font-size: 0.78rem;
+      font-weight: 600;
+      color: var(--gold);
+    }
+
+    .coming-soon-badge {
+      position: absolute;
+      top: 0.85rem;
+      right: 0.85rem;
+      background: rgba(212,175,55,0.12);
+      color: var(--gold);
+      border: 1px solid var(--gold-border);
+      border-radius: 100px;
+      font-size: 0.63rem;
+      font-weight: 700;
+      letter-spacing: 0.07em;
+      padding: 0.2rem 0.55rem;
+      text-transform: uppercase;
+    }
   </style>
 </head>
 <body>
@@ -668,10 +797,44 @@
     <a href="/" class="logo">Operr<span>AI</span></a>
     <div class="topbar-center">
       <span class="live-dot"></span>
-      <span>Live Demo &mdash; EV Scooter Client</span>
+      <span>Live Demo &mdash; Ather</span>
     </div>
-    <button class="logout-btn" id="logoutBtn">Sign Out</button>
+    <div style="display:flex;align-items:center;gap:0.6rem;">
+      <button class="theme-btn" id="themeBtn" title="Toggle theme">🌙</button>
+      <button class="logout-btn" id="logoutBtn">Sign Out</button>
+    </div>
   </header>
+
+  <!-- ── POC Selector ─────────────────────────────────────────── -->
+  <div class="poc-selector">
+
+    <!-- Box 1: Email & Chat -->
+    <div class="poc-box poc-box--active" id="pocEmailChat"
+         onclick="document.getElementById('chatCard').scrollIntoView({behavior:'smooth'})">
+      <div class="poc-box-icon">💬</div>
+      <div class="poc-box-title">Email &amp; Chat POC</div>
+      <div class="poc-box-desc">Agentic AI handles customer queries across live chat and email, grounded in your product knowledge base.</div>
+      <div class="poc-box-cta">View Demo →</div>
+    </div>
+
+    <!-- Box 2: Quality Assurance -->
+    <div class="poc-box" id="pocQA"
+         onclick="document.getElementById('accBars').scrollIntoView({behavior:'smooth'})">
+      <div class="poc-box-icon">✅</div>
+      <div class="poc-box-title">Quality Assurance POC</div>
+      <div class="poc-box-desc">AI-powered response accuracy rating and quality gate system, with real-time distribution analytics.</div>
+      <div class="poc-box-cta">View Analytics →</div>
+    </div>
+
+    <!-- Box 3: Lead Nurturing (Coming Soon) -->
+    <div class="poc-box poc-box--disabled">
+      <span class="coming-soon-badge">Coming Soon</span>
+      <div class="poc-box-icon">🎯</div>
+      <div class="poc-box-title">Lead Nurturing POC</div>
+      <div class="poc-box-desc">Automated lead qualification and nurturing workflows powered by conversational AI and behavioural signals.</div>
+    </div>
+
+  </div>
 
   <!-- ── Hero ──────────────────────────────────────────────────── -->
   <section class="hero-banner">
@@ -702,7 +865,7 @@
       <div class="chat-messages" id="chatMessages">
         <div class="chat-welcome" id="chatWelcome">
           <div class="welcome-icon">🛵</div>
-          <h3>Ask anything about your EV scooter</h3>
+          <h3>Ask anything about your Ather scooter</h3>
           <p>Powered by your product knowledge base. Every answer is sourced and rated for accuracy.</p>
           <div class="suggestion-chips">
             <span class="chip" onclick="sendChip(this)">What is the battery range?</span>
@@ -878,6 +1041,28 @@
     localStorage.removeItem(TOKEN_KEY);
     sessionStorage.removeItem('poc_session');
     window.location.href = '/';
+  });
+
+  // ── Theme toggle ──────────────────────────────────────────────────────────
+  const themeBtn = document.getElementById('themeBtn');
+  const THEME_KEY = 'poc_theme';
+
+  function applyTheme(theme) {
+    if (theme === 'light') {
+      document.body.classList.add('light-theme');
+      themeBtn.textContent = '☀️';
+    } else {
+      document.body.classList.remove('light-theme');
+      themeBtn.textContent = '🌙';
+    }
+  }
+
+  applyTheme(localStorage.getItem(THEME_KEY) || 'dark');
+
+  themeBtn.addEventListener('click', () => {
+    const next = document.body.classList.contains('light-theme') ? 'dark' : 'light';
+    localStorage.setItem(THEME_KEY, next);
+    applyTheme(next);
   });
 
   // ── Chat ──────────────────────────────────────────────────────────────────
