@@ -52,7 +52,7 @@ module.exports = async (req, res) => {
   try {
     // Fetch messages with ratings, including channel and session_id
     const messages = await supabaseFetch(
-      'messages?select=id,session_id,question,channel,response,response_time_ms,sources,created_at,ratings(accuracy_score,accuracy_label)&order=created_at.desc&limit=500',
+      'messages?select=id,session_id,question,channel,response,response_time_ms,sources,created_at,ratings(accuracy_score,accuracy_label,rating_rationale)&order=created_at.desc&limit=500',
       SUPABASE_URL,
       SUPABASE_ANON_KEY
     );
@@ -122,9 +122,10 @@ module.exports = async (req, res) => {
       question:       m.question,
       channel:        m.channel || 'chat',
       responseTimeMs: m.response_time_ms,
-      accuracyScore:  m.ratings?.[0]?.accuracy_score  ?? null,
-      accuracyLabel:  m.ratings?.[0]?.accuracy_label  ?? null,
-      createdAt:      m.created_at,
+      accuracyScore:     m.ratings?.[0]?.accuracy_score     ?? null,
+      accuracyLabel:     m.ratings?.[0]?.accuracy_label     ?? null,
+      ratingRationale:   m.ratings?.[0]?.rating_rationale   ?? null,
+      createdAt:         m.created_at,
     }));
 
     return res.status(200).json({
