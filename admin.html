@@ -596,6 +596,50 @@
     }
     .filter-btn.active,
     .filter-btn:hover { border-color: var(--gold-border); color: var(--gold); background: var(--gold-dim); }
+
+    /* ── Feedback section ──────────────────────────────────────── */
+    .fb-stars-display {
+      display: inline-flex;
+      gap: 0.1rem;
+      color: var(--gold);
+      font-size: 0.9rem;
+      vertical-align: middle;
+    }
+    .fb-stars-display .dim { color: var(--border2); }
+    .fb-category-badge {
+      display: inline-block;
+      font-size: 0.68rem;
+      font-weight: 600;
+      letter-spacing: 0.05em;
+      text-transform: capitalize;
+      padding: 0.15rem 0.55rem;
+      border-radius: 100px;
+      background: var(--gold-dim);
+      border: 1px solid var(--gold-border);
+      color: var(--gold);
+    }
+    .fb-comment-cell {
+      max-width: 300px;
+      white-space: pre-wrap;
+      word-break: break-word;
+      font-size: 0.82rem;
+      color: var(--text);
+    }
+    .fb-stat-row {
+      display: flex;
+      gap: 1.5rem;
+      margin-bottom: 1.25rem;
+      flex-wrap: wrap;
+    }
+    .fb-stat {
+      background: var(--surface2);
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      padding: 0.75rem 1.2rem;
+      min-width: 110px;
+    }
+    .fb-stat-label { font-size: 0.7rem; color: var(--muted); font-weight: 600; text-transform: uppercase; letter-spacing: 0.06em; }
+    .fb-stat-value { font-family: var(--font-heading); font-size: 1.4rem; font-weight: 800; color: var(--gold); line-height: 1.2; margin-top: 0.2rem; }
   </style>
 </head>
 <body>
@@ -791,6 +835,42 @@
               </tr>
             </thead>
             <tbody id="messagesBody">
+              <tr><td colspan="6" class="table-empty">Loading…</td></tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+
+      <!-- ── Tester Feedback ─────────────────────────────────── -->
+      <div class="section-title">Tester Feedback</div>
+
+      <!-- Summary stats -->
+      <div class="fb-stat-row" id="fbSummaryRow">
+        <div class="fb-stat">
+          <div class="fb-stat-label">Total Feedback</div>
+          <div class="fb-stat-value" id="fbTotal">—</div>
+        </div>
+        <div class="fb-stat">
+          <div class="fb-stat-label">Avg Rating</div>
+          <div class="fb-stat-value" id="fbAvgRating">—</div>
+        </div>
+      </div>
+
+      <div class="card" style="margin-bottom:3rem;">
+        <div class="card-head">💬 Feedback Log</div>
+        <div class="data-table-wrap">
+          <table class="data-table">
+            <thead>
+              <tr>
+                <th>Time</th>
+                <th>Tester</th>
+                <th>Rating</th>
+                <th>Category</th>
+                <th>Comment</th>
+                <th>Session</th>
+              </tr>
+            </thead>
+            <tbody id="feedbackBody">
               <tr><td colspan="6" class="table-empty">Loading…</td></tr>
             </tbody>
           </table>
@@ -1046,6 +1126,70 @@
 
   // Auto-refresh every 60 seconds
   setInterval(() => { if (adminToken) loadAdminData(); }, 60000);
+
+  // ── Tester Feedback ────────────────────────────────────────────────────────
+  async function loadFeedbacks() {
+    try {
+      const resp = await fetch('/api/feedback', {
+        headers: { 'Authorization': `Bearer ${adminToken}` },
+      });
+      if (!resp.ok) return;
+      const data = await resp.json();
+      renderFeedbacks(data.feedbacks || []);
+    } catch { /* ignore */ }
+  }
+
+  function renderFeedbacks(feedbacks) {
+    const tbody = document.getElementById('feedbackBody');
+
+    // Summary stats
+    document.getElementById('fbTotal').textContent = feedbacks.length;
+    if (feedbacks.length > 0) {
+      const avg = feedbacks.reduce((s, f) => s + (f.rating || 0), 0) / feedbacks.length;
+      document.getElementById('fbAvgRating').textContent = avg.toFixed(1) + ' / 5';
+    } else {
+      document.getElementById('fbAvgRating').textContent = '—';
+    }
+
+    if (feedbacks.length === 0) {
+      tbody.innerHTML = '<tr><td colspan="6" class="table-empty">No feedback submitted yet.</td></tr>';
+      return;
+    }
+
+    tbody.innerHTML = feedbacks.map(f => {
+      const stars = Array.from({ length: 5 }, (_, i) =>
+        `<span class="${i < f.rating ? '' : 'dim'}">★</span>`
+      ).join('');
+      const session = f.session_id ? f.session_id.slice(0, 8) + '…' : '—';
+      const tester  = escapeHtml(f.tester_name || '—');
+      return `
+        <tr>
+          <td style="white-space:nowrap;color:var(--muted);">${formatDate(f.created_at)}</td>
+          <td style="color:var(--text);font-size:0.82rem;">${tester}</td>
+          <td><span class="fb-stars-display">${stars}</span> <span style="font-size:0.75rem;color:var(--muted);">${f.rating}/5</span></td>
+          <td><span class="fb-category-badge">${escapeHtml(f.category || 'general')}</span></td>
+          <td class="fb-comment-cell">${escapeHtml(f.comment)}</td>
+          <td style="color:var(--muted);font-size:0.75rem;">${escapeHtml(session)}</td>
+        </tr>
+      `;
+    }).join('');
+  }
+
+  // Wrap showDash so feedbacks load on every login (stored token or fresh login)
+  const _showDashBase = showDash;
+  showDash = function() {
+    _showDashBase();
+    loadFeedbacks();
+  };
+
+  // Load feedbacks on initial page load (handles the stored-token path from init IIFE)
+  if (adminToken) loadFeedbacks();
+
+  // Also reload when refresh button is clicked
+  document.getElementById('refreshBtn').addEventListener('click', loadFeedbacks);
+
+  // Auto-refresh feedbacks every 60 seconds
+  setInterval(() => { if (adminToken) loadFeedbacks(); }, 60000);
 </script>
 </body>
 </html>

@@ -61,6 +61,24 @@ ALTER TABLE service_requests ENABLE ROW LEVEL SECURITY;
 CREATE POLICY "anon_sr_insert" ON service_requests FOR INSERT TO anon WITH CHECK (true);
 CREATE POLICY "anon_sr_select" ON service_requests FOR SELECT TO anon USING (true);
 
+-- ── Tester feedbacks ───────────────────────────────────────────────────────────
+CREATE TABLE IF NOT EXISTS feedbacks (
+  id          UUID        PRIMARY KEY DEFAULT gen_random_uuid(),
+  session_id  TEXT,                         -- browser session identifier
+  rating      SMALLINT    NOT NULL CHECK (rating BETWEEN 1 AND 5),
+  category    TEXT        NOT NULL DEFAULT 'general',
+  -- category: 'accuracy' | 'speed' | 'ui' | 'general' | 'other'
+  comment     TEXT        NOT NULL,
+  tester_name TEXT,                         -- optional tester name
+  created_at  TIMESTAMPTZ NOT NULL DEFAULT NOW()
+);
+
+CREATE INDEX IF NOT EXISTS feedbacks_created_idx ON feedbacks (created_at DESC);
+
+ALTER TABLE feedbacks ENABLE ROW LEVEL SECURITY;
+CREATE POLICY "anon can insert feedbacks" ON feedbacks FOR INSERT TO anon WITH CHECK (true);
+CREATE POLICY "anon can select feedbacks" ON feedbacks FOR SELECT TO anon USING (true);
+
 -- ── Dashboard view ─────────────────────────────────────────────────────────────
 CREATE OR REPLACE VIEW dashboard_summary AS
 SELECT

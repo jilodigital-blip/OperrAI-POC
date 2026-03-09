@@ -111,6 +111,175 @@
     }
     .logout-btn:hover { color: #fff; border-color: var(--border2); }
 
+    /* ── Feedback button ─────────────────────────────────────── */
+    .feedback-btn {
+      font-family: var(--font-body);
+      font-size: 0.8rem;
+      font-weight: 600;
+      color: var(--gold);
+      background: var(--gold-dim);
+      border: 1px solid var(--gold-border);
+      border-radius: 6px;
+      padding: 0.35rem 0.8rem;
+      cursor: pointer;
+      transition: background 0.2s, border-color 0.2s, color 0.2s;
+      display: flex;
+      align-items: center;
+      gap: 0.35rem;
+    }
+    .feedback-btn:hover {
+      background: rgba(212,175,55,0.18);
+      border-color: rgba(212,175,55,0.45);
+    }
+
+    /* ── Feedback modal overlay ──────────────────────────────── */
+    .fb-overlay {
+      position: fixed;
+      inset: 0;
+      background: rgba(0,0,0,0.72);
+      backdrop-filter: blur(6px);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      z-index: 9999;
+      padding: 1rem;
+      opacity: 0;
+      pointer-events: none;
+      transition: opacity 0.2s;
+    }
+    .fb-overlay.visible {
+      opacity: 1;
+      pointer-events: all;
+    }
+
+    .fb-modal {
+      background: var(--surface);
+      border: 1px solid var(--border2);
+      border-radius: 20px;
+      padding: 2rem;
+      width: 100%;
+      max-width: 480px;
+      box-shadow: 0 24px 80px rgba(0,0,0,0.5);
+      transform: translateY(16px);
+      transition: transform 0.2s;
+    }
+    .fb-overlay.visible .fb-modal { transform: translateY(0); }
+
+    .fb-modal-head {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      margin-bottom: 1.5rem;
+    }
+    .fb-modal-title {
+      font-family: var(--font-heading);
+      font-size: 1.1rem;
+      font-weight: 700;
+      color: #fff;
+    }
+    .fb-close {
+      background: none;
+      border: none;
+      color: var(--muted);
+      font-size: 1.3rem;
+      cursor: pointer;
+      line-height: 1;
+      padding: 0.2rem;
+      transition: color 0.2s;
+    }
+    .fb-close:hover { color: #fff; }
+
+    .fb-field { margin-bottom: 1.2rem; }
+    .fb-label {
+      display: block;
+      font-size: 0.75rem;
+      font-weight: 600;
+      letter-spacing: 0.06em;
+      text-transform: uppercase;
+      color: var(--muted);
+      margin-bottom: 0.5rem;
+    }
+
+    /* Star rating */
+    .fb-stars {
+      display: flex;
+      gap: 0.35rem;
+    }
+    .fb-star {
+      font-size: 1.6rem;
+      cursor: pointer;
+      color: var(--border2);
+      transition: color 0.15s, transform 0.1s;
+      user-select: none;
+    }
+    .fb-star.active { color: var(--gold); }
+    .fb-star:hover  { transform: scale(1.15); }
+
+    /* Category chips */
+    .fb-categories {
+      display: flex;
+      gap: 0.4rem;
+      flex-wrap: wrap;
+    }
+    .fb-cat {
+      font-size: 0.75rem;
+      font-weight: 600;
+      padding: 0.3rem 0.75rem;
+      border-radius: 100px;
+      border: 1px solid var(--border2);
+      color: var(--muted);
+      cursor: pointer;
+      transition: background 0.15s, color 0.15s, border-color 0.15s;
+    }
+    .fb-cat.selected {
+      background: var(--gold-dim);
+      border-color: var(--gold-border);
+      color: var(--gold);
+    }
+
+    .fb-input {
+      font-family: var(--font-body);
+      font-size: 0.9rem;
+      color: var(--text);
+      background: var(--surface2);
+      border: 1px solid var(--border2);
+      border-radius: 10px;
+      padding: 0.65rem 0.9rem;
+      width: 100%;
+      resize: none;
+      outline: none;
+      transition: border-color 0.2s;
+    }
+    .fb-input:focus { border-color: var(--gold-border); }
+    .fb-input::placeholder { color: var(--muted); }
+
+    .fb-submit {
+      width: 100%;
+      font-family: var(--font-body);
+      font-size: 0.9rem;
+      font-weight: 600;
+      color: var(--ink);
+      background: var(--gold);
+      border: none;
+      border-radius: 10px;
+      padding: 0.8rem;
+      cursor: pointer;
+      transition: opacity 0.2s;
+      margin-top: 0.5rem;
+    }
+    .fb-submit:hover { opacity: 0.9; }
+    .fb-submit:disabled { opacity: 0.5; cursor: not-allowed; }
+
+    .fb-msg {
+      text-align: center;
+      font-size: 0.85rem;
+      margin-top: 0.75rem;
+      min-height: 1.2em;
+      color: var(--muted);
+    }
+    .fb-msg.success { color: #22c55e; }
+    .fb-msg.error   { color: #ef4444; }
+
     /* ── Welcome Banner (Team Ather) ─────────────────────────── */
     .welcome-banner {
       background: linear-gradient(135deg, rgba(212,175,55,0.08) 0%, rgba(212,175,55,0.03) 50%, rgba(34,197,94,0.04) 100%);
@@ -899,6 +1068,10 @@
     body.light-theme .topbar-center { color: #333; }
     body.light-theme .logout-btn { color: #555; border-color: rgba(0,0,0,0.15); }
     body.light-theme .logout-btn:hover { background: rgba(0,0,0,0.05); color: #111; }
+    body.light-theme .feedback-btn { background: rgba(212,175,55,0.12); border-color: rgba(212,175,55,0.3); }
+    body.light-theme .fb-modal { background: #fff; border-color: rgba(0,0,0,0.12); }
+    body.light-theme .fb-input { background: #f5f5f5; border-color: rgba(0,0,0,0.12); color: #111; }
+    body.light-theme .fb-cat { border-color: rgba(0,0,0,0.15); color: #555; }
     body.light-theme .card { background: #FFFFFF; border-color: rgba(0,0,0,0.09); }
     body.light-theme .dashboard-card { background: #FFFFFF; border-color: rgba(0,0,0,0.09); }
     body.light-theme .card-title { color: rgba(0,0,0,0.85); border-bottom-color: rgba(0,0,0,0.07); }
@@ -1052,9 +1225,55 @@
     </div>
     <div style="display:flex;align-items:center;gap:0.6rem;">
       <button class="theme-btn" id="themeBtn" title="Toggle theme">🌙</button>
+      <button class="feedback-btn" id="feedbackBtn" title="Share your feedback about this POC">💬 Share Feedback</button>
       <button class="logout-btn" id="logoutBtn">Sign Out</button>
     </div>
   </header>
+
+  <!-- ── Feedback Modal ────────────────────────────────────────── -->
+  <div class="fb-overlay" id="fbOverlay" role="dialog" aria-modal="true" aria-label="Share Feedback">
+    <div class="fb-modal">
+      <div class="fb-modal-head">
+        <div class="fb-modal-title">Share Your Feedback</div>
+        <button class="fb-close" id="fbClose" aria-label="Close">&times;</button>
+      </div>
+
+      <div class="fb-field">
+        <label class="fb-label">Your Name (optional)</label>
+        <input type="text" class="fb-input" id="fbName" placeholder="e.g. Jane Smith" maxlength="100" />
+      </div>
+
+      <div class="fb-field">
+        <label class="fb-label">Overall Rating</label>
+        <div class="fb-stars" id="fbStars" role="radiogroup" aria-label="Star rating">
+          <span class="fb-star" data-v="1" title="1 star">★</span>
+          <span class="fb-star" data-v="2" title="2 stars">★</span>
+          <span class="fb-star" data-v="3" title="3 stars">★</span>
+          <span class="fb-star" data-v="4" title="4 stars">★</span>
+          <span class="fb-star" data-v="5" title="5 stars">★</span>
+        </div>
+      </div>
+
+      <div class="fb-field">
+        <label class="fb-label">Category</label>
+        <div class="fb-categories">
+          <button class="fb-cat selected" data-cat="general">General</button>
+          <button class="fb-cat" data-cat="accuracy">Accuracy</button>
+          <button class="fb-cat" data-cat="speed">Speed</button>
+          <button class="fb-cat" data-cat="ui">UI / UX</button>
+          <button class="fb-cat" data-cat="other">Other</button>
+        </div>
+      </div>
+
+      <div class="fb-field">
+        <label class="fb-label">Comments <span style="color:#ef4444">*</span></label>
+        <textarea class="fb-input" id="fbComment" rows="4" maxlength="2000" placeholder="Tell us what you think about the POC — what worked well, what could improve…"></textarea>
+      </div>
+
+      <button class="fb-submit" id="fbSubmit">Submit Feedback</button>
+      <div class="fb-msg" id="fbMsg"></div>
+    </div>
+  </div>
 
   <!-- ── Welcome Banner — Team Ather ───────────────────────────── -->
   <div class="welcome-banner">
@@ -1717,6 +1936,130 @@
   loadDashboard();
   setInterval(loadDashboard, 30000);
   chatInputEl.focus();
+
+  // ══════════════════════════════════════════════════════════════════════════
+  // ── Feedback Modal ────────────────────────────────────────────────────────
+  // ══════════════════════════════════════════════════════════════════════════
+  (function initFeedback() {
+    const overlay   = document.getElementById('fbOverlay');
+    const openBtn   = document.getElementById('feedbackBtn');
+    const closeBtn  = document.getElementById('fbClose');
+    const stars     = document.querySelectorAll('.fb-star');
+    const catBtns   = document.querySelectorAll('.fb-cat');
+    const nameEl    = document.getElementById('fbName');
+    const commentEl = document.getElementById('fbComment');
+    const submitBtn = document.getElementById('fbSubmit');
+    const msgEl     = document.getElementById('fbMsg');
+
+    let selectedRating   = 0;
+    let selectedCategory = 'general';
+
+    function openModal() {
+      overlay.classList.add('visible');
+      nameEl.focus();
+    }
+
+    function closeModal() {
+      overlay.classList.remove('visible');
+    }
+
+    openBtn.addEventListener('click', openModal);
+    closeBtn.addEventListener('click', closeModal);
+    overlay.addEventListener('click', (e) => { if (e.target === overlay) closeModal(); });
+    document.addEventListener('keydown', (e) => { if (e.key === 'Escape') closeModal(); });
+
+    // Star rating interaction
+    stars.forEach(star => {
+      star.addEventListener('click', () => {
+        selectedRating = parseInt(star.dataset.v, 10);
+        stars.forEach(s => s.classList.toggle('active', parseInt(s.dataset.v, 10) <= selectedRating));
+      });
+      star.addEventListener('mouseenter', () => {
+        const hv = parseInt(star.dataset.v, 10);
+        stars.forEach(s => s.classList.toggle('active', parseInt(s.dataset.v, 10) <= hv));
+      });
+    });
+    document.getElementById('fbStars').addEventListener('mouseleave', () => {
+      stars.forEach(s => s.classList.toggle('active', parseInt(s.dataset.v, 10) <= selectedRating));
+    });
+
+    // Category selection
+    catBtns.forEach(btn => {
+      btn.addEventListener('click', () => {
+        catBtns.forEach(b => b.classList.remove('selected'));
+        btn.classList.add('selected');
+        selectedCategory = btn.dataset.cat;
+      });
+    });
+
+    // Submit
+    submitBtn.addEventListener('click', async () => {
+      msgEl.className = 'fb-msg';
+      msgEl.textContent = '';
+
+      if (selectedRating === 0) {
+        msgEl.textContent = 'Please select a star rating.';
+        msgEl.className = 'fb-msg error';
+        return;
+      }
+      const comment = commentEl.value.trim();
+      if (!comment) {
+        msgEl.textContent = 'Please enter a comment.';
+        msgEl.className = 'fb-msg error';
+        commentEl.focus();
+        return;
+      }
+
+      submitBtn.disabled = true;
+      submitBtn.textContent = 'Submitting…';
+
+      try {
+        const resp = await fetch('/api/feedback', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            'Authorization': `Bearer ${authToken}`,
+          },
+          body: JSON.stringify({
+            rating:      selectedRating,
+            category:    selectedCategory,
+            comment,
+            testerName:  nameEl.value.trim(),
+            sessionId,
+          }),
+        });
+
+        if (resp.status === 401) {
+          localStorage.removeItem(TOKEN_KEY);
+          window.location.href = '/login';
+          return;
+        }
+
+        if (resp.ok) {
+          msgEl.textContent = 'Thank you! Your feedback has been recorded.';
+          msgEl.className = 'fb-msg success';
+          // Reset form
+          selectedRating = 0;
+          stars.forEach(s => s.classList.remove('active'));
+          selectedCategory = 'general';
+          catBtns.forEach(b => b.classList.toggle('selected', b.dataset.cat === 'general'));
+          nameEl.value = '';
+          commentEl.value = '';
+          setTimeout(closeModal, 2200);
+        } else {
+          const data = await resp.json();
+          msgEl.textContent = data.error || 'Failed to submit. Please try again.';
+          msgEl.className = 'fb-msg error';
+        }
+      } catch {
+        msgEl.textContent = 'Network error. Please try again.';
+        msgEl.className = 'fb-msg error';
+      } finally {
+        submitBtn.disabled = false;
+        submitBtn.textContent = 'Submit Feedback';
+      }
+    });
+  })();
 </script>
 </body>
 </html>
