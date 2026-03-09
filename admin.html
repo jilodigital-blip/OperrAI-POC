@@ -1,0 +1,1049 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Admin Portal — OperrAI</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Syne:wght@400;600;700;800&family=DM+Sans:ital,opsz,wght@0,9..40,300;0,9..40,400;0,9..40,500;1,9..40,300&display=swap" rel="stylesheet" />
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    :root {
+      --gold: #D4AF37;
+      --gold-dim: rgba(212,175,55,0.1);
+      --gold-border: rgba(212,175,55,0.2);
+      --ink: #0A0A0A;
+      --surface: #111111;
+      --surface2: #161616;
+      --border: rgba(255,255,255,0.06);
+      --border2: rgba(255,255,255,0.1);
+      --muted: #6B7280;
+      --text: rgba(255,255,255,0.88);
+      --font-heading: 'Syne', sans-serif;
+      --font-body: 'DM Sans', sans-serif;
+    }
+
+    html { scroll-behavior: smooth; }
+
+    body {
+      background: var(--ink);
+      color: var(--text);
+      font-family: var(--font-body);
+      min-height: 100vh;
+      line-height: 1.6;
+    }
+
+    body::before {
+      content: '';
+      position: fixed;
+      inset: 0;
+      background-image:
+        linear-gradient(rgba(212,175,55,0.02) 1px, transparent 1px),
+        linear-gradient(90deg, rgba(212,175,55,0.02) 1px, transparent 1px);
+      background-size: 60px 60px;
+      pointer-events: none;
+      z-index: 0;
+    }
+
+    .page { position: relative; z-index: 1; }
+
+    /* ── Login screen ──────────────────────────────────────────── */
+    #loginScreen {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      min-height: 100vh;
+      padding: 2rem 1rem;
+    }
+
+    .login-card {
+      background: var(--surface);
+      border: 1px solid var(--border2);
+      border-radius: 20px;
+      padding: 2.5rem;
+      width: 100%;
+      max-width: 400px;
+    }
+
+    .login-logo {
+      font-family: var(--font-heading);
+      font-size: 1.5rem;
+      font-weight: 800;
+      color: #fff;
+      text-align: center;
+      margin-bottom: 0.5rem;
+    }
+    .login-logo span { color: var(--gold); }
+
+    .login-sub {
+      text-align: center;
+      font-size: 0.82rem;
+      color: var(--muted);
+      margin-bottom: 2rem;
+    }
+
+    .admin-badge {
+      display: inline-flex;
+      align-items: center;
+      gap: 0.4rem;
+      font-size: 0.68rem;
+      font-weight: 700;
+      letter-spacing: 0.08em;
+      text-transform: uppercase;
+      color: var(--gold);
+      background: var(--gold-dim);
+      border: 1px solid var(--gold-border);
+      padding: 0.25rem 0.7rem;
+      border-radius: 100px;
+      margin-bottom: 1.5rem;
+    }
+
+    .login-header-center {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 0.5rem;
+    }
+
+    .field {
+      margin-bottom: 1rem;
+    }
+
+    .field label {
+      display: block;
+      font-size: 0.78rem;
+      font-weight: 600;
+      color: rgba(255,255,255,0.6);
+      margin-bottom: 0.4rem;
+      letter-spacing: 0.04em;
+    }
+
+    .field input {
+      width: 100%;
+      background: rgba(255,255,255,0.04);
+      border: 1px solid var(--border2);
+      border-radius: 10px;
+      padding: 0.7rem 1rem;
+      font-family: var(--font-body);
+      font-size: 0.9rem;
+      color: #fff;
+      outline: none;
+      transition: border-color 0.2s;
+    }
+    .field input:focus { border-color: rgba(212,175,55,0.5); }
+    .field input::placeholder { color: rgba(255,255,255,0.2); }
+
+    .login-btn {
+      width: 100%;
+      background: var(--gold);
+      color: var(--ink);
+      border: none;
+      border-radius: 10px;
+      padding: 0.8rem;
+      font-family: var(--font-heading);
+      font-size: 0.9rem;
+      font-weight: 700;
+      cursor: pointer;
+      transition: opacity 0.2s;
+      margin-top: 0.5rem;
+    }
+    .login-btn:hover { opacity: 0.88; }
+    .login-btn:disabled { opacity: 0.45; cursor: not-allowed; }
+
+    .login-error {
+      background: rgba(239,68,68,0.08);
+      border: 1px solid rgba(239,68,68,0.25);
+      color: #fca5a5;
+      border-radius: 8px;
+      padding: 0.65rem 0.9rem;
+      font-size: 0.82rem;
+      margin-top: 0.75rem;
+      display: none;
+    }
+    .login-error.show { display: block; }
+
+    /* ── Admin Dashboard ───────────────────────────────────────── */
+    #dashScreen { display: none; }
+
+    /* ── Topbar ──────────────────────────────────────────────── */
+    .topbar {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 1rem 2rem;
+      border-bottom: 1px solid var(--border);
+      background: rgba(10,10,10,0.9);
+      backdrop-filter: blur(12px);
+      position: sticky;
+      top: 0;
+      z-index: 100;
+    }
+
+    .logo {
+      font-family: var(--font-heading);
+      font-size: 1.25rem;
+      font-weight: 800;
+      color: #fff;
+      text-decoration: none;
+      letter-spacing: -0.02em;
+    }
+    .logo span { color: var(--gold); }
+
+    .topbar-right {
+      display: flex;
+      align-items: center;
+      gap: 0.75rem;
+    }
+
+    .admin-role-badge {
+      font-size: 0.68rem;
+      font-weight: 700;
+      letter-spacing: 0.08em;
+      text-transform: uppercase;
+      color: var(--gold);
+      background: var(--gold-dim);
+      border: 1px solid var(--gold-border);
+      padding: 0.25rem 0.7rem;
+      border-radius: 100px;
+    }
+
+    .logout-btn {
+      font-family: var(--font-body);
+      font-size: 0.8rem;
+      color: var(--muted);
+      background: none;
+      border: 1px solid var(--border2);
+      border-radius: 6px;
+      padding: 0.35rem 0.75rem;
+      cursor: pointer;
+      transition: color 0.2s;
+    }
+    .logout-btn:hover { color: #fff; }
+
+    .refresh-btn {
+      font-family: var(--font-body);
+      font-size: 0.8rem;
+      color: var(--gold);
+      background: var(--gold-dim);
+      border: 1px solid var(--gold-border);
+      border-radius: 6px;
+      padding: 0.35rem 0.75rem;
+      cursor: pointer;
+      transition: background 0.2s;
+    }
+    .refresh-btn:hover { background: rgba(212,175,55,0.18); }
+
+    /* ── Page content ─────────────────────────────────────────── */
+    .admin-content {
+      max-width: 1300px;
+      margin: 0 auto;
+      padding: 2rem;
+    }
+
+    @media (max-width: 768px) {
+      .admin-content { padding: 1.25rem; }
+      .topbar { padding: 1rem 1.25rem; }
+    }
+
+    /* Section headers */
+    .section-title {
+      font-family: var(--font-heading);
+      font-size: 0.85rem;
+      font-weight: 700;
+      letter-spacing: 0.06em;
+      text-transform: uppercase;
+      color: var(--muted);
+      margin-bottom: 1rem;
+      display: flex;
+      align-items: center;
+      gap: 0.6rem;
+    }
+
+    .section-title::after {
+      content: '';
+      flex: 1;
+      height: 1px;
+      background: var(--border);
+    }
+
+    /* ── Stat cards row ───────────────────────────────────────── */
+    .stats-row {
+      display: grid;
+      grid-template-columns: repeat(6, 1fr);
+      gap: 1rem;
+      margin-bottom: 2rem;
+    }
+
+    @media (max-width: 1100px) {
+      .stats-row { grid-template-columns: repeat(3, 1fr); }
+    }
+
+    @media (max-width: 600px) {
+      .stats-row { grid-template-columns: repeat(2, 1fr); }
+    }
+
+    .stat-card {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      padding: 1rem 1.1rem;
+      position: relative;
+      overflow: hidden;
+    }
+
+    .stat-card::before {
+      content: '';
+      position: absolute;
+      top: 0; left: 0; right: 0;
+      height: 2px;
+      background: var(--gold);
+      opacity: 0.4;
+    }
+
+    .stat-card.green::before { background: #22c55e; }
+    .stat-card.purple::before { background: #a78bfa; }
+    .stat-card.red::before { background: #ef4444; }
+    .stat-card.blue::before { background: #60a5fa; }
+    .stat-card.orange::before { background: #f97316; }
+
+    .stat-label {
+      font-size: 0.68rem;
+      font-weight: 600;
+      letter-spacing: 0.07em;
+      text-transform: uppercase;
+      color: var(--muted);
+      margin-bottom: 0.5rem;
+    }
+
+    .stat-value {
+      font-family: var(--font-heading);
+      font-size: 1.75rem;
+      font-weight: 800;
+      color: #fff;
+      line-height: 1;
+    }
+    .stat-value small {
+      font-size: 0.9rem;
+      font-weight: 400;
+      color: var(--muted);
+      margin-left: 0.15rem;
+    }
+    .stat-value.gold { color: var(--gold); }
+    .stat-value.green { color: #22c55e; }
+    .stat-value.red { color: #ef4444; }
+    .stat-value.blue { color: #60a5fa; }
+    .stat-value.purple { color: #a78bfa; }
+
+    /* ── Two column layout ─────────────────────────────────────── */
+    .two-col {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 1.5rem;
+      margin-bottom: 2rem;
+    }
+
+    @media (max-width: 900px) {
+      .two-col { grid-template-columns: 1fr; }
+    }
+
+    /* ── Cards ────────────────────────────────────────────────── */
+    .card {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: 14px;
+      overflow: hidden;
+    }
+
+    .card-head {
+      display: flex;
+      align-items: center;
+      gap: 0.6rem;
+      padding: 1rem 1.25rem;
+      border-bottom: 1px solid var(--border);
+      background: var(--surface2);
+      font-family: var(--font-heading);
+      font-size: 0.9rem;
+      font-weight: 700;
+    }
+
+    .card-body { padding: 1.25rem; }
+
+    /* Accuracy bars */
+    .acc-bars { display: flex; flex-direction: column; gap: 0.65rem; }
+
+    .acc-row {
+      display: flex;
+      align-items: center;
+      gap: 0.75rem;
+    }
+
+    .acc-label {
+      font-size: 0.78rem;
+      width: 80px;
+      color: rgba(255,255,255,0.65);
+      flex-shrink: 0;
+    }
+
+    .acc-bar-wrap {
+      flex: 1;
+      height: 8px;
+      background: var(--border2);
+      border-radius: 4px;
+      overflow: hidden;
+    }
+
+    .acc-bar-fill {
+      height: 100%;
+      border-radius: 4px;
+      transition: width 0.7s ease;
+    }
+    .fill-excellent { background: #22c55e; }
+    .fill-good      { background: var(--gold); }
+    .fill-acceptable{ background: #f97316; }
+    .fill-poor      { background: #ef4444; }
+
+    .acc-count {
+      font-size: 0.78rem;
+      font-weight: 600;
+      color: rgba(255,255,255,0.75);
+      width: 28px;
+      text-align: right;
+      flex-shrink: 0;
+    }
+
+    /* Channel split */
+    .channel-split {
+      display: flex;
+      gap: 1rem;
+    }
+
+    .channel-block {
+      flex: 1;
+      background: var(--surface2);
+      border: 1px solid var(--border);
+      border-radius: 10px;
+      padding: 1rem;
+      text-align: center;
+    }
+
+    .channel-block .ch-icon { font-size: 1.75rem; margin-bottom: 0.4rem; }
+    .channel-block .ch-name {
+      font-size: 0.72rem;
+      font-weight: 600;
+      letter-spacing: 0.06em;
+      text-transform: uppercase;
+      color: var(--muted);
+      margin-bottom: 0.3rem;
+    }
+    .channel-block .ch-count {
+      font-family: var(--font-heading);
+      font-size: 1.5rem;
+      font-weight: 800;
+      color: #fff;
+    }
+    .channel-block .ch-pct {
+      font-size: 0.72rem;
+      color: var(--muted);
+    }
+
+    /* ── Table ─────────────────────────────────────────────────── */
+    .data-table-wrap {
+      overflow-x: auto;
+      margin-bottom: 2rem;
+    }
+
+    .data-table {
+      width: 100%;
+      border-collapse: collapse;
+      font-size: 0.82rem;
+    }
+
+    .data-table thead tr {
+      background: var(--surface2);
+      border-bottom: 1px solid var(--border2);
+    }
+
+    .data-table th {
+      padding: 0.75rem 1rem;
+      text-align: left;
+      font-size: 0.68rem;
+      font-weight: 700;
+      letter-spacing: 0.07em;
+      text-transform: uppercase;
+      color: var(--muted);
+      white-space: nowrap;
+    }
+
+    .data-table td {
+      padding: 0.75rem 1rem;
+      border-bottom: 1px solid var(--border);
+      color: rgba(255,255,255,0.75);
+      vertical-align: top;
+    }
+
+    .data-table tbody tr:hover { background: rgba(255,255,255,0.02); }
+    .data-table tbody tr:last-child td { border-bottom: none; }
+
+    .badge {
+      display: inline-block;
+      font-size: 0.68rem;
+      font-weight: 700;
+      letter-spacing: 0.05em;
+      text-transform: uppercase;
+      padding: 0.2rem 0.55rem;
+      border-radius: 100px;
+      border: 1px solid;
+    }
+
+    .badge-chat { color: #60a5fa; border-color: rgba(96,165,250,0.25); background: rgba(96,165,250,0.08); }
+    .badge-email { color: #a78bfa; border-color: rgba(167,139,250,0.25); background: rgba(167,139,250,0.08); }
+    .badge-excellent { color: #22c55e; border-color: rgba(34,197,94,0.25); background: rgba(34,197,94,0.08); }
+    .badge-good { color: var(--gold); border-color: rgba(212,175,55,0.25); background: rgba(212,175,55,0.08); }
+    .badge-acceptable { color: #f97316; border-color: rgba(249,115,22,0.25); background: rgba(249,115,22,0.08); }
+    .badge-poor { color: #ef4444; border-color: rgba(239,68,68,0.25); background: rgba(239,68,68,0.08); }
+    .badge-open { color: #f97316; border-color: rgba(249,115,22,0.25); background: rgba(249,115,22,0.08); }
+
+    .q-text {
+      max-width: 280px;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      display: block;
+    }
+
+    .table-empty {
+      text-align: center;
+      padding: 2rem;
+      color: var(--muted);
+      font-size: 0.85rem;
+      font-style: italic;
+    }
+
+    /* Loading spinner */
+    .loading-overlay {
+      display: none;
+      position: fixed;
+      inset: 0;
+      background: rgba(10,10,10,0.7);
+      z-index: 200;
+      align-items: center;
+      justify-content: center;
+      backdrop-filter: blur(4px);
+    }
+    .loading-overlay.show { display: flex; }
+
+    .spinner {
+      width: 40px; height: 40px;
+      border: 3px solid var(--border2);
+      border-top-color: var(--gold);
+      border-radius: 50%;
+      animation: spin 0.8s linear infinite;
+    }
+    @keyframes spin { to { transform: rotate(360deg); } }
+
+    .status-bar {
+      font-size: 0.72rem;
+      color: var(--muted);
+      margin-top: 0.5rem;
+    }
+
+    .source-docs-list { display: flex; flex-direction: column; gap: 0.4rem; }
+    .source-doc-item {
+      display: flex;
+      align-items: center;
+      gap: 0.6rem;
+      font-size: 0.8rem;
+      color: rgba(255,255,255,0.65);
+      background: var(--surface2);
+      border: 1px solid var(--border);
+      border-radius: 7px;
+      padding: 0.5rem 0.75rem;
+    }
+    .doc-empty {
+      font-size: 0.8rem;
+      color: var(--muted);
+      font-style: italic;
+    }
+
+    .filter-row {
+      display: flex;
+      align-items: center;
+      gap: 0.75rem;
+      margin-bottom: 1rem;
+      flex-wrap: wrap;
+    }
+
+    .filter-label {
+      font-size: 0.75rem;
+      color: var(--muted);
+      font-weight: 500;
+    }
+
+    .filter-btn {
+      font-family: var(--font-body);
+      font-size: 0.75rem;
+      padding: 0.3rem 0.75rem;
+      border-radius: 100px;
+      border: 1px solid var(--border2);
+      background: var(--surface2);
+      color: rgba(255,255,255,0.6);
+      cursor: pointer;
+      transition: border-color 0.2s, color 0.2s;
+    }
+    .filter-btn.active,
+    .filter-btn:hover { border-color: var(--gold-border); color: var(--gold); background: var(--gold-dim); }
+  </style>
+</head>
+<body>
+<div class="page">
+
+  <!-- ── Loading overlay ────────────────────────────────────────── -->
+  <div class="loading-overlay" id="loadingOverlay">
+    <div>
+      <div class="spinner"></div>
+    </div>
+  </div>
+
+  <!-- ══════════════════════════════════════════════════════════ -->
+  <!-- Login screen -->
+  <!-- ══════════════════════════════════════════════════════════ -->
+  <div id="loginScreen">
+    <div class="login-card">
+      <div class="login-header-center">
+        <div class="login-logo">Operr<span>AI</span></div>
+        <div class="login-sub">Internal admin access only</div>
+        <div class="admin-badge">🔒 Admin Portal</div>
+      </div>
+
+      <form id="loginForm" onsubmit="handleAdminLogin(event)">
+        <div class="field">
+          <label for="adminUser">Username</label>
+          <input type="text" id="adminUser" placeholder="Admin username" autocomplete="username" />
+        </div>
+        <div class="field">
+          <label for="adminPass">Password</label>
+          <input type="password" id="adminPass" placeholder="Admin password" autocomplete="current-password" />
+        </div>
+        <button type="submit" class="login-btn" id="loginBtn">Sign In to Admin Portal</button>
+        <div class="login-error" id="loginError"></div>
+      </form>
+    </div>
+  </div>
+
+  <!-- ══════════════════════════════════════════════════════════ -->
+  <!-- Admin dashboard -->
+  <!-- ══════════════════════════════════════════════════════════ -->
+  <div id="dashScreen">
+
+    <!-- Topbar -->
+    <header class="topbar">
+      <a href="/" class="logo" style="text-decoration:none;">Operr<span>AI</span></a>
+      <div style="display:flex;align-items:center;gap:0.5rem;">
+        <span class="admin-role-badge">Admin</span>
+        <span id="topbarStatus" class="status-bar"></span>
+      </div>
+      <div class="topbar-right">
+        <button class="refresh-btn" id="refreshBtn" onclick="loadAdminData()">↻ Refresh</button>
+        <button class="logout-btn" id="logoutBtn">Sign Out</button>
+      </div>
+    </header>
+
+    <!-- Content -->
+    <div class="admin-content">
+
+      <!-- ── Overview stats ──────────────────────────────────── -->
+      <div class="section-title">Overview</div>
+      <div class="stats-row">
+        <div class="stat-card">
+          <div class="stat-label">Total Messages</div>
+          <div class="stat-value" id="aTotal">—</div>
+        </div>
+        <div class="stat-card blue">
+          <div class="stat-label">Chat Messages</div>
+          <div class="stat-value blue" id="aChat">—</div>
+        </div>
+        <div class="stat-card purple">
+          <div class="stat-label">Email Messages</div>
+          <div class="stat-value purple" id="aEmail">—</div>
+        </div>
+        <div class="stat-card red">
+          <div class="stat-label">Escalated</div>
+          <div class="stat-value red" id="aBlocked">—</div>
+        </div>
+        <div class="stat-card green">
+          <div class="stat-label">Avg Accuracy</div>
+          <div class="stat-value green" id="aAccuracy">—</div>
+        </div>
+        <div class="stat-card orange">
+          <div class="stat-label">Avg Response</div>
+          <div class="stat-value" id="aAvgTime">—</div>
+        </div>
+      </div>
+
+      <!-- ── Quality + Channel split ────────────────────────── -->
+      <div class="two-col">
+
+        <!-- Accuracy distribution -->
+        <div class="card">
+          <div class="card-head">📊 Accuracy Distribution</div>
+          <div class="card-body">
+            <div class="acc-bars">
+              <div class="acc-row">
+                <span class="acc-label">Excellent</span>
+                <div class="acc-bar-wrap"><div class="acc-bar-fill fill-excellent" id="aBarExcellent" style="width:0%"></div></div>
+                <span class="acc-count" id="aCntExcellent">0</span>
+              </div>
+              <div class="acc-row">
+                <span class="acc-label">Good</span>
+                <div class="acc-bar-wrap"><div class="acc-bar-fill fill-good" id="aBarGood" style="width:0%"></div></div>
+                <span class="acc-count" id="aCntGood">0</span>
+              </div>
+              <div class="acc-row">
+                <span class="acc-label">Acceptable</span>
+                <div class="acc-bar-wrap"><div class="acc-bar-fill fill-acceptable" id="aBarAcceptable" style="width:0%"></div></div>
+                <span class="acc-count" id="aCntAcceptable">0</span>
+              </div>
+              <div class="acc-row">
+                <span class="acc-label">Poor</span>
+                <div class="acc-bar-wrap"><div class="acc-bar-fill fill-poor" id="aBarPoor" style="width:0%"></div></div>
+                <span class="acc-count" id="aCntPoor">0</span>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Channel usage + Source docs -->
+        <div class="card">
+          <div class="card-head">📡 Channel Usage</div>
+          <div class="card-body">
+            <div class="channel-split" id="channelSplit">
+              <div class="channel-block">
+                <div class="ch-icon">💬</div>
+                <div class="ch-name">Chat</div>
+                <div class="ch-count" id="aChatCount">—</div>
+                <div class="ch-pct" id="aChatPct">—</div>
+              </div>
+              <div class="channel-block">
+                <div class="ch-icon">📧</div>
+                <div class="ch-name">Email</div>
+                <div class="ch-count" id="aEmailCount">—</div>
+                <div class="ch-pct" id="aEmailPct">—</div>
+              </div>
+            </div>
+
+            <div style="margin-top:1.25rem;">
+              <div style="font-size:0.72rem;font-weight:700;letter-spacing:0.07em;text-transform:uppercase;color:var(--muted);margin-bottom:0.6rem;">Knowledge Sources</div>
+              <div class="source-docs-list" id="aSourceDocs">
+                <div class="doc-empty">No sources yet</div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+      </div>
+
+      <!-- ── Service Requests (Escalated) ──────────────────────── -->
+      <div class="section-title">Escalated Service Requests</div>
+      <div class="card" style="margin-bottom:2rem;">
+        <div class="card-head">🎫 Open Tickets</div>
+        <div class="data-table-wrap">
+          <table class="data-table">
+            <thead>
+              <tr>
+                <th>Ticket ID</th>
+                <th>Channel</th>
+                <th>Question</th>
+                <th>Status</th>
+                <th>Created</th>
+              </tr>
+            </thead>
+            <tbody id="ticketsBody">
+              <tr><td colspan="5" class="table-empty">Loading…</td></tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+
+      <!-- ── Recent Messages ─────────────────────────────────── -->
+      <div class="section-title">Recent Messages</div>
+      <div class="filter-row">
+        <span class="filter-label">Filter:</span>
+        <button class="filter-btn active" id="filterAll" onclick="setFilter('all')">All</button>
+        <button class="filter-btn" id="filterChat" onclick="setFilter('chat')">Chat only</button>
+        <button class="filter-btn" id="filterEmail" onclick="setFilter('email')">Email only</button>
+      </div>
+      <div class="card" style="margin-bottom:3rem;">
+        <div class="card-head">💬 Message Log</div>
+        <div class="data-table-wrap">
+          <table class="data-table">
+            <thead>
+              <tr>
+                <th>Time</th>
+                <th>Channel</th>
+                <th>Question</th>
+                <th>Accuracy</th>
+                <th>Response Time</th>
+                <th>Session</th>
+              </tr>
+            </thead>
+            <tbody id="messagesBody">
+              <tr><td colspan="6" class="table-empty">Loading…</td></tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+
+    </div>
+  </div>
+
+</div><!-- /page -->
+<script>
+  const ADMIN_TOKEN_KEY = 'operr_admin_token';
+  let adminToken = null;
+  let allMessages = [];
+  let currentFilter = 'all';
+
+  // ── Check existing session ─────────────────────────────────────────────────
+  (function init() {
+    const stored = localStorage.getItem(ADMIN_TOKEN_KEY);
+    if (stored) {
+      try {
+        const payload = JSON.parse(atob(stored.split('.')[1].replace(/-/g, '+').replace(/_/g, '/')));
+        if (payload.exp >= Math.floor(Date.now() / 1000) && payload.role === 'admin') {
+          adminToken = stored;
+          showDash();
+          return;
+        }
+      } catch { /* fall through */ }
+      localStorage.removeItem(ADMIN_TOKEN_KEY);
+    }
+    showLogin();
+  })();
+
+  function showLogin() {
+    document.getElementById('loginScreen').style.display = 'flex';
+    document.getElementById('dashScreen').style.display = 'none';
+  }
+
+  function showDash() {
+    document.getElementById('loginScreen').style.display = 'none';
+    document.getElementById('dashScreen').style.display = 'block';
+    loadAdminData();
+  }
+
+  // ── Login ──────────────────────────────────────────────────────────────────
+  async function handleAdminLogin(e) {
+    e.preventDefault();
+    const username = document.getElementById('adminUser').value.trim();
+    const password = document.getElementById('adminPass').value;
+    const errEl    = document.getElementById('loginError');
+    const btn      = document.getElementById('loginBtn');
+
+    errEl.classList.remove('show');
+    btn.disabled = true;
+    btn.textContent = 'Signing in…';
+
+    try {
+      const resp = await fetch('/api/auth', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ username, password }),
+      });
+
+      const data = await resp.json();
+
+      if (!resp.ok) {
+        errEl.textContent = data.error || 'Invalid credentials';
+        errEl.classList.add('show');
+        return;
+      }
+
+      if (data.role !== 'admin') {
+        errEl.textContent = 'Access denied — admin credentials required.';
+        errEl.classList.add('show');
+        return;
+      }
+
+      adminToken = data.token;
+      localStorage.setItem(ADMIN_TOKEN_KEY, adminToken);
+      showDash();
+
+    } catch {
+      errEl.textContent = 'Network error. Please try again.';
+      errEl.classList.add('show');
+    } finally {
+      btn.disabled = false;
+      btn.textContent = 'Sign In to Admin Portal';
+    }
+  }
+
+  // ── Logout ─────────────────────────────────────────────────────────────────
+  document.getElementById('logoutBtn').addEventListener('click', () => {
+    localStorage.removeItem(ADMIN_TOKEN_KEY);
+    adminToken = null;
+    showLogin();
+  });
+
+  // ── Load admin data ────────────────────────────────────────────────────────
+  async function loadAdminData() {
+    const statusEl = document.getElementById('topbarStatus');
+    statusEl.textContent = 'Refreshing…';
+
+    try {
+      const resp = await fetch('/api/admin', {
+        headers: { 'Authorization': `Bearer ${adminToken}` },
+      });
+
+      if (resp.status === 401) {
+        localStorage.removeItem(ADMIN_TOKEN_KEY);
+        adminToken = null;
+        showLogin();
+        return;
+      }
+
+      if (!resp.ok) {
+        statusEl.textContent = 'Error loading data';
+        return;
+      }
+
+      const d = await resp.json();
+      renderAdminData(d);
+      statusEl.textContent = `Updated ${new Date().toLocaleTimeString('en-IN', { hour: '2-digit', minute: '2-digit', hour12: true })}`;
+
+    } catch {
+      statusEl.textContent = 'Connection error';
+    }
+  }
+
+  // ── Render ─────────────────────────────────────────────────────────────────
+  function renderAdminData(d) {
+    // Overview stats
+    const overview = d.overview || {};
+    document.getElementById('aTotal').textContent    = overview.totalMessages   ?? 0;
+    document.getElementById('aChat').textContent     = overview.chatMessages    ?? 0;
+    document.getElementById('aEmail').textContent    = overview.emailMessages   ?? 0;
+    document.getElementById('aBlocked').textContent  = overview.blockedMessages ?? 0;
+
+    const acc = overview.avgAccuracyScore;
+    document.getElementById('aAccuracy').innerHTML = acc != null ? `${acc}<small>/10</small>` : '—';
+
+    const t = overview.avgResponseTimeMs;
+    document.getElementById('aAvgTime').innerHTML = t
+      ? (t >= 1000 ? `${(t/1000).toFixed(1)}<small>s</small>` : `${t}<small>ms</small>`)
+      : '—';
+
+    // Accuracy bars
+    const dist = d.accuracyDistribution || {};
+    const total = (dist.Excellent||0) + (dist.Good||0) + (dist.Acceptable||0) + (dist.Poor||0);
+    const pct = n => total > 0 ? Math.round((n / total) * 100) : 0;
+
+    document.getElementById('aBarExcellent').style.width  = pct(dist.Excellent||0) + '%';
+    document.getElementById('aBarGood').style.width       = pct(dist.Good||0) + '%';
+    document.getElementById('aBarAcceptable').style.width = pct(dist.Acceptable||0) + '%';
+    document.getElementById('aBarPoor').style.width       = pct(dist.Poor||0) + '%';
+    document.getElementById('aCntExcellent').textContent  = dist.Excellent || 0;
+    document.getElementById('aCntGood').textContent       = dist.Good || 0;
+    document.getElementById('aCntAcceptable').textContent = dist.Acceptable || 0;
+    document.getElementById('aCntPoor').textContent       = dist.Poor || 0;
+
+    // Channel split
+    const chat  = overview.chatMessages  || 0;
+    const email = overview.emailMessages || 0;
+    const tot   = chat + email || 1;
+    document.getElementById('aChatCount').textContent  = chat;
+    document.getElementById('aEmailCount').textContent = email;
+    document.getElementById('aChatPct').textContent    = Math.round(chat / tot * 100) + '% of traffic';
+    document.getElementById('aEmailPct').textContent   = Math.round(email / tot * 100) + '% of traffic';
+
+    // Source docs
+    const docsEl = document.getElementById('aSourceDocs');
+    const docs = (d.sourceDocs || []).filter(Boolean);
+    docsEl.innerHTML = docs.length > 0
+      ? docs.map(doc => `<div class="source-doc-item">📄 <span>${escapeHtml(doc)}</span></div>`).join('')
+      : '<div class="doc-empty">No documents queried yet.</div>';
+
+    // Service requests
+    const tickets = d.serviceRequests || [];
+    const tbody = document.getElementById('ticketsBody');
+    if (tickets.length === 0) {
+      tbody.innerHTML = '<tr><td colspan="5" class="table-empty">No escalated tickets — great job!</td></tr>';
+    } else {
+      tbody.innerHTML = tickets.map(t => `
+        <tr>
+          <td><code style="font-size:0.75rem;color:var(--gold);">${escapeHtml(t.ticket_id)}</code></td>
+          <td><span class="badge badge-${t.channel}">${escapeHtml(t.channel)}</span></td>
+          <td><span class="q-text" title="${escapeHtml(t.question)}">${escapeHtml(t.question)}</span></td>
+          <td><span class="badge badge-open">${escapeHtml(t.status || 'open')}</span></td>
+          <td style="white-space:nowrap;color:var(--muted);">${formatDate(t.created_at)}</td>
+        </tr>
+      `).join('');
+    }
+
+    // Messages log
+    allMessages = d.recentMessages || [];
+    renderMessagesTable();
+  }
+
+  function renderMessagesTable() {
+    const tbody = document.getElementById('messagesBody');
+    const filtered = currentFilter === 'all'
+      ? allMessages
+      : allMessages.filter(m => m.channel === currentFilter);
+
+    if (filtered.length === 0) {
+      tbody.innerHTML = `<tr><td colspan="6" class="table-empty">No messages${currentFilter !== 'all' ? ' for this channel' : ''} yet.</td></tr>`;
+      return;
+    }
+
+    const accColors = { Excellent: 'excellent', Good: 'good', Acceptable: 'acceptable', Poor: 'poor' };
+
+    tbody.innerHTML = filtered.map(m => {
+      const labelClass = accColors[m.accuracyLabel] || 'acceptable';
+      const tStr = m.responseTimeMs
+        ? (m.responseTimeMs >= 1000 ? `${(m.responseTimeMs/1000).toFixed(1)}s` : `${m.responseTimeMs}ms`)
+        : '—';
+      const session = m.sessionId ? m.sessionId.slice(0, 8) + '…' : '—';
+      return `
+        <tr>
+          <td style="white-space:nowrap;color:var(--muted);">${formatDate(m.createdAt)}</td>
+          <td><span class="badge badge-${m.channel}">${escapeHtml(m.channel)}</span></td>
+          <td><span class="q-text" title="${escapeHtml(m.question)}">${escapeHtml(m.question)}</span></td>
+          <td>${m.accuracyLabel
+            ? `<span class="badge badge-${labelClass}">${escapeHtml(m.accuracyLabel)}${m.accuracyScore != null ? ` (${m.accuracyScore}/10)` : ''}</span>`
+            : '<span style="color:var(--muted);font-size:0.75rem;">Pending</span>'
+          }</td>
+          <td style="color:var(--muted);white-space:nowrap;">${tStr}</td>
+          <td style="color:var(--muted);font-size:0.75rem;">${escapeHtml(session)}</td>
+        </tr>
+      `;
+    }).join('');
+  }
+
+  function setFilter(f) {
+    currentFilter = f;
+    document.querySelectorAll('.filter-btn').forEach(b => b.classList.remove('active'));
+    document.getElementById('filter' + f.charAt(0).toUpperCase() + f.slice(1)).classList.add('active');
+    renderMessagesTable();
+  }
+
+  // ── Utilities ──────────────────────────────────────────────────────────────
+  function escapeHtml(str) {
+    return String(str || '')
+      .replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
+  }
+
+  function formatDate(isoStr) {
+    if (!isoStr) return '—';
+    const d = new Date(isoStr);
+    return d.toLocaleDateString('en-IN', { day: '2-digit', month: 'short' }) +
+           ' ' + d.toLocaleTimeString('en-IN', { hour: '2-digit', minute: '2-digit', hour12: true });
+  }
+
+  // Auto-refresh every 60 seconds
+  setInterval(() => { if (adminToken) loadAdminData(); }, 60000);
+</script>
+</body>
+</html>

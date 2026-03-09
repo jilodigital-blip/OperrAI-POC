@@ -43,9 +43,11 @@ async function readBody(req) {
 
 module.exports = async (req, res) => {
   // Read env vars inside handler to avoid stale module-scope cache on Vercel
-  const DEMO_USER  = process.env.DEMO_USER  || 'ev_demo';
-  const DEMO_PASS  = process.env.DEMO_PASS  || 'EV@OperrAI2024';
-  const JWT_SECRET = process.env.JWT_SECRET || 'operrai-poc-secret-change-in-prod';
+  const DEMO_USER   = process.env.DEMO_USER   || 'ev_demo';
+  const DEMO_PASS   = process.env.DEMO_PASS   || 'EV@OperrAI2024';
+  const ADMIN_USER  = process.env.ADMIN_USER  || 'operr_admin';
+  const ADMIN_PASS  = process.env.ADMIN_PASS  || 'Admin@OperrAI2024';
+  const JWT_SECRET  = process.env.JWT_SECRET  || 'operrai-poc-secret-change-in-prod';
 
   res.setHeader('Access-Control-Allow-Origin', '*');
   res.setHeader('Access-Control-Allow-Methods', 'POST, OPTIONS');
@@ -68,17 +70,18 @@ module.exports = async (req, res) => {
   const body = req.body && typeof req.body === 'object' ? req.body : await readBody(req);
   const { username = '', password = '' } = body;
 
-  const validUser = safeEqual(username, DEMO_USER);
-  const validPass = safeEqual(password, DEMO_PASS);
+  const isAdmin = safeEqual(username, ADMIN_USER) && safeEqual(password, ADMIN_PASS);
+  const isUser  = safeEqual(username, DEMO_USER)  && safeEqual(password, DEMO_PASS);
 
-  if (!validUser || !validPass) {
+  if (!isAdmin && !isUser) {
     attempts[ip].push(now);
     return res.status(401).json({ error: 'Invalid credentials' });
   }
 
-  const iat = Math.floor(Date.now() / 1000);
-  const exp = iat + 8 * 3600; // 8-hour session
-  const token = signJWT({ sub: 'ev_demo', client: 'ev_scooter', iat, exp }, JWT_SECRET);
+  const role = isAdmin ? 'admin' : 'user';
+  const iat  = Math.floor(Date.now() / 1000);
+  const exp  = iat + 8 * 3600; // 8-hour session
+  const token = signJWT({ sub: username, client: 'ev_scooter', role, iat, exp }, JWT_SECRET);
 
-  return res.status(200).json({ token, expiresAt: exp });
+  return res.status(200).json({ token, expiresAt: exp, role });
 };

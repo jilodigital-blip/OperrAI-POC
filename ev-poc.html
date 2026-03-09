@@ -111,6 +111,110 @@
     }
     .logout-btn:hover { color: #fff; border-color: var(--border2); }
 
+    /* ── Welcome Banner (Team Ather) ─────────────────────────── */
+    .welcome-banner {
+      background: linear-gradient(135deg, rgba(212,175,55,0.08) 0%, rgba(212,175,55,0.03) 50%, rgba(34,197,94,0.04) 100%);
+      border-bottom: 1px solid var(--gold-border);
+      padding: 0;
+      overflow: hidden;
+    }
+
+    .welcome-banner-inner {
+      max-width: 1200px;
+      margin: 0 auto;
+      padding: 1.4rem 2rem;
+      display: flex;
+      align-items: center;
+      gap: 1.5rem;
+    }
+
+    .welcome-avatar {
+      width: 52px;
+      height: 52px;
+      background: linear-gradient(135deg, var(--gold), #a07c1a);
+      border-radius: 14px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 1.5rem;
+      flex-shrink: 0;
+      box-shadow: 0 4px 20px rgba(212,175,55,0.25);
+    }
+
+    .welcome-content { flex: 1; }
+
+    .welcome-content h2 {
+      font-family: var(--font-heading);
+      font-size: 1.05rem;
+      font-weight: 700;
+      color: #fff;
+      letter-spacing: -0.01em;
+      margin-bottom: 0.25rem;
+    }
+
+    .welcome-content h2 .gold { color: var(--gold); }
+
+    .welcome-content p {
+      font-size: 0.82rem;
+      color: rgba(255,255,255,0.55);
+      line-height: 1.55;
+      max-width: 680px;
+    }
+
+    .welcome-badges {
+      display: flex;
+      gap: 0.5rem;
+      flex-wrap: wrap;
+      margin-top: 0.5rem;
+    }
+
+    .welcome-badge {
+      display: inline-flex;
+      align-items: center;
+      gap: 0.3rem;
+      font-size: 0.68rem;
+      font-weight: 600;
+      letter-spacing: 0.06em;
+      text-transform: uppercase;
+      color: var(--gold);
+      background: var(--gold-dim);
+      border: 1px solid var(--gold-border);
+      padding: 0.2rem 0.6rem;
+      border-radius: 100px;
+    }
+
+    .welcome-assurance {
+      flex-shrink: 0;
+      background: rgba(34,197,94,0.08);
+      border: 1px solid rgba(34,197,94,0.2);
+      border-radius: 10px;
+      padding: 0.75rem 1rem;
+      text-align: center;
+      min-width: 120px;
+    }
+
+    .assurance-num {
+      font-family: var(--font-heading);
+      font-size: 1.4rem;
+      font-weight: 800;
+      color: #22c55e;
+      line-height: 1;
+    }
+
+    .assurance-label {
+      font-size: 0.62rem;
+      font-weight: 600;
+      text-transform: uppercase;
+      letter-spacing: 0.07em;
+      color: rgba(34,197,94,0.7);
+      margin-top: 0.2rem;
+    }
+
+    @media (max-width: 700px) {
+      .welcome-assurance { display: none; }
+      .welcome-banner-inner { padding: 1rem 1.25rem; }
+    }
+
     /* ── Hero banner ─────────────────────────────────────────── */
     .hero-banner {
       padding: 3rem 2rem 2.5rem;
@@ -187,7 +291,7 @@
       gap: 1.5rem;
       max-width: 1200px;
       margin: 0 auto;
-      padding: 0 2rem 4rem;
+      padding: 0 2rem 1.5rem;
     }
 
     @media (max-width: 900px) {
@@ -195,7 +299,7 @@
       .topbar { padding: 1rem 1.25rem; }
       .topbar-center { display: none; }
       .hero-banner { padding: 2rem 1.25rem 1.5rem; }
-      .main-grid { padding: 0 1.25rem 3rem; }
+      .main-grid { padding: 0 1.25rem 1.5rem; }
     }
 
     /* ── Shared card ─────────────────────────────────────────── */
@@ -230,7 +334,28 @@
       flex-shrink: 0;
     }
 
-    /* ── Chat ────────────────────────────────────────────────── */
+    .card-title .channel-badge {
+      margin-left: auto;
+      font-size: 0.65rem;
+      font-weight: 600;
+      letter-spacing: 0.06em;
+      text-transform: uppercase;
+      padding: 0.2rem 0.55rem;
+      border-radius: 100px;
+      border: 1px solid;
+    }
+    .card-title .channel-badge.chat-badge {
+      color: #60a5fa;
+      border-color: rgba(96,165,250,0.25);
+      background: rgba(96,165,250,0.08);
+    }
+    .card-title .channel-badge.email-badge {
+      color: #a78bfa;
+      border-color: rgba(167,139,250,0.25);
+      background: rgba(167,139,250,0.08);
+    }
+
+    /* ── Chat / Email shared ──────────────────────────────────── */
     .chat-messages {
       height: 420px;
       overflow-y: auto;
@@ -329,6 +454,12 @@
       color: var(--text);
     }
 
+    /* Email response bubble — slightly wider, different accent */
+    .email-msg.ai .bubble {
+      border-color: rgba(167,139,250,0.2);
+      background: rgba(22, 16, 36, 0.7);
+    }
+
     .msg-meta {
       font-size: 0.7rem;
       color: var(--muted);
@@ -404,7 +535,7 @@
       30%           { transform: translateY(-5px); }
     }
 
-    /* Chat input */
+    /* Chat input area */
     .chat-input-area {
       padding: 1rem 1.25rem;
       border-top: 1px solid var(--border);
@@ -433,6 +564,7 @@
     .chat-input::placeholder { color: rgba(255,255,255,0.2); }
     .chat-input:focus { border-color: rgba(212,175,55,0.4); }
 
+    /* Chat send button (icon only) */
     .send-btn {
       width: 44px; height: 44px;
       border-radius: 10px;
@@ -448,17 +580,100 @@
     .send-btn:hover { opacity: 0.85; }
     .send-btn:active { transform: scale(0.95); }
     .send-btn:disabled { opacity: 0.35; cursor: not-allowed; }
-
     .send-btn svg { width: 18px; height: 18px; fill: var(--ink); }
 
-    /* ── Dashboard ───────────────────────────────────────────── */
-    .dashboard-body { padding: 1.25rem; }
+    /* Email send button (wider, with text) */
+    .email-send-btn {
+      height: 44px;
+      padding: 0 1.1rem;
+      border-radius: 10px;
+      border: none;
+      background: linear-gradient(135deg, #7c3aed, #6d28d9);
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 0.45rem;
+      flex-shrink: 0;
+      transition: opacity 0.2s, transform 0.1s, box-shadow 0.2s;
+      font-family: var(--font-body);
+      font-size: 0.82rem;
+      font-weight: 600;
+      color: #fff;
+      white-space: nowrap;
+      box-shadow: 0 2px 12px rgba(124,58,237,0.25);
+    }
+    .email-send-btn:hover { opacity: 0.88; box-shadow: 0 4px 18px rgba(124,58,237,0.35); }
+    .email-send-btn:active { transform: scale(0.96); }
+    .email-send-btn:disabled { opacity: 0.35; cursor: not-allowed; }
+    .email-send-btn svg { width: 16px; height: 16px; fill: #fff; }
+
+    /* Email input focus */
+    .email-input:focus { border-color: rgba(167,139,250,0.4); }
+
+    /* ── Dashboard section ───────────────────────────────────── */
+    .dashboard-section {
+      max-width: 1200px;
+      margin: 0 auto;
+      padding: 0 2rem 2rem;
+    }
+
+    @media (max-width: 900px) {
+      .dashboard-section { padding: 0 1.25rem 2rem; }
+    }
+
+    .dashboard-card {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: 16px;
+      overflow: hidden;
+    }
+
+    .dashboard-card-title {
+      display: flex;
+      align-items: center;
+      gap: 0.6rem;
+      font-family: var(--font-heading);
+      font-size: 0.95rem;
+      font-weight: 700;
+      padding: 1.1rem 1.5rem;
+      border-bottom: 1px solid var(--border);
+      background: var(--surface2);
+    }
+
+    .dashboard-card-title .icon {
+      width: 28px;
+      height: 28px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      background: var(--gold-dim);
+      border-radius: 6px;
+      font-size: 0.9rem;
+      flex-shrink: 0;
+    }
+
+    .dashboard-body-wide {
+      padding: 1.5rem;
+      display: grid;
+      grid-template-columns: 1fr 1fr 1fr;
+      gap: 1.5rem;
+    }
+
+    @media (max-width: 900px) {
+      .dashboard-body-wide { grid-template-columns: 1fr; }
+    }
+
+    @media (max-width: 1100px) and (min-width: 901px) {
+      .dashboard-body-wide { grid-template-columns: 1fr 1fr; }
+    }
+
+    .dash-col { display: flex; flex-direction: column; gap: 1rem; }
 
     .stats-grid {
       display: grid;
       grid-template-columns: 1fr 1fr;
       gap: 0.75rem;
-      margin-bottom: 1.25rem;
     }
 
     .stat-card {
@@ -502,7 +717,7 @@
       margin-bottom: 0.75rem;
     }
 
-    .acc-bars { display: flex; flex-direction: column; gap: 0.5rem; margin-bottom: 1.25rem; }
+    .acc-bars { display: flex; flex-direction: column; gap: 0.5rem; }
 
     .acc-row {
       display: flex;
@@ -685,7 +900,9 @@
     body.light-theme .logout-btn { color: #555; border-color: rgba(0,0,0,0.15); }
     body.light-theme .logout-btn:hover { background: rgba(0,0,0,0.05); color: #111; }
     body.light-theme .card { background: #FFFFFF; border-color: rgba(0,0,0,0.09); }
+    body.light-theme .dashboard-card { background: #FFFFFF; border-color: rgba(0,0,0,0.09); }
     body.light-theme .card-title { color: rgba(0,0,0,0.85); border-bottom-color: rgba(0,0,0,0.07); }
+    body.light-theme .dashboard-card-title { color: rgba(0,0,0,0.85); border-bottom-color: rgba(0,0,0,0.07); }
     body.light-theme .hero-banner { background: linear-gradient(180deg, #eee 0%, #F4F4F2 100%); }
     body.light-theme .section-badge { background: rgba(212,175,55,0.12); color: var(--gold); }
     body.light-theme h1 { color: #111; }
@@ -704,6 +921,11 @@
     body.light-theme .source-item { background: rgba(0,0,0,0.04); color: #444; }
     body.light-theme .refresh-note { color: #888; }
     body.light-theme input, body.light-theme textarea { background: #F0F0F0; color: #111; border-color: rgba(0,0,0,0.12); }
+    body.light-theme .welcome-banner {
+      background: linear-gradient(135deg, rgba(212,175,55,0.06) 0%, rgba(255,255,255,0.8) 100%);
+    }
+    body.light-theme .welcome-content h2 { color: #111; }
+    body.light-theme .welcome-content p { color: #555; }
 
     /* ── Theme toggle button ─────────────────────────────────────────────── */
     .theme-btn {
@@ -787,6 +1009,35 @@
       padding: 0.2rem 0.55rem;
       text-transform: uppercase;
     }
+
+    /* Channel divider label */
+    .channel-divider {
+      max-width: 1200px;
+      margin: 0 auto;
+      padding: 0.5rem 2rem 0.75rem;
+      display: flex;
+      align-items: center;
+      gap: 1rem;
+    }
+
+    .channel-divider-label {
+      font-size: 0.7rem;
+      font-weight: 700;
+      letter-spacing: 0.1em;
+      text-transform: uppercase;
+      color: var(--muted);
+      white-space: nowrap;
+    }
+
+    .channel-divider-line {
+      flex: 1;
+      height: 1px;
+      background: var(--border);
+    }
+
+    @media (max-width: 900px) {
+      .channel-divider { padding: 0.5rem 1.25rem 0.75rem; }
+    }
   </style>
 </head>
 <body>
@@ -805,6 +1056,31 @@
     </div>
   </header>
 
+  <!-- ── Welcome Banner — Team Ather ───────────────────────────── -->
+  <div class="welcome-banner">
+    <div class="welcome-banner-inner">
+      <div class="welcome-avatar">⚡</div>
+      <div class="welcome-content">
+        <h2>Welcome, <span class="gold">Team Ather</span> — Your AI Support Hub is Live!</h2>
+        <p>
+          Your intelligent customer support system is ready to serve. Every response is grounded in your product
+          knowledge base, quality-evaluated by Claude Opus 4.6, and designed to delight your customers
+          with speed and accuracy — across both live chat and email.
+        </p>
+        <div class="welcome-badges">
+          <span class="welcome-badge">✓ RAG-Grounded Answers</span>
+          <span class="welcome-badge">✓ AI Quality Gate</span>
+          <span class="welcome-badge">✓ Chat &amp; Email Ready</span>
+          <span class="welcome-badge">✓ Real-Time Analytics</span>
+        </div>
+      </div>
+      <div class="welcome-assurance">
+        <div class="assurance-num">99%</div>
+        <div class="assurance-label">Uptime SLA</div>
+      </div>
+    </div>
+  </div>
+
   <!-- ── POC Selector ─────────────────────────────────────────── -->
   <div class="poc-selector">
 
@@ -819,7 +1095,7 @@
 
     <!-- Box 2: Quality Assurance -->
     <div class="poc-box" id="pocQA"
-         onclick="document.getElementById('accBars').scrollIntoView({behavior:'smooth'})">
+         onclick="document.getElementById('dashSection').scrollIntoView({behavior:'smooth'})">
       <div class="poc-box-icon">✅</div>
       <div class="poc-box-title">Quality Assurance POC</div>
       <div class="poc-box-desc">AI-powered response accuracy rating and quality gate system, with real-time distribution analytics.</div>
@@ -852,29 +1128,36 @@
     </div>
   </section>
 
-  <!-- ── Main: Chat + Dashboard ────────────────────────────────── -->
+  <!-- ── Channel divider ───────────────────────────────────────── -->
+  <div class="channel-divider">
+    <span class="channel-divider-label">Live Channels</span>
+    <div class="channel-divider-line"></div>
+  </div>
+
+  <!-- ── Main: Chat + Email ─────────────────────────────────────── -->
   <div class="main-grid">
 
-    <!-- Chat -->
+    <!-- ─── Chat Box ──────────────────────────────────────────── -->
     <div class="card" id="chatCard">
       <div class="card-title">
         <div class="icon">💬</div>
         Customer Chat
+        <span class="channel-badge chat-badge">Live Chat</span>
       </div>
 
       <div class="chat-messages" id="chatMessages">
         <div class="chat-welcome" id="chatWelcome">
           <div class="welcome-icon">🛵</div>
           <h3>Ask anything about your Ather scooter</h3>
-          <p>Powered by your product knowledge base. Every answer is sourced and rated for accuracy.</p>
+          <p>Instant answers from your product knowledge base. Sourced and accuracy-rated on every reply.</p>
           <div class="suggestion-chips">
-            <span class="chip" onclick="sendChip(this)">What is the battery range?</span>
-            <span class="chip" onclick="sendChip(this)">How do I claim warranty?</span>
-            <span class="chip" onclick="sendChip(this)">Charging time at home?</span>
-            <span class="chip" onclick="sendChip(this)">Service centre locations?</span>
+            <span class="chip" onclick="sendChatChip(this)">What is the battery range?</span>
+            <span class="chip" onclick="sendChatChip(this)">How do I claim warranty?</span>
+            <span class="chip" onclick="sendChatChip(this)">Charging time at home?</span>
+            <span class="chip" onclick="sendChatChip(this)">Service centre locations?</span>
           </div>
         </div>
-        <div class="typing-indicator" id="typingIndicator">
+        <div class="typing-indicator" id="chatTypingIndicator">
           <div class="typing-bubble">
             <div class="typing-dot"></div>
             <div class="typing-dot"></div>
@@ -891,7 +1174,7 @@
           rows="1"
           maxlength="1000"
         ></textarea>
-        <button class="send-btn" id="sendBtn" aria-label="Send">
+        <button class="send-btn" id="chatSendBtn" aria-label="Send">
           <svg viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
             <path d="M2.01 21L23 12 2.01 3 2 10l15 2-15 2z"/>
           </svg>
@@ -899,70 +1182,126 @@
       </div>
     </div>
 
-    <!-- Dashboard -->
-    <div class="card">
+    <!-- ─── Email Box ─────────────────────────────────────────── -->
+    <div class="card" id="emailCard">
       <div class="card-title">
+        <div class="icon">📧</div>
+        Email Support
+        <span class="channel-badge email-badge">Email Channel</span>
+      </div>
+
+      <div class="chat-messages" id="emailMessages">
+        <div class="chat-welcome" id="emailWelcome">
+          <div class="welcome-icon">✉️</div>
+          <h3>Compose an email query</h3>
+          <p>Get a fully-formatted, professional email response drafted by AI — ready to review and send.</p>
+          <div class="suggestion-chips">
+            <span class="chip" onclick="sendEmailChip(this)">What's the warranty coverage?</span>
+            <span class="chip" onclick="sendEmailChip(this)">Request service appointment</span>
+            <span class="chip" onclick="sendEmailChip(this)">Charging station locations?</span>
+            <span class="chip" onclick="sendEmailChip(this)">Battery replacement cost?</span>
+          </div>
+        </div>
+        <div class="typing-indicator" id="emailTypingIndicator">
+          <div class="typing-bubble">
+            <div class="typing-dot"></div>
+            <div class="typing-dot"></div>
+            <div class="typing-dot"></div>
+          </div>
+        </div>
+      </div>
+
+      <div class="chat-input-area">
+        <textarea
+          id="emailInput"
+          class="chat-input email-input"
+          placeholder="Describe your query or issue…"
+          rows="1"
+          maxlength="1000"
+        ></textarea>
+        <button class="email-send-btn" id="emailSendBtn" aria-label="Send Email">
+          <svg viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+            <path d="M20 4H4c-1.1 0-2 .9-2 2v12c0 1.1.9 2 2 2h16c1.1 0 2-.9 2-2V6c0-1.1-.9-2-2-2zm0 4l-8 5-8-5V6l8 5 8-5v2z"/>
+          </svg>
+          Send Email
+        </button>
+      </div>
+    </div>
+
+  </div><!-- /main-grid -->
+
+  <!-- ── Dashboard Section (full width) ───────────────────────── -->
+  <div class="dashboard-section" id="dashSection">
+    <div class="dashboard-card">
+      <div class="dashboard-card-title">
         <div class="icon">📊</div>
         Response Analytics
         <span id="dashStatus" style="margin-left:auto;font-size:0.7rem;font-weight:400;color:var(--muted);">Loading…</span>
       </div>
-      <div class="dashboard-body">
+      <div class="dashboard-body-wide">
 
-        <!-- Stat cards -->
-        <div class="stats-grid" id="statsGrid">
-          <div class="stat-card">
-            <div class="stat-label">Total Questions</div>
-            <div class="stat-value" id="statTotal">—</div>
-          </div>
-          <div class="stat-card">
-            <div class="stat-label">Unique Questions</div>
-            <div class="stat-value" id="statUnique">—</div>
-          </div>
-          <div class="stat-card">
-            <div class="stat-label">Avg Response Time</div>
-            <div class="stat-value" id="statAvgTime">—</div>
-          </div>
-          <div class="stat-card">
-            <div class="stat-label">Avg Accuracy Score</div>
-            <div class="stat-value gold" id="statAccuracy">—</div>
+        <!-- Column 1: Stats -->
+        <div class="dash-col">
+          <div class="section-heading">Overview</div>
+          <div class="stats-grid">
+            <div class="stat-card">
+              <div class="stat-label">Total Questions</div>
+              <div class="stat-value" id="statTotal">—</div>
+            </div>
+            <div class="stat-card">
+              <div class="stat-label">Unique Questions</div>
+              <div class="stat-value" id="statUnique">—</div>
+            </div>
+            <div class="stat-card">
+              <div class="stat-label">Avg Response Time</div>
+              <div class="stat-value" id="statAvgTime">—</div>
+            </div>
+            <div class="stat-card">
+              <div class="stat-label">Avg Accuracy Score</div>
+              <div class="stat-value gold" id="statAccuracy">—</div>
+            </div>
           </div>
         </div>
 
-        <!-- Accuracy distribution -->
-        <div class="section-heading">Accuracy Distribution (rated by AI)</div>
-        <div class="acc-bars" id="accBars">
-          <div class="acc-row">
-            <span class="acc-label">Excellent</span>
-            <div class="acc-bar-wrap"><div class="acc-bar-fill fill-excellent" id="barExcellent" style="width:0%"></div></div>
-            <span class="acc-count" id="cntExcellent">0</span>
+        <!-- Column 2: Accuracy distribution -->
+        <div class="dash-col">
+          <div class="section-heading" id="accBars">Accuracy Distribution (rated by AI)</div>
+          <div class="acc-bars">
+            <div class="acc-row">
+              <span class="acc-label">Excellent</span>
+              <div class="acc-bar-wrap"><div class="acc-bar-fill fill-excellent" id="barExcellent" style="width:0%"></div></div>
+              <span class="acc-count" id="cntExcellent">0</span>
+            </div>
+            <div class="acc-row">
+              <span class="acc-label">Good</span>
+              <div class="acc-bar-wrap"><div class="acc-bar-fill fill-good" id="barGood" style="width:0%"></div></div>
+              <span class="acc-count" id="cntGood">0</span>
+            </div>
+            <div class="acc-row">
+              <span class="acc-label">Acceptable</span>
+              <div class="acc-bar-wrap"><div class="acc-bar-fill fill-acceptable" id="barAcceptable" style="width:0%"></div></div>
+              <span class="acc-count" id="cntAcceptable">0</span>
+            </div>
+            <div class="acc-row">
+              <span class="acc-label">Poor</span>
+              <div class="acc-bar-wrap"><div class="acc-bar-fill fill-poor" id="barPoor" style="width:0%"></div></div>
+              <span class="acc-count" id="cntPoor">0</span>
+            </div>
           </div>
-          <div class="acc-row">
-            <span class="acc-label">Good</span>
-            <div class="acc-bar-wrap"><div class="acc-bar-fill fill-good" id="barGood" style="width:0%"></div></div>
-            <span class="acc-count" id="cntGood">0</span>
-          </div>
-          <div class="acc-row">
-            <span class="acc-label">Acceptable</span>
-            <div class="acc-bar-wrap"><div class="acc-bar-fill fill-acceptable" id="barAcceptable" style="width:0%"></div></div>
-            <span class="acc-count" id="cntAcceptable">0</span>
-          </div>
-          <div class="acc-row">
-            <span class="acc-label">Poor</span>
-            <div class="acc-bar-wrap"><div class="acc-bar-fill fill-poor" id="barPoor" style="width:0%"></div></div>
-            <span class="acc-count" id="cntPoor">0</span>
+          <div class="refresh-note" id="refreshNote">Auto-refreshes every 30 s</div>
+        </div>
+
+        <!-- Column 3: Source docs -->
+        <div class="dash-col">
+          <div class="section-heading">Knowledge Sources Used</div>
+          <div class="source-docs-list" id="sourceDocs">
+            <div class="doc-empty">No documents queried yet.</div>
           </div>
         </div>
 
-        <!-- Source docs -->
-        <div class="section-heading">Knowledge Sources Used</div>
-        <div class="source-docs-list" id="sourceDocs">
-          <div class="doc-empty">No documents queried yet.</div>
-        </div>
-
-        <div class="refresh-note" id="refreshNote">Auto-refreshes every 30 s</div>
       </div>
     </div>
-  </div><!-- /main-grid -->
+  </div>
 
   <!-- ── How it works panel ─────────────────────────────────────── -->
   <div class="info-panel">
@@ -973,16 +1312,16 @@
         <ul>
           <li>Customer submits a question through this live chat interface</li>
           <li>The agentic system retrieves relevant chunks from the product knowledge base using semantic search</li>
-          <li>A response is generated grounded strictly in your documentation</li>
+          <li>A concise, direct response (under 150 words) is generated, grounded in your documentation</li>
           <li>Cited sources are shown with every answer for full transparency</li>
         </ul>
       </div>
       <div class="info-card">
         <h3>📧 Email Channel</h3>
         <ul>
-          <li>Incoming customer emails are processed by the same agentic pipeline</li>
-          <li>Responses are auto-drafted and queued for human review before sending</li>
-          <li>Tone and format are adjusted automatically for email communication</li>
+          <li>Customer email queries are processed by the same agentic pipeline</li>
+          <li>Responses are formatted as proper emails — with greeting, body, and professional sign-off</li>
+          <li>Tone and format are automatically adjusted for formal email communication</li>
           <li>Average email draft time is under 10 seconds, reducing agent workload by 70%+</li>
         </ul>
       </div>
@@ -1065,56 +1404,23 @@
     applyTheme(next);
   });
 
-  // ── Chat ──────────────────────────────────────────────────────────────────
-  const chatMessages = document.getElementById('chatMessages');
-  const chatWelcome  = document.getElementById('chatWelcome');
-  const typingEl     = document.getElementById('typingIndicator');
-  const chatInput    = document.getElementById('chatInput');
-  const sendBtn      = document.getElementById('sendBtn');
-
-  let isSending = false;
-
-  // Auto-resize textarea
-  chatInput.addEventListener('input', () => {
-    chatInput.style.height = 'auto';
-    chatInput.style.height = Math.min(chatInput.scrollHeight, 140) + 'px';
-  });
-
-  // Send on Enter (Shift+Enter = newline)
-  chatInput.addEventListener('keydown', (e) => {
-    if (e.key === 'Enter' && !e.shiftKey) {
-      e.preventDefault();
-      handleSend();
-    }
-  });
-
-  sendBtn.addEventListener('click', handleSend);
-
-  function sendChip(el) {
-    chatInput.value = el.textContent;
-    handleSend();
+  // ── Utilities ─────────────────────────────────────────────────────────────
+  function escapeHtml(str) {
+    return String(str)
+      .replace(/&/g, '&amp;')
+      .replace(/</g, '&lt;')
+      .replace(/>/g, '&gt;')
+      .replace(/"/g, '&quot;');
   }
 
-  function scrollToBottom() {
-    chatMessages.scrollTop = chatMessages.scrollHeight;
+  function formatTime(date) {
+    return date.toLocaleTimeString('en-IN', { hour: '2-digit', minute: '2-digit', hour12: true });
   }
 
-  function addUserMessage(text) {
-    if (chatWelcome) chatWelcome.style.display = 'none';
-
+  // ── Shared message renderers ───────────────────────────────────────────────
+  function buildAIMessage(text, sources, responseTimeMs, accuracyScore, accuracyLabel, extraClass) {
     const msg = document.createElement('div');
-    msg.className = 'msg user';
-    msg.innerHTML = `
-      <div class="bubble">${escapeHtml(text)}</div>
-      <div class="msg-meta">${formatTime(new Date())}</div>
-    `;
-    chatMessages.insertBefore(msg, typingEl);
-    scrollToBottom();
-  }
-
-  function addAIMessage(text, sources, responseTimeMs, accuracyScore, accuracyLabel) {
-    const msg = document.createElement('div');
-    msg.className = 'msg ai';
+    msg.className = 'msg ai' + (extraClass ? ' ' + extraClass : '');
 
     const validSources = (sources || []).filter(s => s.doc_name && !s.doc_name.includes('not yet connected'));
     const sourcesHtml = validSources.length > 0
@@ -1127,7 +1433,6 @@
       : '';
 
     const timeStr = responseTimeMs ? `${(responseTimeMs / 1000).toFixed(1)}s` : '';
-
     const accuracyColors = { Excellent: '#22c55e', Good: '#D4AF37', Acceptable: '#f97316', Poor: '#ef4444' };
     const accuracyHtml = accuracyLabel
       ? ` &bull; <span style="color:${accuracyColors[accuracyLabel] || 'var(--muted)'};">&#9679; ${escapeHtml(accuracyLabel)}${accuracyScore != null ? ` (${accuracyScore}/10)` : ''}</span>`
@@ -1140,24 +1445,44 @@
         ${formatTime(new Date())}${timeStr ? ` &bull; ${timeStr}` : ''}${accuracyHtml}
       </div>
     `;
-    chatMessages.insertBefore(msg, typingEl);
-    scrollToBottom();
+    return msg;
   }
 
-  async function handleSend() {
-    const question = chatInput.value.trim();
-    if (!question || isSending) return;
+  function buildUserMessage(text) {
+    const msg = document.createElement('div');
+    msg.className = 'msg user';
+    msg.innerHTML = `
+      <div class="bubble">${escapeHtml(text)}</div>
+      <div class="msg-meta">${formatTime(new Date())}</div>
+    `;
+    return msg;
+  }
 
-    isSending = true;
-    sendBtn.disabled = true;
-    chatInput.value = '';
-    chatInput.style.height = 'auto';
+  function buildBlockedMessage(ticketNote) {
+    const msg = document.createElement('div');
+    msg.className = 'msg ai';
+    msg.innerHTML = `
+      <div class="bubble" style="border-color:rgba(239,68,68,0.3);color:rgba(255,255,255,0.7);">
+        🎫 Your question requires specialist attention and has been escalated to our support team.${ticketNote} We'll be in touch shortly.
+      </div>
+      <div class="msg-meta">${formatTime(new Date())}</div>`;
+    return msg;
+  }
 
-    addUserMessage(question);
+  function buildErrorMessage(text) {
+    const msg = document.createElement('div');
+    msg.className = 'msg ai';
+    msg.innerHTML = `
+      <div class="bubble" style="border-color:rgba(239,68,68,0.3);color:rgba(255,255,255,0.6);">
+        ⚠ ${escapeHtml(text)}
+      </div>`;
+    return msg;
+  }
 
-    // Show typing
+  // ── Generic send function ──────────────────────────────────────────────────
+  async function sendMessage({ question, channel, messagesEl, welcomeEl, typingEl, appendMsg }) {
     typingEl.classList.add('visible');
-    scrollToBottom();
+    messagesEl.scrollTop = messagesEl.scrollHeight;
 
     try {
       const resp = await fetch('/api/chat', {
@@ -1166,7 +1491,7 @@
           'Content-Type': 'application/json',
           'Authorization': `Bearer ${authToken}`,
         },
-        body: JSON.stringify({ question, sessionId }),
+        body: JSON.stringify({ question, sessionId, channel }),
       });
 
       typingEl.classList.remove('visible');
@@ -1180,48 +1505,141 @@
       const data = await resp.json();
 
       if (resp.ok) {
+        let msg;
         if (data.blocked) {
           const ticketNote = data.ticketId ? ` Your reference number is <strong>${escapeHtml(data.ticketId)}</strong>.` : '';
-          addBlockedMessage(ticketNote);
+          msg = buildBlockedMessage(ticketNote);
         } else {
-          addAIMessage(data.answer, data.sources, data.responseTimeMs, data.accuracyScore, data.accuracyLabel);
+          const extraClass = channel === 'email' ? 'email-msg' : '';
+          msg = buildAIMessage(data.answer, data.sources, data.responseTimeMs, data.accuracyScore, data.accuracyLabel, extraClass);
         }
-        // Refresh dashboard after each answer
+        appendMsg(msg);
         setTimeout(loadDashboard, 3000);
       } else {
-        addErrorMessage(data.error || 'Something went wrong. Please try again.');
+        appendMsg(buildErrorMessage(data.error || 'Something went wrong. Please try again.'));
       }
     } catch {
       typingEl.classList.remove('visible');
-      addErrorMessage('Connection error. Please check your internet and try again.');
-    } finally {
-      isSending = false;
-      sendBtn.disabled = false;
-      chatInput.focus();
+      appendMsg(buildErrorMessage('Connection error. Please check your internet and try again.'));
     }
   }
 
-  function addErrorMessage(text) {
-    const msg = document.createElement('div');
-    msg.className = 'msg ai';
-    msg.innerHTML = `
-      <div class="bubble" style="border-color:rgba(239,68,68,0.3);color:rgba(255,255,255,0.6);">
-        ⚠ ${escapeHtml(text)}
-      </div>`;
-    chatMessages.insertBefore(msg, typingEl);
-    scrollToBottom();
+  // ══════════════════════════════════════════════════════════════════════════
+  // ── Chat Box ──────────────────────────────────────────────────────────────
+  // ══════════════════════════════════════════════════════════════════════════
+  const chatMessagesEl = document.getElementById('chatMessages');
+  const chatWelcomeEl  = document.getElementById('chatWelcome');
+  const chatTypingEl   = document.getElementById('chatTypingIndicator');
+  const chatInputEl    = document.getElementById('chatInput');
+  const chatSendBtn    = document.getElementById('chatSendBtn');
+  let isChatSending    = false;
+
+  // Auto-resize
+  chatInputEl.addEventListener('input', () => {
+    chatInputEl.style.height = 'auto';
+    chatInputEl.style.height = Math.min(chatInputEl.scrollHeight, 140) + 'px';
+  });
+
+  // Enter to send
+  chatInputEl.addEventListener('keydown', (e) => {
+    if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); handleChatSend(); }
+  });
+
+  chatSendBtn.addEventListener('click', handleChatSend);
+
+  function sendChatChip(el) {
+    chatInputEl.value = el.textContent;
+    handleChatSend();
   }
 
-  function addBlockedMessage(ticketNote) {
-    const msg = document.createElement('div');
-    msg.className = 'msg ai';
-    msg.innerHTML = `
-      <div class="bubble" style="border-color:rgba(239,68,68,0.3);color:rgba(255,255,255,0.7);">
-        🎫 Your question requires specialist attention and has been escalated to our support team.${ticketNote} We'll be in touch shortly.
-      </div>
-      <div class="msg-meta">${formatTime(new Date())}</div>`;
-    chatMessages.insertBefore(msg, typingEl);
-    scrollToBottom();
+  function chatAppendMsg(msg) {
+    chatMessagesEl.insertBefore(msg, chatTypingEl);
+    chatMessagesEl.scrollTop = chatMessagesEl.scrollHeight;
+  }
+
+  async function handleChatSend() {
+    const question = chatInputEl.value.trim();
+    if (!question || isChatSending) return;
+
+    isChatSending = true;
+    chatSendBtn.disabled = true;
+    chatInputEl.value = '';
+    chatInputEl.style.height = 'auto';
+
+    if (chatWelcomeEl) chatWelcomeEl.style.display = 'none';
+    chatAppendMsg(buildUserMessage(question));
+
+    await sendMessage({
+      question,
+      channel: 'chat',
+      messagesEl: chatMessagesEl,
+      welcomeEl: chatWelcomeEl,
+      typingEl: chatTypingEl,
+      appendMsg: chatAppendMsg,
+    });
+
+    isChatSending = false;
+    chatSendBtn.disabled = false;
+    chatInputEl.focus();
+  }
+
+  // ══════════════════════════════════════════════════════════════════════════
+  // ── Email Box ─────────────────────────────────────────────────────────────
+  // ══════════════════════════════════════════════════════════════════════════
+  const emailMessagesEl = document.getElementById('emailMessages');
+  const emailWelcomeEl  = document.getElementById('emailWelcome');
+  const emailTypingEl   = document.getElementById('emailTypingIndicator');
+  const emailInputEl    = document.getElementById('emailInput');
+  const emailSendBtn    = document.getElementById('emailSendBtn');
+  let isEmailSending    = false;
+
+  // Auto-resize
+  emailInputEl.addEventListener('input', () => {
+    emailInputEl.style.height = 'auto';
+    emailInputEl.style.height = Math.min(emailInputEl.scrollHeight, 140) + 'px';
+  });
+
+  // Shift+Enter = newline; Enter alone = send
+  emailInputEl.addEventListener('keydown', (e) => {
+    if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); handleEmailSend(); }
+  });
+
+  emailSendBtn.addEventListener('click', handleEmailSend);
+
+  function sendEmailChip(el) {
+    emailInputEl.value = el.textContent;
+    handleEmailSend();
+  }
+
+  function emailAppendMsg(msg) {
+    emailMessagesEl.insertBefore(msg, emailTypingEl);
+    emailMessagesEl.scrollTop = emailMessagesEl.scrollHeight;
+  }
+
+  async function handleEmailSend() {
+    const question = emailInputEl.value.trim();
+    if (!question || isEmailSending) return;
+
+    isEmailSending = true;
+    emailSendBtn.disabled = true;
+    emailInputEl.value = '';
+    emailInputEl.style.height = 'auto';
+
+    if (emailWelcomeEl) emailWelcomeEl.style.display = 'none';
+    emailAppendMsg(buildUserMessage(question));
+
+    await sendMessage({
+      question,
+      channel: 'email',
+      messagesEl: emailMessagesEl,
+      welcomeEl: emailWelcomeEl,
+      typingEl: emailTypingEl,
+      appendMsg: emailAppendMsg,
+    });
+
+    isEmailSending = false;
+    emailSendBtn.disabled = false;
+    emailInputEl.focus();
   }
 
   // ── Dashboard ─────────────────────────────────────────────────────────────
@@ -1295,23 +1713,10 @@
     }
   }
 
-  // ── Utilities ─────────────────────────────────────────────────────────────
-  function escapeHtml(str) {
-    return String(str)
-      .replace(/&/g, '&amp;')
-      .replace(/</g, '&lt;')
-      .replace(/>/g, '&gt;')
-      .replace(/"/g, '&quot;');
-  }
-
-  function formatTime(date) {
-    return date.toLocaleTimeString('en-IN', { hour: '2-digit', minute: '2-digit', hour12: true });
-  }
-
   // ── Init ──────────────────────────────────────────────────────────────────
   loadDashboard();
   setInterval(loadDashboard, 30000);
-  chatInput.focus();
+  chatInputEl.focus();
 </script>
 </body>
 </html>
