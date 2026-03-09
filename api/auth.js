@@ -1,9 +1,5 @@
 const crypto = require('crypto');
 
-const DEMO_USER = process.env.DEMO_USER || 'ev_demo';
-const DEMO_PASS = process.env.DEMO_PASS || 'EV@OperrAI2024';
-const JWT_SECRET = process.env.JWT_SECRET || 'operrai-poc-secret-change-in-prod';
-
 // Simple in-memory rate limiter (resets on cold start — fine for a POC)
 const attempts = {};
 
@@ -12,11 +8,11 @@ function b64url(str) {
     .replace(/=/g, '').replace(/\+/g, '-').replace(/\//g, '_');
 }
 
-function signJWT(payload) {
+function signJWT(payload, secret) {
   const header = b64url(JSON.stringify({ alg: 'HS256', typ: 'JWT' }));
   const body = b64url(JSON.stringify(payload));
   const sig = crypto
-    .createHmac('sha256', JWT_SECRET)
+    .createHmac('sha256', secret)
     .update(`${header}.${body}`)
     .digest('base64')
     .replace(/=/g, '').replace(/\+/g, '-').replace(/\//g, '_');
@@ -46,6 +42,11 @@ async function readBody(req) {
 }
 
 module.exports = async (req, res) => {
+  // Read env vars inside handler to avoid stale module-scope cache on Vercel
+  const DEMO_USER  = process.env.DEMO_USER  || 'ev_demo';
+  const DEMO_PASS  = process.env.DEMO_PASS  || 'EV@OperrAI2024';
+  const JWT_SECRET = process.env.JWT_SECRET || 'operrai-poc-secret-change-in-prod';
+
   res.setHeader('Access-Control-Allow-Origin', '*');
   res.setHeader('Access-Control-Allow-Methods', 'POST, OPTIONS');
   res.setHeader('Access-Control-Allow-Headers', 'Content-Type');
@@ -63,7 +64,8 @@ module.exports = async (req, res) => {
     return res.status(429).json({ error: 'Too many attempts. Try again in 15 minutes.' });
   }
 
-  const body = await readBody(req);
+  // Vercel pre-parses JSON bodies onto req.body; fall back to manual stream read
+  const body = req.body && typeof req.body === 'object' ? req.body : await readBody(req);
   const { username = '', password = '' } = body;
 
   const validUser = safeEqual(username, DEMO_USER);
@@ -76,7 +78,7 @@ module.exports = async (req, res) => {
 
   const iat = Math.floor(Date.now() / 1000);
   const exp = iat + 8 * 3600; // 8-hour session
-  const token = signJWT({ sub: 'ev_demo', client: 'ev_scooter', iat, exp });
+  const token = signJWT({ sub: 'ev_demo', client: 'ev_scooter', iat, exp }, JWT_SECRET);
 
   return res.status(200).json({ token, expiresAt: exp });
 };
