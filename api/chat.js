@@ -1,9 +1,9 @@
 const crypto = require('crypto');
 
-const JWT_SECRET = process.env.JWT_SECRET || 'operrai-poc-secret-change-in-prod';
-const N8N_WEBHOOK_URL = process.env.N8N_WEBHOOK_URL || '';
-const ANTHROPIC_API_KEY = process.env.ANTHROPIC_API_KEY || '';
-const SUPABASE_URL = process.env.SUPABASE_URL || 'https://qjajoayybuvxvpgysoih.supabase.co';
+const JWT_SECRET      = process.env.JWT_SECRET      || 'operrai-poc-secret-change-in-prod';
+const OPENAI_API_KEY  = process.env.OPENAI_API_KEY  || '';
+const GEMINI_API_KEY  = process.env.GEMINI_API_KEY  || '';
+const SUPABASE_URL    = process.env.SUPABASE_URL    || 'https://qjajoayybuvxvpgysoih.supabase.co';
 const SUPABASE_ANON_KEY = process.env.SUPABASE_ANON_KEY || '';
 
 // ── JWT helpers ────────────────────────────────────────────────────────────────
@@ -39,7 +39,7 @@ async function readBody(req) {
   });
 }
 
-// ── Supabase REST helper ───────────────────────────────────────────────────────
+// ── Supabase REST helpers ──────────────────────────────────────────────────────
 
 async function supabaseInsert(table, row) {
   if (!SUPABASE_ANON_KEY) return null;
@@ -58,107 +58,159 @@ async function supabaseInsert(table, row) {
   return Array.isArray(data) ? data[0] : data;
 }
 
-async function supabasePatch(table, id, row) {
-  if (!SUPABASE_ANON_KEY) return;
-  await fetch(`${SUPABASE_URL}/rest/v1/${table}?id=eq.${id}`, {
-    method: 'PATCH',
+async function supabaseRPC(fn, params) {
+  const resp = await fetch(`${SUPABASE_URL}/rest/v1/rpc/${fn}`, {
+    method: 'POST',
     headers: {
       'apikey': SUPABASE_ANON_KEY,
       'Authorization': `Bearer ${SUPABASE_ANON_KEY}`,
       'Content-Type': 'application/json',
     },
-    body: JSON.stringify(row),
+    body: JSON.stringify(params),
   });
-}
-
-// ── n8n call ───────────────────────────────────────────────────────────────────
-
-async function callN8N(question, sessionId) {
-  const resp = await fetch(N8N_WEBHOOK_URL, {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({ question, sessionId }),
-    signal: AbortSignal.timeout(30000),
-  });
-  if (!resp.ok) throw new Error(`n8n returned ${resp.status}`);
+  if (!resp.ok) throw new Error(`Supabase RPC ${fn} returned ${resp.status}`);
   return await resp.json();
-  // Expected: { answer: string, sources: [{doc_name, relevance_score}] }
 }
 
-// ── Claude direct fallback (when n8n not configured) ──────────────────────────
+// ── Agentic pipeline: Embed → RAG → GPT-4o L1 → Gemini L2 → Quality Gate ─────
 
-async function callClaudeDirect(question) {
-  if (!ANTHROPIC_API_KEY) {
-    return {
-      answer: "The AI service is not yet configured. Please set up n8n or provide an Anthropic API key.",
-      sources: [],
-    };
-  }
-  const resp = await fetch('https://api.anthropic.com/v1/messages', {
+async function callAgenticPipeline(question, channel) {
+  // ── L0: Embed ──────────────────────────────────────────────────────────────
+  if (!OPENAI_API_KEY) throw new Error('OPENAI_API_KEY is not configured');
+  const embedResp = await fetch('https://api.openai.com/v1/embeddings', {
     method: 'POST',
     headers: {
+      'Authorization': `Bearer ${OPENAI_API_KEY}`,
       'Content-Type': 'application/json',
-      'x-api-key': ANTHROPIC_API_KEY,
-      'anthropic-version': '2023-06-01',
+    },
+    body: JSON.stringify({ model: 'text-embedding-3-small', input: question }),
+    signal: AbortSignal.timeout(15000),
+  });
+  if (!embedResp.ok) throw new Error(`OpenAI embed returned ${embedResp.status}`);
+  const embedData = await embedResp.json();
+  const embedding = embedData.data[0].embedding;
+
+  // ── RAG: Vector search ─────────────────────────────────────────────────────
+  let chunks = [];
+  try {
+    chunks = await supabaseRPC('match_documents', {
+      query_embedding: embedding,
+      match_count: 5,
+    });
+  } catch {
+    chunks = [];
+  }
+  const context = chunks.length > 0
+    ? chunks.map((c, i) => `[Source ${i + 1}: ${c.doc_name}]\n${c.content}`).join('\n\n---\n\n')
+    : 'No relevant documents found in the knowledge base.';
+  const sources = chunks.map(c => ({
+    doc_name: c.doc_name,
+    relevance_score: Math.round((c.similarity || 0) * 100) / 100,
+  }));
+
+  // ── L1: GPT-4o Worker ──────────────────────────────────────────────────────
+  const formatInstruction = channel === 'email'
+    ? 'FORMAT: Write a formal professional email response with greeting and sign-off. Be thorough and warm.'
+    : 'FORMAT: Be concise and direct. Under 150 words. No greeting needed.';
+  const systemPrompt = `You are an expert customer support agent for Ather Energy EV scooters.
+Answer ONLY using the provided knowledge base context. Do not hallucinate.
+If the context lacks the answer, say: "I don't have enough information on this topic. Please contact our support team."
+
+${formatInstruction}
+
+Knowledge Base Context:
+${context}`;
+
+  const l1Resp = await fetch('https://api.openai.com/v1/chat/completions', {
+    method: 'POST',
+    headers: {
+      'Authorization': `Bearer ${OPENAI_API_KEY}`,
+      'Content-Type': 'application/json',
     },
     body: JSON.stringify({
-      model: 'claude-sonnet-4-6',
-      max_tokens: 1024,
-      system: `You are a helpful customer support agent for an EV scooter manufacturer in India.
-Answer questions about EV scooters, charging, maintenance, warranties, and general usage.
-Be concise, friendly, and accurate. If you are unsure, say so honestly.
-Note: This is a POC demo. Full RAG integration with product-specific documents will be enabled via n8n.`,
-      messages: [{ role: 'user', content: question }],
+      model: 'gpt-4o',
+      max_tokens: channel === 'email' ? 1024 : 512,
+      temperature: 0.3,
+      messages: [
+        { role: 'system', content: systemPrompt },
+        { role: 'user',   content: question },
+      ],
     }),
     signal: AbortSignal.timeout(30000),
   });
-  if (!resp.ok) throw new Error(`Claude API returned ${resp.status}`);
-  const data = await resp.json();
-  return {
-    answer: data.content?.[0]?.text || 'No response received.',
-    sources: [{ doc_name: 'General EV Knowledge (RAG not yet connected)', relevance_score: null }],
-  };
-}
+  if (!l1Resp.ok) throw new Error(`GPT-4o returned ${l1Resp.status}`);
+  const l1Data = await l1Resp.json();
+  const l1Answer = l1Data.choices?.[0]?.message?.content?.trim() || 'No response generated.';
 
-// ── Async accuracy rating via Claude Opus (fire-and-forget) ───────────────────
+  // ── L2: Gemini Supervisor ──────────────────────────────────────────────────
+  let rating = { score: 7, label: 'Good', rationale: 'Gemini not configured — defaulting to Good.' };
+  if (GEMINI_API_KEY) {
+    const geminiPrompt = `You are a strict QA evaluator for an AI customer support system.
+Evaluate whether the AI answer correctly addresses the customer question.
+Check for: hallucinations, incorrect facts, missing critical info, or off-topic responses.
 
-async function rateAccuracy(messageId, question, answer, context) {
-  if (!ANTHROPIC_API_KEY || !messageId) return;
-  try {
-    const resp = await fetch('https://api.anthropic.com/v1/messages', {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-        'x-api-key': ANTHROPIC_API_KEY,
-        'anthropic-version': '2023-06-01',
-      },
-      body: JSON.stringify({
-        model: 'claude-opus-4-6',
-        max_tokens: 256,
-        system: `You are an expert QA evaluator for an AI customer support system.
-Rate the accuracy and helpfulness of AI responses on a scale of 0–10.
-Respond ONLY with valid JSON: {"score": <number 0-10>, "label": "<Excellent|Good|Acceptable|Poor>", "rationale": "<one sentence>"}`,
-        messages: [{
-          role: 'user',
-          content: `Question: ${question}\n\nAI Answer: ${answer}\n\nContext available: ${context || 'General knowledge only (no RAG documents)'}`,
-        }],
-      }),
-      signal: AbortSignal.timeout(30000),
-    });
-    if (!resp.ok) return;
-    const data = await resp.json();
-    const text = data.content?.[0]?.text || '';
-    const rating = JSON.parse(text);
-    await supabaseInsert('ratings', {
-      message_id: messageId,
-      accuracy_score: rating.score,
-      accuracy_label: rating.label,
-      rating_rationale: rating.rationale,
-      rated_by_model: 'claude-opus-4-6',
-    });
-  } catch {
-    // Silently fail — rating is non-critical
+Customer Question:
+${question}
+
+AI Answer:
+${l1Answer}
+
+Knowledge Base Context Used:
+${context}
+
+Respond ONLY with valid JSON (no markdown):
+{"score": <integer 0-10>, "label": "<Excellent|Good|Acceptable|Poor>", "rationale": "<one concise sentence>"}
+
+Scoring: 9-10=Excellent, 7-8=Good, 5-6=Acceptable, 0-4=Poor`;
+
+    try {
+      const gemResp = await fetch(
+        `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-pro:generateContent?key=${GEMINI_API_KEY}`,
+        {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            contents: [{ parts: [{ text: geminiPrompt }] }],
+            generationConfig: { temperature: 0.1, maxOutputTokens: 256 },
+          }),
+          signal: AbortSignal.timeout(20000),
+        }
+      );
+      if (gemResp.ok) {
+        const gemData = await gemResp.json();
+        const raw = gemData?.candidates?.[0]?.content?.parts?.[0]?.text?.trim() || '';
+        const cleaned = raw.replace(/^```json\s*/i, '').replace(/```\s*$/, '').trim();
+        const parsed = JSON.parse(cleaned);
+        rating = {
+          score: Math.max(0, Math.min(10, Number(parsed.score) || 5)),
+          label: ['Excellent', 'Good', 'Acceptable', 'Poor'].includes(parsed.label)
+            ? parsed.label : 'Acceptable',
+          rationale: parsed.rationale || '',
+        };
+      }
+    } catch {
+      // Keep default rating on Gemini failure — do not block the response
+    }
   }
+
+  // ── Quality Gate ───────────────────────────────────────────────────────────
+  const blocked = rating.label === 'Poor';
+  let ticket_id = null;
+  if (blocked) {
+    const dateStr = new Date().toISOString().slice(0, 10).replace(/-/g, '');
+    const rand    = String(Math.floor(Math.random() * 90000) + 10000);
+    ticket_id = `SR-${dateStr}-${rand}`;
+  }
+
+  return {
+    answer:             blocked ? null : l1Answer,
+    sources,
+    accuracy_score:     rating.score,
+    accuracy_label:     rating.label,
+    accuracy_rationale: rating.rationale,
+    blocked,
+    ticket_id,
+  };
 }
 
 // ── Main handler ───────────────────────────────────────────────────────────────
@@ -178,60 +230,77 @@ module.exports = async (req, res) => {
   if (!claims) return res.status(401).json({ error: 'Unauthorized' });
 
   const body = await readBody(req);
-  const { question, sessionId } = body;
+  const { question, sessionId, channel: rawChannel } = body;
+  const channel = rawChannel === 'email' ? 'email' : 'chat';
   if (!question?.trim()) return res.status(400).json({ error: 'Question is required' });
 
   const startTime = Date.now();
 
-  let answer, sources;
+  let result;
   try {
-    if (N8N_WEBHOOK_URL) {
-      const result = await callN8N(question.trim(), sessionId);
-      answer = result.answer;
-      sources = result.sources || [];
-    } else {
-      const result = await callClaudeDirect(question.trim());
-      answer = result.answer;
-      sources = result.sources || [];
-    }
+    result = await callAgenticPipeline(question.trim(), channel);
   } catch (err) {
-    console.error('AI call failed:', err.message);
+    console.error('Pipeline failed:', err.message);
     return res.status(502).json({ error: 'AI service temporarily unavailable. Please try again.' });
   }
 
+  const { answer, sources, blocked, ticket_id,
+          accuracy_score, accuracy_label, accuracy_rationale } = result;
   const responseTimeMs = Date.now() - startTime;
 
-  // Deduplicate question by hash
   const questionHash = crypto
     .createHash('sha256')
     .update(question.trim().toLowerCase())
     .digest('hex');
 
-  // Persist to Supabase (non-blocking for response time)
   const messageRow = {
-    session_id: sessionId || null,
-    question: question.trim(),
-    question_hash: questionHash,
-    response: answer,
+    session_id:       sessionId || null,
+    question:         question.trim(),
+    question_hash:    questionHash,
+    response:         blocked ? '[BLOCKED]' : answer,
     response_time_ms: responseTimeMs,
-    sources: JSON.stringify(sources),
+    sources:          JSON.stringify(sources),
+    channel,
   };
 
   let savedMessage = null;
   try {
     savedMessage = await supabaseInsert('messages', messageRow);
   } catch {
-    // DB logging failure should not block the response
+    // DB logging failure does not block the response
   }
 
-  // Fire-and-forget accuracy rating
-  const contextStr = sources.map(s => s.doc_name).join(', ');
-  rateAccuracy(savedMessage?.id, question.trim(), answer, contextStr).catch(() => {});
+  // Persist accuracy rating (already computed — no extra API call)
+  if (savedMessage?.id) {
+    supabaseInsert('ratings', {
+      message_id:       savedMessage.id,
+      accuracy_score,
+      accuracy_label,
+      rating_rationale: accuracy_rationale,
+      rated_by_model:   GEMINI_API_KEY ? 'gemini-2.5-pro' : 'default',
+    }).catch(() => {});
+  }
+
+  // Persist service request for blocked responses
+  if (blocked && ticket_id) {
+    supabaseInsert('service_requests', {
+      message_id: savedMessage?.id || null,
+      ticket_id,
+      question:   question.trim(),
+      channel,
+      status:     'open',
+    }).catch(() => {});
+  }
 
   return res.status(200).json({
-    answer,
+    answer:        blocked ? null : answer,
     sources,
     responseTimeMs,
-    messageId: savedMessage?.id || null,
+    messageId:     savedMessage?.id || null,
+    blocked,
+    ticketId:      blocked ? ticket_id : null,
+    channel,
+    accuracyScore: accuracy_score,
+    accuracyLabel: accuracy_label,
   });
 };

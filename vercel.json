@@ -1,6 +1,15 @@
 {
-  "rewrites": [
-    { "source": "/ev-poc", "destination": "/ev-poc.html" },
-    { "source": "/login", "destination": "/login.html" }
+  "version": 2,
+  "functions": {
+    "api/*.js": {
+      "maxDuration": 30
+    }
+  },
+  "routes": [
+    { "src": "/api/(.*)", "dest": "/api/$1" },
+    { "src": "/ev-poc",   "dest": "/ev-poc.html" },
+    { "src": "/ingest",   "dest": "/ingest.html" },
+    { "src": "/login",    "dest": "/login.html" },
+    { "src": "/(.*)",     "dest": "/index.html" }
   ]
 }
