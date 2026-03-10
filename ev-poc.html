@@ -947,7 +947,40 @@
       width: 70px;
       color: rgba(255,255,255,0.6);
       flex-shrink: 0;
+      position: relative;
+      cursor: help;
     }
+    .acc-label .acc-tooltip {
+      visibility: hidden;
+      opacity: 0;
+      position: absolute;
+      bottom: 130%;
+      left: 0;
+      min-width: 220px;
+      background: #1a1a1a;
+      color: rgba(255,255,255,0.9);
+      font-size: 0.68rem;
+      line-height: 1.4;
+      padding: 0.5rem 0.65rem;
+      border-radius: 6px;
+      box-shadow: 0 4px 12px rgba(0,0,0,0.4);
+      z-index: 100;
+      pointer-events: none;
+      transition: opacity 0.2s, visibility 0.2s;
+      white-space: normal;
+    }
+    body.light-theme .acc-label .acc-tooltip { background: #333; }
+    .acc-label .acc-tooltip::after {
+      content: '';
+      position: absolute;
+      top: 100%;
+      left: 16px;
+      border-width: 5px;
+      border-style: solid;
+      border-color: #1a1a1a transparent transparent transparent;
+    }
+    body.light-theme .acc-label .acc-tooltip::after { border-top-color: #333; }
+    .acc-label:hover .acc-tooltip { visibility: visible; opacity: 1; }
 
     .acc-bar-wrap {
       flex: 1;
@@ -1146,6 +1179,8 @@
     body.light-theme .chip { background: rgba(0,0,0,0.06); color: #444; }
     body.light-theme .chip:hover { background: rgba(212,175,55,0.15); }
     body.light-theme .source-item { background: rgba(0,0,0,0.04); color: #444; }
+    body.light-theme .source-doc-item { color: #444; background: #F0F0F0; border-color: rgba(0,0,0,0.09); }
+    body.light-theme .acc-label { color: rgba(0,0,0,0.6); }
     body.light-theme .refresh-note { color: #888; }
     body.light-theme input, body.light-theme textarea { background: #F0F0F0; color: #111; border-color: rgba(0,0,0,0.12); }
     body.light-theme .welcome-banner {
@@ -1397,7 +1432,7 @@
     <div class="channels">
       <div class="channel-pill"><span class="dot"></span> Live Chat</div>
       <div class="channel-pill"><span class="dot"></span> Email Support</div>
-      <div class="channel-pill"><span class="dot"></span> AI-rated accuracy</div>
+      <div class="channel-pill"><span class="dot"></span> AI Quality Assessment</div>
     </div>
   </section>
 
@@ -1544,27 +1579,27 @@
           </div>
         </div>
 
-        <!-- Column 2: Accuracy distribution -->
+        <!-- Column 2: Quality Assessment -->
         <div class="dash-col">
-          <div class="section-heading" id="accBars">Accuracy Distribution (rated by AI)</div>
+          <div class="section-heading" id="accBars">Quality Assessment (rated by AI)</div>
           <div class="acc-bars">
             <div class="acc-row">
-              <span class="acc-label">Excellent</span>
+              <span class="acc-label" style="color:#22c55e;">Excellent<span class="acc-tooltip" style="border-left:3px solid #22c55e;">Score 9-10 — Response is accurate, complete, well-cited, and directly addresses the question using knowledge base sources.</span></span>
               <div class="acc-bar-wrap"><div class="acc-bar-fill fill-excellent" id="barExcellent" style="width:0%"></div></div>
               <span class="acc-count" id="cntExcellent">0</span>
             </div>
             <div class="acc-row">
-              <span class="acc-label">Good</span>
+              <span class="acc-label" style="color:#D4AF37;">Good<span class="acc-tooltip" style="border-left:3px solid #D4AF37;">Score 7-8 — Response is correct and helpful with minor gaps in detail or citation.</span></span>
               <div class="acc-bar-wrap"><div class="acc-bar-fill fill-good" id="barGood" style="width:0%"></div></div>
               <span class="acc-count" id="cntGood">0</span>
             </div>
             <div class="acc-row">
-              <span class="acc-label">Acceptable</span>
+              <span class="acc-label" style="color:#f97316;">Acceptable<span class="acc-tooltip" style="border-left:3px solid #f97316;">Score 5-6 — Response is partially correct but may miss key information or lack specificity.</span></span>
               <div class="acc-bar-wrap"><div class="acc-bar-fill fill-acceptable" id="barAcceptable" style="width:0%"></div></div>
               <span class="acc-count" id="cntAcceptable">0</span>
             </div>
             <div class="acc-row">
-              <span class="acc-label">Poor</span>
+              <span class="acc-label" style="color:#ef4444;">Poor<span class="acc-tooltip" style="border-left:3px solid #ef4444;">Score 0-4 — Response contains inaccuracies, hallucinations, or fails to use available knowledge. Escalated to human support.</span></span>
               <div class="acc-bar-wrap"><div class="acc-bar-fill fill-poor" id="barPoor" style="width:0%"></div></div>
               <span class="acc-count" id="cntPoor">0</span>
             </div>
