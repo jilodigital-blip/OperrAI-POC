@@ -418,7 +418,7 @@ module.exports = async (req, res) => {
   const SUPABASE_URL      = process.env.SUPABASE_URL      || '';
   const SUPABASE_ANON_KEY = process.env.SUPABASE_ANON_KEY || '';
 
-  res.setHeader('Access-Control-Allow-Origin', '*');
+  res.setHeader('Access-Control-Allow-Origin', process.env.CORS_ORIGIN || '*');
   res.setHeader('Access-Control-Allow-Methods', 'POST, OPTIONS');
   res.setHeader('Access-Control-Allow-Headers', 'Content-Type, Authorization');
 

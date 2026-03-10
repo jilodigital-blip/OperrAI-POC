@@ -261,7 +261,7 @@
   <script>
     // Redirect if already logged in
     (function () {
-      const token = localStorage.getItem('operr_token');
+      const token = localStorage.getItem('raymidi_token');
       if (token) {
         try {
           const payload = JSON.parse(atob(token.split('.')[1].replace(/-/g, '+').replace(/_/g, '/')));
@@ -336,7 +336,7 @@
         const data = await resp.json();
 
         if (resp.ok && data.token) {
-          localStorage.setItem('operr_token', data.token);
+          localStorage.setItem('raymidi_token', data.token);
           showAlert('info', 'Access granted. Redirecting…');
           setTimeout(() => { window.location.href = '/ev-poc'; }, 600);
         } else if (resp.status === 429) {
