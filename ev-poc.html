@@ -704,6 +704,44 @@
       30%           { transform: translateY(-5px); }
     }
 
+    /* Channel toggle */
+    .channel-toggle {
+      display: flex;
+      align-items: center;
+      gap: 0.5rem;
+      padding: 0.5rem 1.25rem;
+      border-top: 1px solid var(--border);
+      background: var(--surface2);
+      font-size: 0.75rem;
+      color: var(--muted);
+    }
+
+    .channel-toggle-label { flex-shrink: 0; }
+
+    .channel-switch {
+      display: flex;
+      background: rgba(255,255,255,0.04);
+      border: 1px solid var(--border2);
+      border-radius: 6px;
+      overflow: hidden;
+    }
+
+    .channel-opt {
+      padding: 0.3rem 0.7rem;
+      cursor: pointer;
+      font-size: 0.72rem;
+      font-weight: 500;
+      color: var(--muted);
+      transition: background 0.2s, color 0.2s;
+      border: none;
+      background: none;
+      font-family: var(--font-body);
+    }
+    .channel-opt.active {
+      background: var(--gold-dim);
+      color: var(--gold);
+    }
+
     /* Chat input area */
     .chat-input-area {
       padding: 1rem 1.25rem;
@@ -1385,6 +1423,14 @@
         </div>
       </div>
 
+      <div class="channel-toggle">
+        <span class="channel-toggle-label">Response mode:</span>
+        <div class="channel-switch">
+          <button class="channel-opt active" data-channel="chat" onclick="setChannel('chat')">💬 Chat</button>
+          <button class="channel-opt" data-channel="email" onclick="setChannel('email')">📧 Email</button>
+        </div>
+      </div>
+
       <div class="chat-input-area">
         <textarea
           id="chatInput"
@@ -1658,7 +1704,7 @@
       : ' &bull; Accuracy rating pending…';
 
     msg.innerHTML = `
-      <div class="bubble">${escapeHtml(text)}</div>
+      <div class="bubble">${renderMarkdown(text)}</div>
       ${sourcesHtml}
       <div class="msg-meta">
         ${formatTime(new Date())}${timeStr ? ` &bull; ${timeStr}` : ''}${accuracyHtml}
@@ -1931,6 +1977,27 @@
       docsEl.innerHTML = '<div class="doc-empty">No documents queried yet. Ask a question to get started.</div>';
     }
   }
+
+  // Lightweight markdown → HTML for AI responses (bold, italic, lists, line breaks)
+  function renderMarkdown(str) {
+    let html = escapeHtml(str);
+    // Bold: **text** or __text__
+    html = html.replace(/\*\*(.+?)\*\*/g, '<strong>$1</strong>');
+    html = html.replace(/__(.+?)__/g, '<strong>$1</strong>');
+    // Italic: *text* or _text_ (but not inside words with underscores)
+    html = html.replace(/(?<!\w)\*([^*]+?)\*(?!\w)/g, '<em>$1</em>');
+    // Numbered lists: lines starting with "1. ", "2. " etc.
+    html = html.replace(/^(\d+)\.\s+(.+)$/gm, '<li style="margin-left:1.2em;list-style:decimal;">$2</li>');
+    // Bullet lists: lines starting with "- " or "• "
+    html = html.replace(/^[-•]\s+(.+)$/gm, '<li style="margin-left:1.2em;list-style:disc;">$1</li>');
+    // Wrap consecutive <li> runs in <ul>/<ol>
+    html = html.replace(/((?:<li[^>]*>.*?<\/li>\n?)+)/g, '<ul style="padding-left:0.5em;margin:0.3em 0;">$1</ul>');
+    // Line breaks (double newline → paragraph break, single → <br>)
+    html = html.replace(/\n{2,}/g, '<br><br>');
+    html = html.replace(/\n/g, '<br>');
+    return html;
+  }
+
 
   // ── Init ──────────────────────────────────────────────────────────────────
   loadDashboard();
