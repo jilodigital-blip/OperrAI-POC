@@ -120,6 +120,7 @@ module.exports = async (req, res) => {
       id:             m.id,
       sessionId:      m.session_id,
       question:       m.question,
+      response:       m.response,
       channel:        m.channel || 'chat',
       responseTimeMs: m.response_time_ms,
       accuracyScore:     m.ratings?.[0]?.accuracy_score     ?? null,

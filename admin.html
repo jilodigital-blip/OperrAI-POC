@@ -1232,6 +1232,7 @@
                 <th>Time</th>
                 <th>Channel</th>
                 <th>Question</th>
+                <th>Answer</th>
                 <th>Accuracy</th>
                 <th>Response Time</th>
                 <th>Session</th>
@@ -1478,7 +1479,7 @@
       : allMessages.filter(m => m.channel === currentFilter);
 
     if (filtered.length === 0) {
-      tbody.innerHTML = `<tr><td colspan="6" class="table-empty">No messages${currentFilter !== 'all' ? ' for this channel' : ''} yet.</td></tr>`;
+      tbody.innerHTML = `<tr><td colspan="7" class="table-empty">No messages${currentFilter !== 'all' ? ' for this channel' : ''} yet.</td></tr>`;
       return;
     }
 
@@ -1496,6 +1497,7 @@
           <td style="white-space:nowrap;color:var(--muted);">${formatDate(m.createdAt)}</td>
           <td><span class="badge badge-${m.channel}">${escapeHtml(m.channel)}</span></td>
           <td><span class="q-text" title="${escapeHtml(m.question)}">${escapeHtml(m.question)}</span></td>
+          <td><span class="q-text" title="${escapeHtml(m.response)}">${m.response === '[BLOCKED]' ? '<span style="color:#ef4444;font-weight:600;">BLOCKED</span>' : escapeHtml(m.response)}</span></td>
           <td>${m.accuracyLabel
             ? `<span class="badge badge-${labelClass}">${escapeHtml(m.accuracyLabel)}${m.accuracyScore != null ? ` (${m.accuracyScore}/10)` : ''}</span>${showReason ? `<div class="rating-reason">${escapeHtml(m.ratingRationale)}</div>` : ''}`
             : '<span style="color:var(--muted);font-size:0.75rem;">Pending</span>'

@@ -1,13 +1,10 @@
 const crypto = require('crypto');
-const path   = require('path');
-const fs     = require('fs');
 
 // ── Bundled FAQ fallback (used when Supabase documents table is empty) ─────────
+// Use require() so Vercel's bundler includes the file in the serverless function.
 let BUNDLED_FAQS = [];
 try {
-  BUNDLED_FAQS = JSON.parse(
-    fs.readFileSync(path.join(__dirname, '../ingest/faqs.json'), 'utf8')
-  );
+  BUNDLED_FAQS = require('../ingest/faqs.json');
 } catch { /* no local fallback available */ }
 
 // ── JWT helpers ────────────────────────────────────────────────────────────────
@@ -155,8 +152,13 @@ async function callAgenticPipeline(question, channel, { openaiKey, supabaseUrl, 
       return { ...f, _score: score };
     }).sort((a, b) => b._score - a._score);
 
-    // Only include FAQs with non-zero relevance; take top 5
-    chunks = scored.filter(f => f._score > 0).slice(0, 5).map(f => ({
+    // Prefer FAQs with keyword matches; if none match, include the top 3
+    // general FAQs so the model always has some context to work with.
+    const matched = scored.filter(f => f._score > 0);
+    const fallbackSlice = matched.length > 0
+      ? matched.slice(0, 5)
+      : scored.slice(0, 3);
+    chunks = fallbackSlice.map(f => ({
       doc_name:   f.doc_name,
       content:    f.content,
       similarity: null,
