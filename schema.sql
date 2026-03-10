@@ -79,6 +79,28 @@ ALTER TABLE feedbacks ENABLE ROW LEVEL SECURITY;
 CREATE POLICY "anon can insert feedbacks" ON feedbacks FOR INSERT TO anon WITH CHECK (true);
 CREATE POLICY "anon can select feedbacks" ON feedbacks FOR SELECT TO anon USING (true);
 
+-- ── AI Test Runs ─────────────────────────────────────────────────────────────
+CREATE TABLE IF NOT EXISTS test_runs (
+  id                  UUID          PRIMARY KEY DEFAULT gen_random_uuid(),
+  run_id              TEXT          NOT NULL UNIQUE,
+  session_id          TEXT          NOT NULL,
+  total_questions     INTEGER       NOT NULL,
+  chat_results        JSONB         NOT NULL DEFAULT '{}',
+  email_results       JSONB         NOT NULL DEFAULT '{}',
+  overall_confidence  NUMERIC(5,2)  NOT NULL,
+  pass_threshold      NUMERIC(5,2)  NOT NULL DEFAULT 80,
+  passed              BOOLEAN       NOT NULL,
+  duration_ms         INTEGER,
+  question_details    JSONB         NOT NULL DEFAULT '[]',
+  created_at          TIMESTAMPTZ   NOT NULL DEFAULT NOW()
+);
+
+CREATE INDEX IF NOT EXISTS test_runs_created_idx ON test_runs (created_at DESC);
+
+ALTER TABLE test_runs ENABLE ROW LEVEL SECURITY;
+CREATE POLICY "anon can insert test_runs" ON test_runs FOR INSERT TO anon WITH CHECK (true);
+CREATE POLICY "anon can select test_runs" ON test_runs FOR SELECT TO anon USING (true);
+
 -- ── Dashboard view ─────────────────────────────────────────────────────────────
 CREATE OR REPLACE VIEW dashboard_summary AS
 SELECT

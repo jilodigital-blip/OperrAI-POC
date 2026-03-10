@@ -523,6 +523,273 @@
       font-style: italic;
     }
 
+    /* ── AI Testing Agent ──────────────────────────────────── */
+    .ai-test-section { margin-bottom: 2rem; }
+
+    .ai-test-controls {
+      display: flex;
+      align-items: center;
+      gap: 1rem;
+      flex-wrap: wrap;
+      margin-bottom: 1rem;
+    }
+
+    .ai-test-run-btn {
+      font-family: var(--font-heading);
+      font-size: 0.9rem;
+      font-weight: 700;
+      color: var(--ink);
+      background: var(--gold);
+      border: none;
+      border-radius: 10px;
+      padding: 0.7rem 1.5rem;
+      cursor: pointer;
+      transition: opacity 0.2s;
+      display: inline-flex;
+      align-items: center;
+      gap: 0.5rem;
+    }
+    .ai-test-run-btn:hover { opacity: 0.88; }
+    .ai-test-run-btn:disabled { opacity: 0.45; cursor: not-allowed; }
+
+    .ai-test-stop-btn {
+      font-family: var(--font-heading);
+      font-size: 0.85rem;
+      font-weight: 700;
+      color: #ef4444;
+      background: rgba(239,68,68,0.08);
+      border: 1px solid rgba(239,68,68,0.25);
+      border-radius: 10px;
+      padding: 0.65rem 1.2rem;
+      cursor: pointer;
+      display: none;
+    }
+    .ai-test-stop-btn:hover { background: rgba(239,68,68,0.15); }
+
+    .ai-test-config {
+      display: flex;
+      align-items: center;
+      gap: 0.75rem;
+      flex-wrap: wrap;
+    }
+
+    .ai-test-config label {
+      font-size: 0.75rem;
+      color: var(--muted);
+      font-weight: 600;
+    }
+
+    .ai-test-config select,
+    .ai-test-config input[type="number"] {
+      background: var(--surface2);
+      border: 1px solid var(--border2);
+      border-radius: 8px;
+      color: #fff;
+      font-family: var(--font-body);
+      font-size: 0.82rem;
+      padding: 0.4rem 0.6rem;
+      outline: none;
+    }
+    .ai-test-config select:focus,
+    .ai-test-config input:focus { border-color: rgba(212,175,55,0.5); }
+
+    .ai-test-config input[type="number"] { width: 60px; text-align: center; }
+
+    /* Progress */
+    .ai-test-progress { display: none; margin-bottom: 1.25rem; }
+    .ai-test-progress.show { display: block; }
+
+    .progress-bar-wrap {
+      height: 10px;
+      background: var(--border2);
+      border-radius: 5px;
+      overflow: hidden;
+      margin-bottom: 0.5rem;
+    }
+
+    .progress-bar-fill {
+      height: 100%;
+      background: linear-gradient(90deg, var(--gold), #f5d060);
+      border-radius: 5px;
+      transition: width 0.3s ease;
+      width: 0%;
+    }
+
+    .progress-info {
+      display: flex;
+      justify-content: space-between;
+      font-size: 0.75rem;
+      color: var(--muted);
+    }
+
+    .progress-question {
+      font-size: 0.78rem;
+      color: rgba(255,255,255,0.5);
+      font-style: italic;
+      margin-top: 0.35rem;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      max-width: 600px;
+    }
+
+    /* Results */
+    .ai-test-results { display: none; }
+    .ai-test-results.show { display: block; }
+
+    .confidence-gauge {
+      display: flex;
+      align-items: center;
+      gap: 2rem;
+      margin-bottom: 1.5rem;
+      flex-wrap: wrap;
+    }
+
+    .gauge-circle {
+      position: relative;
+      width: 140px;
+      height: 140px;
+      flex-shrink: 0;
+    }
+
+    .gauge-circle svg { width: 140px; height: 140px; transform: rotate(-90deg); }
+
+    .gauge-circle .gauge-bg {
+      fill: none;
+      stroke: var(--border2);
+      stroke-width: 10;
+    }
+
+    .gauge-circle .gauge-fill {
+      fill: none;
+      stroke-width: 10;
+      stroke-linecap: round;
+      transition: stroke-dashoffset 1s ease, stroke 0.5s;
+    }
+
+    .gauge-text {
+      position: absolute;
+      inset: 0;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+    }
+
+    .gauge-pct {
+      font-family: var(--font-heading);
+      font-size: 2rem;
+      font-weight: 800;
+      color: #fff;
+      line-height: 1;
+    }
+
+    .gauge-label {
+      font-size: 0.68rem;
+      font-weight: 600;
+      text-transform: uppercase;
+      letter-spacing: 0.08em;
+      margin-top: 0.25rem;
+    }
+
+    .gauge-meta {
+      display: flex;
+      flex-direction: column;
+      gap: 0.6rem;
+    }
+
+    .gauge-meta-row {
+      display: flex;
+      align-items: center;
+      gap: 0.5rem;
+      font-size: 0.82rem;
+      color: rgba(255,255,255,0.7);
+    }
+
+    .gauge-meta-row strong { color: #fff; }
+
+    .badge-pass {
+      display: inline-block;
+      font-size: 0.75rem;
+      font-weight: 700;
+      letter-spacing: 0.06em;
+      text-transform: uppercase;
+      padding: 0.3rem 0.8rem;
+      border-radius: 100px;
+    }
+
+    .badge-pass.pass { color: #22c55e; border: 1px solid rgba(34,197,94,0.3); background: rgba(34,197,94,0.08); }
+    .badge-pass.fail { color: #ef4444; border: 1px solid rgba(239,68,68,0.3); background: rgba(239,68,68,0.08); }
+
+    .channel-results-row {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 1rem;
+      margin-bottom: 1.5rem;
+    }
+
+    @media (max-width: 600px) {
+      .channel-results-row { grid-template-columns: 1fr; }
+    }
+
+    .channel-result-card {
+      background: var(--surface2);
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      padding: 1rem 1.25rem;
+    }
+
+    .channel-result-card .cr-header {
+      display: flex;
+      align-items: center;
+      gap: 0.5rem;
+      margin-bottom: 0.75rem;
+      font-family: var(--font-heading);
+      font-size: 0.85rem;
+      font-weight: 700;
+    }
+
+    .cr-stats {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 0.4rem 1rem;
+      font-size: 0.78rem;
+      color: rgba(255,255,255,0.65);
+    }
+
+    .cr-stats span.val { color: #fff; font-weight: 600; }
+
+    .test-detail-toggle {
+      font-family: var(--font-body);
+      font-size: 0.78rem;
+      color: var(--gold);
+      background: none;
+      border: 1px solid var(--gold-border);
+      border-radius: 6px;
+      padding: 0.35rem 0.75rem;
+      cursor: pointer;
+      margin-right: 0.5rem;
+    }
+    .test-detail-toggle:hover { background: var(--gold-dim); }
+
+    .test-export-btn {
+      font-family: var(--font-body);
+      font-size: 0.78rem;
+      color: var(--muted);
+      background: none;
+      border: 1px solid var(--border2);
+      border-radius: 6px;
+      padding: 0.35rem 0.75rem;
+      cursor: pointer;
+    }
+    .test-export-btn:hover { color: #fff; }
+
+    .test-details-table { display: none; margin-top: 1rem; }
+    .test-details-table.show { display: block; }
+
+    /* Test history */
+    .test-history-section { margin-top: 1.5rem; }
+
     /* Loading spinner */
     .loading-overlay {
       display: none;
@@ -784,6 +1051,142 @@
               <div class="source-docs-list" id="aSourceDocs">
                 <div class="doc-empty">No sources yet</div>
               </div>
+            </div>
+          </div>
+        </div>
+
+      </div>
+
+      <!-- ── AI Testing Agent ──────────────────────────────────── -->
+      <div class="section-title">AI Testing Agent</div>
+      <div class="ai-test-section">
+
+        <!-- Controls -->
+        <div class="ai-test-controls">
+          <button class="ai-test-run-btn" id="aiTestRunBtn" onclick="startAITest()">
+            ▶ Run AI Test
+          </button>
+          <button class="ai-test-stop-btn" id="aiTestStopBtn" onclick="stopAITest()">
+            ■ Stop Test
+          </button>
+          <div class="ai-test-config">
+            <label>Threshold:</label>
+            <input type="number" id="aiTestThreshold" value="80" min="0" max="100" step="5" />
+            <label>%</label>
+          </div>
+        </div>
+
+        <!-- Progress -->
+        <div class="ai-test-progress" id="aiTestProgress">
+          <div class="progress-bar-wrap">
+            <div class="progress-bar-fill" id="aiTestBar"></div>
+          </div>
+          <div class="progress-info">
+            <span id="aiTestCount">Testing 0/0…</span>
+            <span id="aiTestChannel">—</span>
+          </div>
+          <div class="progress-question" id="aiTestCurrentQ"></div>
+        </div>
+
+        <!-- Results -->
+        <div class="ai-test-results" id="aiTestResults">
+          <div class="confidence-gauge">
+            <div class="gauge-circle">
+              <svg viewBox="0 0 140 140">
+                <circle class="gauge-bg" cx="70" cy="70" r="58" />
+                <circle class="gauge-fill" id="gaugeFill" cx="70" cy="70" r="58"
+                  stroke-dasharray="364.42" stroke-dashoffset="364.42" />
+              </svg>
+              <div class="gauge-text">
+                <div class="gauge-pct" id="gaugePct">—</div>
+                <div class="gauge-label" id="gaugeLabel" style="color:var(--muted);">Confidence</div>
+              </div>
+            </div>
+            <div class="gauge-meta">
+              <div class="gauge-meta-row">
+                <span id="gaugePassBadge" class="badge-pass pass">PASS</span>
+              </div>
+              <div class="gauge-meta-row">Questions tested: <strong id="gaugeTotalQ">—</strong></div>
+              <div class="gauge-meta-row">Duration: <strong id="gaugeDuration">—</strong></div>
+              <div class="gauge-meta-row">Threshold: <strong id="gaugeThreshold">—</strong></div>
+            </div>
+          </div>
+
+          <!-- Channel breakdown -->
+          <div class="channel-results-row">
+            <div class="channel-result-card" id="chatResultCard">
+              <div class="cr-header">💬 Chat Channel</div>
+              <div class="cr-stats">
+                <span>Avg Score:</span> <span class="val" id="crChatScore">—</span>
+                <span>Excellent:</span> <span class="val" id="crChatExcellent">—</span>
+                <span>Good:</span> <span class="val" id="crChatGood">—</span>
+                <span>Acceptable:</span> <span class="val" id="crChatAcceptable">—</span>
+                <span>Poor:</span> <span class="val" id="crChatPoor">—</span>
+                <span>Blocked:</span> <span class="val" id="crChatBlocked">—</span>
+              </div>
+            </div>
+            <div class="channel-result-card" id="emailResultCard">
+              <div class="cr-header">📧 Email Channel</div>
+              <div class="cr-stats">
+                <span>Avg Score:</span> <span class="val" id="crEmailScore">—</span>
+                <span>Excellent:</span> <span class="val" id="crEmailExcellent">—</span>
+                <span>Good:</span> <span class="val" id="crEmailGood">—</span>
+                <span>Acceptable:</span> <span class="val" id="crEmailAcceptable">—</span>
+                <span>Poor:</span> <span class="val" id="crEmailPoor">—</span>
+                <span>Blocked:</span> <span class="val" id="crEmailBlocked">—</span>
+              </div>
+            </div>
+          </div>
+
+          <!-- Actions -->
+          <div style="margin-bottom:1rem;">
+            <button class="test-detail-toggle" id="toggleDetailsBtn" onclick="toggleTestDetails()">Show Details</button>
+            <button class="test-export-btn" onclick="exportTestResults()">Export JSON</button>
+          </div>
+
+          <!-- Per-question details table -->
+          <div class="test-details-table" id="testDetailsTable">
+            <div class="card">
+              <div class="card-head">📋 Per-Question Results</div>
+              <div class="data-table-wrap">
+                <table class="data-table">
+                  <thead>
+                    <tr>
+                      <th>#</th>
+                      <th>Channel</th>
+                      <th>Question</th>
+                      <th>Score</th>
+                      <th>Rating</th>
+                      <th>Response Time</th>
+                    </tr>
+                  </thead>
+                  <tbody id="testDetailsBody"></tbody>
+                </table>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Test History -->
+        <div class="test-history-section">
+          <div class="card">
+            <div class="card-head">📜 Test Run History</div>
+            <div class="data-table-wrap">
+              <table class="data-table">
+                <thead>
+                  <tr>
+                    <th>Date</th>
+                    <th>Confidence</th>
+                    <th>Result</th>
+                    <th>Questions</th>
+                    <th>Duration</th>
+                    <th>Threshold</th>
+                  </tr>
+                </thead>
+                <tbody id="testHistoryBody">
+                  <tr><td colspan="6" class="table-empty">No test runs yet.</td></tr>
+                </tbody>
+              </table>
             </div>
           </div>
         </div>
@@ -1190,6 +1593,345 @@
 
   // Auto-refresh feedbacks every 60 seconds
   setInterval(() => { if (adminToken) loadFeedbacks(); }, 60000);
+
+  // ── AI Testing Agent ────────────────────────────────────────────────────────
+
+  // FAQ data embedded from ingest/faqs.json (loaded via fetch at runtime)
+  let aiFaqQuestions = [];
+  let aiTestRunning = false;
+  let aiTestStopped = false;
+  let aiTestResultData = null;
+
+  // Extract questions from FAQ content
+  function extractFaqQuestions(faqs) {
+    const questions = [];
+    faqs.forEach(faq => {
+      const matches = faq.content.match(/Question:\s*(.+?)(?:\n|$)/g);
+      if (matches) {
+        matches.forEach(m => {
+          const q = m.replace(/^Question:\s*/, '').trim();
+          if (q) questions.push(q);
+        });
+      }
+    });
+    return questions;
+  }
+
+  // Load FAQ questions
+  async function loadFaqQuestions() {
+    if (aiFaqQuestions.length > 0) return aiFaqQuestions;
+    try {
+      const resp = await fetch('/ingest/faqs.json');
+      if (resp.ok) {
+        const faqs = await resp.json();
+        aiFaqQuestions = extractFaqQuestions(faqs);
+      }
+    } catch { /* ignore */ }
+    return aiFaqQuestions;
+  }
+
+  // Compute channel stats from results array
+  function computeChannelStats(results) {
+    if (results.length === 0) return { total: 0, avgScore: 0, excellent: 0, good: 0, acceptable: 0, poor: 0, blocked: 0 };
+    const stats = { total: results.length, excellent: 0, good: 0, acceptable: 0, poor: 0, blocked: 0 };
+    let scoreSum = 0;
+    results.forEach(r => {
+      scoreSum += r.score || 0;
+      const lbl = (r.label || '').toLowerCase();
+      if (lbl === 'excellent') stats.excellent++;
+      else if (lbl === 'good') stats.good++;
+      else if (lbl === 'acceptable') stats.acceptable++;
+      else if (lbl === 'poor') stats.poor++;
+      if (r.blocked) stats.blocked++;
+    });
+    stats.avgScore = Math.round((scoreSum / results.length) * 100) / 100;
+    return stats;
+  }
+
+  // Compute overall confidence score
+  function computeConfidence(chatStats, emailStats) {
+    const chatScore = chatStats.total > 0 ? (chatStats.avgScore / 10) * 100 : 0;
+    const emailScore = emailStats.total > 0 ? (emailStats.avgScore / 10) * 100 : 0;
+    const totalQuestions = chatStats.total + emailStats.total;
+    const totalPoor = chatStats.poor + emailStats.poor;
+
+    let confidence;
+    if (chatStats.total > 0 && emailStats.total > 0) {
+      confidence = (chatScore + emailScore) / 2;
+    } else if (chatStats.total > 0) {
+      confidence = chatScore;
+    } else {
+      confidence = emailScore;
+    }
+
+    // Penalty for poor/blocked responses
+    const penalty = totalQuestions > 0 ? (totalPoor / totalQuestions) * 15 : 0;
+    return Math.max(0, Math.round((confidence - penalty) * 100) / 100);
+  }
+
+  // Generate UUID
+  function genUUID() {
+    return 'xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx'.replace(/[xy]/g, c => {
+      const r = Math.random() * 16 | 0;
+      return (c === 'x' ? r : (r & 0x3 | 0x8)).toString(16);
+    });
+  }
+
+  // Main test runner
+  async function startAITest() {
+    if (aiTestRunning) return;
+
+    const questions = await loadFaqQuestions();
+    if (questions.length === 0) {
+      alert('No FAQ questions found. Please check /ingest/faqs.json');
+      return;
+    }
+
+    const threshold = parseInt(document.getElementById('aiTestThreshold').value) || 80;
+    const runId = genUUID();
+    const sessionId = `ai-test-${runId}`;
+
+    // Build test queue: each question in both channels
+    const testQueue = [];
+    questions.forEach(q => {
+      testQueue.push({ question: q, channel: 'chat' });
+      testQueue.push({ question: q, channel: 'email' });
+    });
+
+    aiTestRunning = true;
+    aiTestStopped = false;
+    aiTestResultData = null;
+
+    // UI: show progress, hide results
+    document.getElementById('aiTestRunBtn').disabled = true;
+    document.getElementById('aiTestStopBtn').style.display = 'inline-block';
+    document.getElementById('aiTestProgress').classList.add('show');
+    document.getElementById('aiTestResults').classList.remove('show');
+    document.getElementById('aiTestBar').style.width = '0%';
+    document.getElementById('aiTestCount').textContent = `Testing 0/${testQueue.length}…`;
+    document.getElementById('aiTestCurrentQ').textContent = '';
+
+    const startTime = Date.now();
+    const allResults = [];
+
+    for (let i = 0; i < testQueue.length; i++) {
+      if (aiTestStopped) break;
+
+      const { question, channel } = testQueue[i];
+      const pct = Math.round(((i + 1) / testQueue.length) * 100);
+
+      // Update progress UI
+      document.getElementById('aiTestBar').style.width = pct + '%';
+      document.getElementById('aiTestCount').textContent = `Testing ${i + 1}/${testQueue.length}…`;
+      document.getElementById('aiTestChannel').textContent = channel === 'chat' ? '💬 Chat' : '📧 Email';
+      document.getElementById('aiTestCurrentQ').textContent = question;
+
+      try {
+        const resp = await fetch('/api/chat', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            'Authorization': `Bearer ${adminToken}`,
+          },
+          body: JSON.stringify({ question, sessionId, channel }),
+        });
+
+        if (resp.ok) {
+          const data = await resp.json();
+          allResults.push({
+            question,
+            channel,
+            score: data.accuracyScore ?? 0,
+            label: data.accuracyLabel || 'Unknown',
+            responseTimeMs: data.responseTimeMs || 0,
+            blocked: !!data.blocked,
+          });
+        } else {
+          allResults.push({
+            question, channel, score: 0, label: 'Error',
+            responseTimeMs: 0, blocked: false, error: `HTTP ${resp.status}`,
+          });
+        }
+      } catch (err) {
+        allResults.push({
+          question, channel, score: 0, label: 'Error',
+          responseTimeMs: 0, blocked: false, error: err.message,
+        });
+      }
+    }
+
+    const durationMs = Date.now() - startTime;
+    const chatResults = computeChannelStats(allResults.filter(r => r.channel === 'chat'));
+    const emailResults = computeChannelStats(allResults.filter(r => r.channel === 'email'));
+    const overallConfidence = computeConfidence(chatResults, emailResults);
+    const passed = overallConfidence >= threshold;
+
+    aiTestResultData = {
+      runId,
+      sessionId,
+      totalQuestions: allResults.length,
+      chatResults,
+      emailResults,
+      overallConfidence,
+      passThreshold: threshold,
+      passed,
+      durationMs,
+      questionDetails: allResults,
+    };
+
+    // Save to backend
+    try {
+      await fetch('/api/ai-test', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${adminToken}`,
+        },
+        body: JSON.stringify(aiTestResultData),
+      });
+    } catch { /* non-blocking */ }
+
+    // UI: hide progress, show results
+    aiTestRunning = false;
+    document.getElementById('aiTestRunBtn').disabled = false;
+    document.getElementById('aiTestStopBtn').style.display = 'none';
+    document.getElementById('aiTestProgress').classList.remove('show');
+
+    renderAITestResults(aiTestResultData);
+    loadTestHistory();
+  }
+
+  function stopAITest() {
+    aiTestStopped = true;
+  }
+
+  // Render the results dashboard
+  function renderAITestResults(data) {
+    document.getElementById('aiTestResults').classList.add('show');
+
+    // Gauge
+    const circumference = 2 * Math.PI * 58; // ~364.42
+    const offset = circumference - (data.overallConfidence / 100) * circumference;
+    const gaugeEl = document.getElementById('gaugeFill');
+    gaugeEl.style.strokeDashoffset = offset;
+    gaugeEl.style.stroke = data.passed ? '#22c55e' : '#ef4444';
+
+    document.getElementById('gaugePct').textContent = data.overallConfidence.toFixed(1) + '%';
+    const labelEl = document.getElementById('gaugeLabel');
+    labelEl.textContent = 'Confidence';
+    labelEl.style.color = data.passed ? '#22c55e' : '#ef4444';
+
+    const passBadge = document.getElementById('gaugePassBadge');
+    passBadge.textContent = data.passed ? 'PASS' : 'FAIL';
+    passBadge.className = 'badge-pass ' + (data.passed ? 'pass' : 'fail');
+
+    document.getElementById('gaugeTotalQ').textContent = data.totalQuestions;
+    document.getElementById('gaugeDuration').textContent = (data.durationMs / 1000).toFixed(1) + 's';
+    document.getElementById('gaugeThreshold').textContent = data.passThreshold + '%';
+
+    // Channel cards
+    const ch = data.chatResults;
+    document.getElementById('crChatScore').textContent = ch.avgScore + '/10';
+    document.getElementById('crChatExcellent').textContent = ch.excellent;
+    document.getElementById('crChatGood').textContent = ch.good;
+    document.getElementById('crChatAcceptable').textContent = ch.acceptable;
+    document.getElementById('crChatPoor').textContent = ch.poor;
+    document.getElementById('crChatBlocked').textContent = ch.blocked;
+
+    const em = data.emailResults;
+    document.getElementById('crEmailScore').textContent = em.avgScore + '/10';
+    document.getElementById('crEmailExcellent').textContent = em.excellent;
+    document.getElementById('crEmailGood').textContent = em.good;
+    document.getElementById('crEmailAcceptable').textContent = em.acceptable;
+    document.getElementById('crEmailPoor').textContent = em.poor;
+    document.getElementById('crEmailBlocked').textContent = em.blocked;
+
+    // Details table
+    const accColors = { Excellent: 'excellent', Good: 'good', Acceptable: 'acceptable', Poor: 'poor' };
+    const tbody = document.getElementById('testDetailsBody');
+    tbody.innerHTML = data.questionDetails.map((r, i) => {
+      const labelClass = accColors[r.label] || 'acceptable';
+      const tStr = r.responseTimeMs >= 1000 ? (r.responseTimeMs / 1000).toFixed(1) + 's' : r.responseTimeMs + 'ms';
+      return `<tr>
+        <td style="color:var(--muted);">${i + 1}</td>
+        <td><span class="badge badge-${r.channel}">${r.channel}</span></td>
+        <td><span class="q-text" title="${escapeHtml(r.question)}">${escapeHtml(r.question)}</span></td>
+        <td style="color:#fff;font-weight:600;">${r.score}/10</td>
+        <td><span class="badge badge-${labelClass}">${escapeHtml(r.label)}</span></td>
+        <td style="color:var(--muted);white-space:nowrap;">${tStr}</td>
+      </tr>`;
+    }).join('');
+  }
+
+  function toggleTestDetails() {
+    const el = document.getElementById('testDetailsTable');
+    const btn = document.getElementById('toggleDetailsBtn');
+    if (el.classList.contains('show')) {
+      el.classList.remove('show');
+      btn.textContent = 'Show Details';
+    } else {
+      el.classList.add('show');
+      btn.textContent = 'Hide Details';
+    }
+  }
+
+  function exportTestResults() {
+    if (!aiTestResultData) return;
+    const blob = new Blob([JSON.stringify(aiTestResultData, null, 2)], { type: 'application/json' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = `ai-test-${aiTestResultData.runId.slice(0, 8)}.json`;
+    a.click();
+    URL.revokeObjectURL(url);
+  }
+
+  // Load test run history
+  async function loadTestHistory() {
+    try {
+      const resp = await fetch('/api/ai-test', {
+        headers: { 'Authorization': `Bearer ${adminToken}` },
+      });
+      if (!resp.ok) return;
+      const data = await resp.json();
+      renderTestHistory(data.testRuns || []);
+    } catch { /* ignore */ }
+  }
+
+  function renderTestHistory(runs) {
+    const tbody = document.getElementById('testHistoryBody');
+    if (runs.length === 0) {
+      tbody.innerHTML = '<tr><td colspan="6" class="table-empty">No test runs yet.</td></tr>';
+      return;
+    }
+    tbody.innerHTML = runs.map(r => {
+      const conf = typeof r.overall_confidence === 'number' ? r.overall_confidence : parseFloat(r.overall_confidence) || 0;
+      const threshold = typeof r.pass_threshold === 'number' ? r.pass_threshold : parseFloat(r.pass_threshold) || 80;
+      const passed = r.passed;
+      const dur = r.duration_ms ? (r.duration_ms / 1000).toFixed(1) + 's' : '—';
+      return `<tr>
+        <td style="white-space:nowrap;color:var(--muted);">${formatDate(r.created_at)}</td>
+        <td style="font-weight:700;color:${passed ? '#22c55e' : '#ef4444'};">${conf.toFixed(1)}%</td>
+        <td><span class="badge-pass ${passed ? 'pass' : 'fail'}">${passed ? 'PASS' : 'FAIL'}</span></td>
+        <td style="color:var(--text);">${r.total_questions}</td>
+        <td style="color:var(--muted);">${dur}</td>
+        <td style="color:var(--muted);">${threshold}%</td>
+      </tr>`;
+    }).join('');
+  }
+
+  // Load test history on dashboard show
+  const _showDashWithTests = showDash;
+  showDash = function() {
+    _showDashWithTests();
+    loadTestHistory();
+  };
+
+  // Load test history on initial page load if already authenticated
+  if (adminToken) loadTestHistory();
+
+  // Reload history on refresh button
+  document.getElementById('refreshBtn').addEventListener('click', loadTestHistory);
 </script>
 </body>
 </html>

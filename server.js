@@ -28,6 +28,7 @@ const API_HANDLERS = {
   '/api/ingest':    './api/ingest.js',
   '/api/admin':     './api/admin.js',
   '/api/feedback':  './api/feedback.js',
+  '/api/ai-test':   './api/ai-test.js',
 };
 
 const MIME = {
