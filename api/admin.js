@@ -31,7 +31,7 @@ async function supabaseFetch(path, supabaseUrl, supabaseKey) {
 }
 
 module.exports = async (req, res) => {
-  const JWT_SECRET        = process.env.JWT_SECRET        || 'operrai-poc-secret-change-in-prod';
+  const JWT_SECRET        = process.env.JWT_SECRET        || 'raymidi-poc-secret-change-in-prod';
   const SUPABASE_URL      = process.env.SUPABASE_URL      || 'https://qjajoayybuvxvpgysoih.supabase.co';
   const SUPABASE_ANON_KEY = process.env.SUPABASE_ANON_KEY || '';
 

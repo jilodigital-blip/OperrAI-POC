@@ -357,7 +357,7 @@ ${context}`;
 
 module.exports = async (req, res) => {
   // Read env vars inside handler to avoid stale module-scope cache on Vercel
-  const JWT_SECRET        = process.env.JWT_SECRET        || 'operrai-poc-secret-change-in-prod';
+  const JWT_SECRET        = process.env.JWT_SECRET        || 'raymidi-poc-secret-change-in-prod';
   const OPENAI_API_KEY    = process.env.OPENAI_API_KEY    || '';
   const GEMINI_API_KEY    = process.env.GEMINI_API_KEY    || '';
   const SUPABASE_URL      = process.env.SUPABASE_URL      || '';

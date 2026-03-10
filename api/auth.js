@@ -44,10 +44,10 @@ async function readBody(req) {
 module.exports = async (req, res) => {
   // Read env vars inside handler to avoid stale module-scope cache on Vercel
   const DEMO_USER   = process.env.DEMO_USER   || 'ev_demo';
-  const DEMO_PASS   = process.env.DEMO_PASS   || 'EV@OperrAI2024';
+  const DEMO_PASS   = process.env.DEMO_PASS   || 'EV@Raymidi2024';
   const ADMIN_USER  = process.env.ADMIN_USER  || 'operr_admin';
-  const ADMIN_PASS  = process.env.ADMIN_PASS  || 'Admin@OperrAI2024';
-  const JWT_SECRET  = process.env.JWT_SECRET  || 'operrai-poc-secret-change-in-prod';
+  const ADMIN_PASS  = process.env.ADMIN_PASS  || 'Admin@Raymidi2024';
+  const JWT_SECRET  = process.env.JWT_SECRET  || 'raymidi-poc-secret-change-in-prod';
 
   res.setHeader('Access-Control-Allow-Origin', '*');
   res.setHeader('Access-Control-Allow-Methods', 'POST, OPTIONS');
