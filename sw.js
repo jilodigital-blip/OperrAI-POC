@@ -1,4 +1,4 @@
-const CACHE = 'operrai-v1';
+const CACHE = 'raymidi-v1';
 const SHELL = ['/', '/login', '/ev-poc', '/ingest', '/manifest.json', '/icons/icon-192.svg', '/icons/icon-512.svg'];
 
 self.addEventListener('install', e => {

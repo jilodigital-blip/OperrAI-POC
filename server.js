@@ -1,5 +1,5 @@
 /**
- * Local development server for OperrAI POC.
+ * Local development server for Raymidi POC.
  * Serves static HTML files and routes /api/* to the Vercel-style handlers.
  *
  * Usage:  node server.js
@@ -96,7 +96,7 @@ const server = http.createServer(async (req, res) => {
 });
 
 server.listen(PORT, () => {
-  console.log(`OperrAI POC running at http://localhost:${PORT}`);
+  console.log(`Raymidi POC running at http://localhost:${PORT}`);
   console.log('');
   console.log('  Login page :  http://localhost:' + PORT + '/login');
   console.log('  Demo page  :  http://localhost:' + PORT + '/ev-poc');

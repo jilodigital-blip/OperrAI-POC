@@ -7,11 +7,11 @@
   <meta name="mobile-web-app-capable" content="yes" />
   <meta name="apple-mobile-web-app-capable" content="yes" />
   <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
-  <meta name="apple-mobile-web-app-title" content="OperrAI" />
+  <meta name="apple-mobile-web-app-title" content="Raymidi" />
   <link rel="manifest" href="/manifest.json" />
   <link rel="apple-touch-icon" href="/icons/icon-192.svg" />
-  <title>OperrAI — Beyond Bots. This is Business Automation.</title>
-  <meta name="description" content="OperrAI builds custom AI solutions that automate workflows, engage customers, and unlock intelligence across your business." />
+  <title>Raymidi — Beyond Bots. This is Business Automation.</title>
+  <meta name="description" content="Raymidi builds custom AI solutions that automate workflows, engage customers, and unlock intelligence across your business." />
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
   <link href="https://fonts.googleapis.com/css2?family=Syne:wght@400;600;700;800&family=DM+Sans:ital,opsz,wght@0,9..40,300;0,9..40,400;0,9..40,500;0,9..40,600;1,9..40,400&display=swap" rel="stylesheet" />
@@ -359,6 +359,19 @@
       border-radius: 50%;
       background: var(--gold);
       flex-shrink: 0;
+    }
+
+    /* Hero logo */
+    .hero-logo {
+      width: 88px;
+      height: 88px;
+      margin-bottom: 1.75rem;
+      filter: drop-shadow(0 4px 24px rgba(201, 168, 76, 0.25));
+      animation: logoFloat 4s ease-in-out infinite;
+    }
+    @keyframes logoFloat {
+      0%, 100% { transform: translateY(0); }
+      50% { transform: translateY(-8px); }
     }
 
     #hero h1 {
@@ -740,7 +753,7 @@
   <!-- ─── Navigation ───────────────────────────────────────────────────── -->
   <header id="navbar">
     <nav class="nav-inner">
-      <a href="#" class="logo">Operr<span>AI</span></a>
+      <a href="#" class="logo">Ray<span>midi</span></a>
       <ul class="nav-links">
         <li><a href="#services">Services</a></li>
         <li><a href="#about">About</a></li>
@@ -768,6 +781,21 @@
     <!-- ─── Hero ────────────────────────────────────────────────────────── -->
     <section id="hero">
       <div class="container hero-content">
+        <!-- Hero Logo -->
+        <svg class="hero-logo reveal" viewBox="0 0 192 192" xmlns="http://www.w3.org/2000/svg">
+          <defs>
+            <linearGradient id="heroGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+              <stop offset="0%" stop-color="#e2c47a"/>
+              <stop offset="100%" stop-color="#a8862e"/>
+            </linearGradient>
+          </defs>
+          <rect width="192" height="192" rx="40" fill="#131210"/>
+          <path d="M60 96 Q60 56, 96 56" fill="none" stroke="url(#heroGrad)" stroke-width="5" stroke-linecap="round" opacity="0.4"/>
+          <path d="M50 96 Q50 42, 96 42" fill="none" stroke="url(#heroGrad)" stroke-width="4" stroke-linecap="round" opacity="0.22"/>
+          <path d="M96 136 Q132 136, 132 96" fill="none" stroke="url(#heroGrad)" stroke-width="5" stroke-linecap="round" opacity="0.4"/>
+          <path d="M96 150 Q146 150, 146 96" fill="none" stroke="url(#heroGrad)" stroke-width="4" stroke-linecap="round" opacity="0.22"/>
+          <text x="96" y="114" font-family="'Syne',sans-serif" font-size="72" font-weight="800" fill="url(#heroGrad)" text-anchor="middle">R</text>
+        </svg>
         <div class="hero-badge reveal">Custom AI Solutions</div>
         <h1 class="reveal reveal-delay-1">
           Beyond Bots.<br />
@@ -775,7 +803,7 @@
           <span class="gold">Automation.</span>
         </h1>
         <p class="hero-sub reveal reveal-delay-2">
-          OperrAI builds intelligent systems that don't just answer questions —
+          Raymidi builds intelligent systems that don't just answer questions —
           they execute decisions, process information, and drive outcomes across
           every layer of your business.
         </p>
@@ -909,7 +937,7 @@
           <div class="about-text reveal">
             <span class="section-label">Our Mission</span>
             <h2>We Build AI That Works<br /><span class="gold">While You Sleep</span></h2>
-            <p>OperrAI was founded on a simple belief: the gap between a business's potential and its performance is filled by automation. We're not an agency that wraps a chatbot around a language model and calls it done. We engineer end-to-end AI systems — custom-designed, deeply integrated, and built to run your operations with precision.</p>
+            <p>Raymidi was founded on a simple belief: the gap between a business's potential and its performance is filled by automation. We're not an agency that wraps a chatbot around a language model and calls it done. We engineer end-to-end AI systems — custom-designed, deeply integrated, and built to run your operations with precision.</p>
             <p>Every engagement begins by understanding your workflows, your data, and your goals. Then we build. Our solutions are deployed in production environments across finance, logistics, healthcare administration, and professional services — not as experiments, but as operating infrastructure.</p>
             <p>We work at the intersection of AI engineering and business strategy, because the most powerful AI system is worthless if it doesn't fit how your business actually moves.</p>
             <a href="#contact" class="btn btn-primary">Work With Us</a>
@@ -1008,7 +1036,7 @@
   <footer>
     <div class="container footer-inner">
       <div class="footer-brand">
-        <a href="#" class="logo">Operr<span>AI</span></a>
+        <a href="#" class="logo">Ray<span>midi</span></a>
         <p>Beyond Bots. This is Business Automation.</p>
       </div>
       <nav class="footer-nav">
@@ -1016,7 +1044,7 @@
         <a href="#about">About</a>
         <a href="#contact">Contact</a>
       </nav>
-      <p class="footer-copy">&copy; 2026 OperrAI. All rights reserved.</p>
+      <p class="footer-copy">&copy; 2026 Raymidi. All rights reserved.</p>
     </div>
   </footer>
 

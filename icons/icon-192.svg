@@ -1,6 +1,16 @@
 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 192 192" width="192" height="192">
-  <rect width="192" height="192" rx="32" fill="#0A0A0A"/>
-  <circle cx="96" cy="96" r="58" fill="none" stroke="#D4AF37" stroke-width="12"/>
-  <circle cx="96" cy="96" r="30" fill="#D4AF37"/>
-  <text x="96" y="106" font-family="sans-serif" font-size="36" font-weight="700" fill="#0A0A0A" text-anchor="middle">AI</text>
+  <defs>
+    <linearGradient id="g1" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#D4AF37"/>
+      <stop offset="100%" stop-color="#A8862E"/>
+    </linearGradient>
+  </defs>
+  <rect width="192" height="192" rx="40" fill="#0F0E0C"/>
+  <!-- Sound wave arcs -->
+  <path d="M60 96 Q60 56, 96 56" fill="none" stroke="url(#g1)" stroke-width="5" stroke-linecap="round" opacity="0.35"/>
+  <path d="M50 96 Q50 42, 96 42" fill="none" stroke="url(#g1)" stroke-width="4" stroke-linecap="round" opacity="0.2"/>
+  <path d="M96 136 Q132 136, 132 96" fill="none" stroke="url(#g1)" stroke-width="5" stroke-linecap="round" opacity="0.35"/>
+  <path d="M96 150 Q146 150, 146 96" fill="none" stroke="url(#g1)" stroke-width="4" stroke-linecap="round" opacity="0.2"/>
+  <!-- Central R letterform -->
+  <text x="96" y="114" font-family="'Syne',sans-serif" font-size="72" font-weight="800" fill="url(#g1)" text-anchor="middle">R</text>
 </svg>

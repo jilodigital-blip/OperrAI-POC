@@ -1,5 +1,5 @@
 /**
- * OperrAI — FAQ Ingestion Script
+ * Raymidi — FAQ Ingestion Script
  * Reads faqs.json, generates OpenAI embeddings, and upserts into Supabase documents table.
  * Safe to re-run: uses doc_id for deduplication (existing rows are updated, not duplicated).
  *
