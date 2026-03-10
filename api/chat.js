@@ -142,6 +142,13 @@ async function callAgenticPipeline(question, channel, { openaiKey, geminiKey, su
 Answer ONLY using the provided knowledge base context. Do not hallucinate.
 If the context lacks the answer, say: "I don't have enough information on this topic. Please contact our support team."
 
+LANGUAGE RULE: Detect the language of the customer's question and ALWAYS reply in the SAME language.
+- If the customer writes in Hindi, reply in Hindi.
+- If the customer writes in Hinglish (mix of Hindi and English), reply in Hinglish.
+- If the customer writes in any other language, reply in that language.
+- If the customer writes in English, reply in English.
+The knowledge base context is in English, but you must translate your answer into the customer's language while keeping technical terms (like model names, features, specifications) in English.
+
 ${formatInstruction}
 
 Knowledge Base Context:
@@ -174,6 +181,7 @@ ${context}`;
 Evaluate whether the AI answer correctly addresses the customer question.
 Check for: hallucinations, incorrect facts, missing critical info, or off-topic responses.
 IMPORTANT: If the AI answer says it does not have information but the Knowledge Base Context clearly contains relevant information to answer the question, rate this as Poor.
+MULTILINGUAL: The AI may respond in Hindi, Hinglish, or other languages to match the customer's language. This is correct behavior — evaluate the factual accuracy of the translated content against the English knowledge base context, not the language used.
 
 Customer Question:
 ${question}
