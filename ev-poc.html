@@ -1300,6 +1300,94 @@
     @media (max-width: 900px) {
       .channel-divider { padding: 0.5rem 1.25rem 0.75rem; }
     }
+
+    /* ── Mobile: Small tablets & large phones (≤ 640px) ──────── */
+    @media (max-width: 640px) {
+      /* Topbar: icon-only buttons */
+      .feedback-btn .feedback-text { display: none; }
+      .feedback-btn { padding: 0.35rem 0.5rem; }
+      .logout-btn .logout-text { display: none; }
+      .logout-btn::after { content: '↗'; font-size: 0.9rem; }
+      .logout-btn { padding: 0.35rem 0.5rem; }
+
+      /* Welcome banner: vertical stack */
+      .welcome-banner-inner {
+        flex-direction: column;
+        align-items: flex-start;
+        gap: 0.75rem;
+        padding: 1rem;
+      }
+      .welcome-avatar { width: 40px; height: 40px; font-size: 1.2rem; border-radius: 10px; }
+      .welcome-content h2 { font-size: 0.92rem; }
+      .welcome-content p {
+        font-size: 0.78rem;
+        line-height: 1.5;
+        display: -webkit-box;
+        -webkit-line-clamp: 3;
+        -webkit-box-orient: vertical;
+        overflow: hidden;
+      }
+      .welcome-badges { gap: 0.35rem; }
+      .welcome-badge { font-size: 0.6rem; padding: 0.15rem 0.45rem; }
+
+      /* Hero: smaller fonts */
+      .hero-banner h1 { font-size: clamp(1.4rem, 5vw, 1.75rem); }
+      .hero-desc { font-size: 0.88rem; line-height: 1.6; }
+      .hero-banner { padding: 1.5rem 1rem 1.25rem; }
+      .section-badge { font-size: 0.62rem; padding: 0.25rem 0.65rem; margin-bottom: 1rem; }
+      .channel-pill { font-size: 0.72rem; padding: 0.3rem 0.75rem; }
+
+      /* Dashboard stats */
+      .stat-value { font-size: 1.35rem; }
+      .stat-label { font-size: 0.65rem; }
+      .stat-card { padding: 0.75rem 0.85rem; }
+    }
+
+    /* ── Mobile: Small phones (≤ 480px) ──────────────────────── */
+    @media (max-width: 480px) {
+      /* Topbar */
+      .topbar { padding: 0.75rem 0.75rem; }
+      .logo { font-size: 1.15rem; }
+
+      /* Tighter layout padding */
+      .main-grid { padding: 0 0.75rem 1.5rem; }
+      .dashboard-section { padding: 0 0.75rem 1.5rem; }
+      .info-panel { padding: 0 0.75rem 2rem; }
+      .channel-divider { padding: 0.5rem 0.75rem 0.75rem; }
+      .poc-selector { padding: 1.5rem 0.75rem 0.5rem; gap: 1rem; }
+
+      /* Card internals */
+      .card-title { padding: 0.9rem 1rem; font-size: 0.88rem; }
+      .chat-messages { padding: 1rem; height: calc(40dvh - 50px); min-height: 160px; max-height: 280px; }
+      .dashboard-card-title { padding: 0.9rem 1rem; }
+      .info-card { padding: 1rem; }
+
+      /* POC boxes */
+      .poc-box { padding: 1.25rem; }
+      .poc-box-icon { font-size: 1.6rem; margin-bottom: 0.5rem; }
+      .poc-box-title { font-size: 0.9rem; }
+      .poc-box-desc { font-size: 0.75rem; }
+
+      /* Hero */
+      .hero-banner h1 { font-size: 1.3rem; }
+      .hero-desc { font-size: 0.82rem; }
+
+      /* Stats */
+      .stat-value { font-size: 1.2rem; }
+    }
+
+    /* ── Mobile: Very small phones (≤ 400px) ─────────────────── */
+    @media (max-width: 400px) {
+      .main-grid { padding: 0 0.5rem 1.25rem; }
+      .dashboard-section { padding: 0 0.5rem 1.25rem; }
+      .info-panel { padding: 0 0.5rem 1.5rem; }
+      .card { border-radius: 12px; }
+
+      .welcome-content p { -webkit-line-clamp: 2; }
+      .welcome-badge { font-size: 0.56rem; padding: 0.12rem 0.4rem; }
+
+      .chat-messages { height: calc(38dvh - 50px); min-height: 150px; max-height: 250px; }
+    }
   </style>
 </head>
 <body>
@@ -1314,8 +1402,8 @@
     </div>
     <div style="display:flex;align-items:center;gap:0.6rem;">
       <button class="theme-btn" id="themeBtn" title="Toggle theme">🌙</button>
-      <button class="feedback-btn" id="feedbackBtn" title="Share your feedback about this POC">💬 Share Feedback</button>
-      <button class="logout-btn" id="logoutBtn">Sign Out</button>
+      <button class="feedback-btn" id="feedbackBtn" title="Share your feedback about this POC">💬 <span class="feedback-text">Share Feedback</span></button>
+      <button class="logout-btn" id="logoutBtn"><span class="logout-text">Sign Out</span></button>
     </div>
   </header>
 
