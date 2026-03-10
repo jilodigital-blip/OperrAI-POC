@@ -1750,18 +1750,33 @@
     return msg;
   }
 
-  function buildErrorMessage(text) {
+  function buildErrorMessage(text, onRetry) {
     const msg = document.createElement('div');
     msg.className = 'msg ai';
     msg.innerHTML = `
       <div class="bubble" style="border-color:rgba(239,68,68,0.3);color:rgba(255,255,255,0.6);">
         ⚠ ${escapeHtml(text)}
       </div>`;
+    if (onRetry) {
+      const btn = document.createElement('button');
+      btn.textContent = 'Retry';
+      btn.style.cssText = 'margin-top:6px;padding:4px 14px;border:1px solid rgba(239,68,68,0.4);border-radius:6px;background:transparent;color:rgba(255,255,255,0.7);cursor:pointer;font-size:0.8rem;';
+      btn.addEventListener('click', () => {
+        btn.disabled = true;
+        btn.textContent = 'Retrying…';
+        msg.remove();
+        onRetry();
+      });
+      msg.querySelector('.bubble').appendChild(btn);
+    }
     return msg;
   }
 
   // ── Generic send function ──────────────────────────────────────────────────
   async function sendMessage({ question, channel, messagesEl, welcomeEl, typingEl, appendMsg }) {
+    const params = { question, channel, messagesEl, welcomeEl, typingEl, appendMsg };
+    const retry = () => sendMessage(params);
+
     typingEl.classList.add('visible');
     messagesEl.scrollTop = messagesEl.scrollHeight;
 
@@ -1797,11 +1812,11 @@
         appendMsg(msg);
         setTimeout(loadDashboard, 3000);
       } else {
-        appendMsg(buildErrorMessage(data.error || 'Something went wrong. Please try again.'));
+        appendMsg(buildErrorMessage(data.error || 'Something went wrong. Please try again.', retry));
       }
     } catch {
       typingEl.classList.remove('visible');
-      appendMsg(buildErrorMessage('Connection error. Please check your internet and try again.'));
+      appendMsg(buildErrorMessage('Connection error. Please check your internet and try again.', retry));
     }
   }
 

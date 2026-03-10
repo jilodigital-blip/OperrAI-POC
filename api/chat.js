@@ -77,20 +77,49 @@ async function supabaseRPC(fn, params, supabaseUrl, supabaseKey) {
   return await resp.json();
 }
 
+// ── Retry helper for transient API failures ─────────────────────────────────
+
+async function fetchWithRetry(url, options, { retries = 2, baseDelay = 1000, timeoutMs } = {}) {
+  for (let attempt = 0; attempt <= retries; attempt++) {
+    try {
+      // Create a fresh timeout signal per attempt so retries aren't pre-aborted
+      const fetchOpts = { ...options };
+      if (timeoutMs) fetchOpts.signal = AbortSignal.timeout(timeoutMs);
+      const resp = await fetch(url, fetchOpts);
+      // Retry on transient HTTP errors (429 rate limit, 500+)
+      if (!resp.ok && attempt < retries && (resp.status === 429 || resp.status >= 500)) {
+        const delay = baseDelay * Math.pow(2, attempt);
+        console.warn(`API returned ${resp.status}, retrying in ${delay}ms (attempt ${attempt + 1}/${retries})`);
+        await new Promise(r => setTimeout(r, delay));
+        continue;
+      }
+      return resp;
+    } catch (err) {
+      // Retry on network/timeout errors
+      if (attempt < retries && (err.name === 'TimeoutError' || err.name === 'AbortError' || err.code === 'ECONNRESET' || err.code === 'ETIMEDOUT')) {
+        const delay = baseDelay * Math.pow(2, attempt);
+        console.warn(`Fetch error (${err.message}), retrying in ${delay}ms (attempt ${attempt + 1}/${retries})`);
+        await new Promise(r => setTimeout(r, delay));
+        continue;
+      }
+      throw err;
+    }
+  }
+}
+
 // ── Agentic pipeline: Embed → RAG → Gemini L1 → OpenAI L2 → Quality Gate ──────
 
 async function callAgenticPipeline(question, channel, { openaiKey, geminiKey, supabaseUrl, supabaseKey }) {
   // ── L0: Embed ──────────────────────────────────────────────────────────────
   if (!openaiKey) throw new Error('OPENAI_API_KEY is not configured');
-  const embedResp = await fetch('https://api.openai.com/v1/embeddings', {
+  const embedResp = await fetchWithRetry('https://api.openai.com/v1/embeddings', {
     method: 'POST',
     headers: {
       'Authorization': `Bearer ${openaiKey}`,
       'Content-Type': 'application/json',
     },
     body: JSON.stringify({ model: 'text-embedding-3-small', input: question }),
-    signal: AbortSignal.timeout(15000),
-  });
+  }, { retries: 2, baseDelay: 1000, timeoutMs: 15000 });
   if (!embedResp.ok) throw new Error(`OpenAI embed returned ${embedResp.status}`);
   const embedData = await embedResp.json();
   const embedding = embedData.data[0].embedding;
@@ -176,7 +205,7 @@ ${formatInstruction}
 Knowledge Base Context:
 ${context}`;
 
-  const l1Resp = await fetch(
+  const l1Resp = await fetchWithRetry(
     `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent?key=${geminiKey}`,
     {
       method: 'POST',
@@ -189,8 +218,8 @@ ${context}`;
           maxOutputTokens: channel === 'email' ? 1024 : 512,
         },
       }),
-      signal: AbortSignal.timeout(30000),
-    }
+    },
+    { retries: 2, baseDelay: 1500, timeoutMs: 30000 }
   );
   if (!l1Resp.ok) throw new Error(`Gemini L1 returned ${l1Resp.status}`);
   const l1Data = await l1Resp.json();
