@@ -98,18 +98,31 @@ module.exports = async (req, res) => {
       runId, sessionId, totalQuestions,
       chatResults, emailResults,
       overallConfidence, passThreshold, passed,
-      durationMs, questionDetails
+      durationMs, questionDetails,
+      testMode, securityResults, securityStats
     } = body;
 
     if (!runId || !totalQuestions) {
       return res.status(400).json({ error: 'runId and totalQuestions are required' });
     }
 
+    // Embed security data into existing JSONB fields (no schema migration needed)
+    // - securityResults and securityStats go into chat_results under a _security key
+    // - questionDetails includes both FAQ and security entries (discriminated by testType)
+    const chatResultsWithSecurity = {
+      ...(chatResults || {}),
+      _security: {
+        testMode: testMode || 'faq',
+        securityStats: securityStats || {},
+        securityResults: securityResults || [],
+      }
+    };
+
     const row = {
       run_id: runId,
       session_id: sessionId || `ai-test-${runId}`,
       total_questions: totalQuestions,
-      chat_results: JSON.stringify(chatResults || {}),
+      chat_results: JSON.stringify(chatResultsWithSecurity),
       email_results: JSON.stringify(emailResults || {}),
       overall_confidence: overallConfidence || 0,
       pass_threshold: passThreshold || 80,
