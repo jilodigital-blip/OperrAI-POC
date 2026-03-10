@@ -2,7 +2,14 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
+  <meta name="theme-color" content="#0A0A0A" />
+  <meta name="mobile-web-app-capable" content="yes" />
+  <meta name="apple-mobile-web-app-capable" content="yes" />
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
+  <meta name="apple-mobile-web-app-title" content="OperrAI" />
+  <link rel="manifest" href="/manifest.json" />
+  <link rel="apple-touch-icon" href="/icons/icon-192.svg" />
   <title>AI POC Hub — Ather | OperrAI</title>
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
@@ -57,6 +64,7 @@
       align-items: center;
       justify-content: space-between;
       padding: 1rem 2rem;
+      padding-top: max(1rem, env(safe-area-inset-top));
       border-bottom: 1px solid var(--border);
       background: rgba(10,10,10,0.9);
       backdrop-filter: blur(12px);
@@ -527,6 +535,7 @@
     /* ── Chat / Email shared ──────────────────────────────────── */
     .chat-messages {
       height: 420px;
+      min-height: 200px;
       overflow-y: auto;
       padding: 1.25rem;
       display: flex;
@@ -704,9 +713,48 @@
       30%           { transform: translateY(-5px); }
     }
 
+    /* Channel toggle */
+    .channel-toggle {
+      display: flex;
+      align-items: center;
+      gap: 0.5rem;
+      padding: 0.5rem 1.25rem;
+      border-top: 1px solid var(--border);
+      background: var(--surface2);
+      font-size: 0.75rem;
+      color: var(--muted);
+    }
+
+    .channel-toggle-label { flex-shrink: 0; }
+
+    .channel-switch {
+      display: flex;
+      background: rgba(255,255,255,0.04);
+      border: 1px solid var(--border2);
+      border-radius: 6px;
+      overflow: hidden;
+    }
+
+    .channel-opt {
+      padding: 0.3rem 0.7rem;
+      cursor: pointer;
+      font-size: 0.72rem;
+      font-weight: 500;
+      color: var(--muted);
+      transition: background 0.2s, color 0.2s;
+      border: none;
+      background: none;
+      font-family: var(--font-body);
+    }
+    .channel-opt.active {
+      background: var(--gold-dim);
+      color: var(--gold);
+    }
+
     /* Chat input area */
     .chat-input-area {
       padding: 1rem 1.25rem;
+      padding-bottom: max(1rem, env(safe-area-inset-bottom));
       border-top: 1px solid var(--border);
       display: flex;
       gap: 0.75rem;
@@ -991,6 +1039,12 @@
     @media (max-width: 640px) {
       .info-cards { grid-template-columns: 1fr; }
       .stats-grid { grid-template-columns: 1fr; }
+      .chat-messages {
+        height: calc(45dvh - 60px);
+        min-height: 180px;
+        max-height: 320px;
+      }
+      .main-grid { padding: 0 1rem 2rem; }
     }
 
     .info-card {
@@ -1385,6 +1439,14 @@
         </div>
       </div>
 
+      <div class="channel-toggle">
+        <span class="channel-toggle-label">Response mode:</span>
+        <div class="channel-switch">
+          <button class="channel-opt active" data-channel="chat" onclick="setChannel('chat')">💬 Chat</button>
+          <button class="channel-opt" data-channel="email" onclick="setChannel('email')">📧 Email</button>
+        </div>
+      </div>
+
       <div class="chat-input-area">
         <textarea
           id="chatInput"
@@ -1658,7 +1720,7 @@
       : ' &bull; Accuracy rating pending…';
 
     msg.innerHTML = `
-      <div class="bubble">${escapeHtml(text)}</div>
+      <div class="bubble">${renderMarkdown(text)}</div>
       ${sourcesHtml}
       <div class="msg-meta">
         ${formatTime(new Date())}${timeStr ? ` &bull; ${timeStr}` : ''}${accuracyHtml}
@@ -1932,10 +1994,44 @@
     }
   }
 
+  // Lightweight markdown → HTML for AI responses (bold, italic, lists, line breaks)
+  function renderMarkdown(str) {
+    let html = escapeHtml(str);
+    // Bold: **text** or __text__
+    html = html.replace(/\*\*(.+?)\*\*/g, '<strong>$1</strong>');
+    html = html.replace(/__(.+?)__/g, '<strong>$1</strong>');
+    // Italic: *text* or _text_ (but not inside words with underscores)
+    html = html.replace(/(?<!\w)\*([^*]+?)\*(?!\w)/g, '<em>$1</em>');
+    // Numbered lists: lines starting with "1. ", "2. " etc.
+    html = html.replace(/^(\d+)\.\s+(.+)$/gm, '<li style="margin-left:1.2em;list-style:decimal;">$2</li>');
+    // Bullet lists: lines starting with "- " or "• "
+    html = html.replace(/^[-•]\s+(.+)$/gm, '<li style="margin-left:1.2em;list-style:disc;">$1</li>');
+    // Wrap consecutive <li> runs in <ul>/<ol>
+    html = html.replace(/((?:<li[^>]*>.*?<\/li>\n?)+)/g, '<ul style="padding-left:0.5em;margin:0.3em 0;">$1</ul>');
+    // Line breaks (double newline → paragraph break, single → <br>)
+    html = html.replace(/\n{2,}/g, '<br><br>');
+    html = html.replace(/\n/g, '<br>');
+    return html;
+  }
+
+
   // ── Init ──────────────────────────────────────────────────────────────────
   loadDashboard();
   setInterval(loadDashboard, 30000);
   chatInputEl.focus();
+
+  // Mobile keyboard awareness — keep chat scrolled to bottom when keyboard opens
+  if (window.visualViewport) {
+    window.visualViewport.addEventListener('resize', () => {
+      chatMessagesEl.scrollTop = chatMessagesEl.scrollHeight;
+    });
+  }
+
+  if ('serviceWorker' in navigator) {
+    window.addEventListener('load', () => {
+      navigator.serviceWorker.register('/sw.js').catch(() => {});
+    });
+  }
 
   // ══════════════════════════════════════════════════════════════════════════
   // ── Feedback Modal ────────────────────────────────────────────────────────
