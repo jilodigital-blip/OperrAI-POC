@@ -1623,10 +1623,23 @@
     try {
       const resp = await fetch('/ingest/faqs.json');
       if (resp.ok) {
+        const contentType = resp.headers.get('content-type') || '';
+        if (!contentType.includes('json')) {
+          console.error('loadFaqQuestions: /ingest/faqs.json returned non-JSON content-type:', contentType);
+          return aiFaqQuestions;
+        }
         const faqs = await resp.json();
+        if (!Array.isArray(faqs)) {
+          console.error('loadFaqQuestions: expected array, got', typeof faqs);
+          return aiFaqQuestions;
+        }
         aiFaqQuestions = extractFaqQuestions(faqs);
+      } else {
+        console.error('loadFaqQuestions: fetch failed with status', resp.status);
       }
-    } catch { /* ignore */ }
+    } catch (err) {
+      console.error('loadFaqQuestions error:', err);
+    }
     return aiFaqQuestions;
   }
 
@@ -1683,7 +1696,7 @@
 
     const questions = await loadFaqQuestions();
     if (questions.length === 0) {
-      alert('No FAQ questions found. Please check /ingest/faqs.json');
+      alert('No FAQ questions found. Please check that /ingest/faqs.json is accessible (check browser console for details).');
       return;
     }
 

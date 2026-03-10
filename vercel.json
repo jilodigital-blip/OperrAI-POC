@@ -10,6 +10,7 @@
     { "src": "/sw.js",         "dest": "/sw.js" },
     { "src": "/manifest.json", "dest": "/manifest.json" },
     { "src": "/icons/(.*)",    "dest": "/icons/$1" },
+    { "src": "/ingest/(.*)",   "dest": "/ingest/$1" },
     { "src": "/ev-poc",        "dest": "/ev-poc.html" },
     { "src": "/ingest",        "dest": "/ingest.html" },
     { "src": "/login",         "dest": "/login.html" },
