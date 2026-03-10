@@ -107,9 +107,9 @@ async function fetchWithRetry(url, options, { retries = 2, baseDelay = 1000, tim
   }
 }
 
-// ── Agentic pipeline: Embed → RAG → Gemini L1 → OpenAI L2 → Quality Gate ──────
+// ── Agentic pipeline: Embed → RAG → OpenAI L1 → OpenAI L2 → Quality Gate ──────
 
-async function callAgenticPipeline(question, channel, { openaiKey, geminiKey, supabaseUrl, supabaseKey }) {
+async function callAgenticPipeline(question, channel, { openaiKey, supabaseUrl, supabaseKey }) {
   // ── L0: Embed ──────────────────────────────────────────────────────────────
   if (!openaiKey) throw new Error('OPENAI_API_KEY is not configured');
   const embedResp = await fetchWithRetry('https://api.openai.com/v1/embeddings', {
@@ -171,8 +171,7 @@ async function callAgenticPipeline(question, channel, { openaiKey, geminiKey, su
     relevance_score: c.similarity !== null ? Math.round((c.similarity || 0) * 100) / 100 : null,
   }));
 
-  // ── L1: Gemini Worker ──────────────────────────────────────────────────────
-  if (!geminiKey) throw new Error('GEMINI_API_KEY is not configured');
+  // ── L1: OpenAI GPT-4o Worker ────────────────────────────────────────────────
   const formatInstruction = channel === 'email'
     ? `FORMAT RULES:
 - Write a formal professional email response with a warm greeting and sign-off.
@@ -206,24 +205,28 @@ Knowledge Base Context:
 ${context}`;
 
   const l1Resp = await fetchWithRetry(
-    `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent?key=${geminiKey}`,
+    'https://api.openai.com/v1/chat/completions',
     {
       method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
+      headers: {
+        'Authorization': `Bearer ${openaiKey}`,
+        'Content-Type': 'application/json',
+      },
       body: JSON.stringify({
-        systemInstruction: { parts: [{ text: systemPrompt }] },
-        contents: [{ role: 'user', parts: [{ text: question }] }],
-        generationConfig: {
-          temperature: 0.3,
-          maxOutputTokens: channel === 'email' ? 1024 : 512,
-        },
+        model: 'gpt-4o',
+        max_tokens: channel === 'email' ? 1024 : 512,
+        temperature: 0.3,
+        messages: [
+          { role: 'system', content: systemPrompt },
+          { role: 'user',   content: question },
+        ],
       }),
     },
     { retries: 2, baseDelay: 1500, timeoutMs: 30000 }
   );
-  if (!l1Resp.ok) throw new Error(`Gemini L1 returned ${l1Resp.status}`);
+  if (!l1Resp.ok) throw new Error(`OpenAI L1 returned ${l1Resp.status}`);
   const l1Data = await l1Resp.json();
-  const l1Answer = l1Data?.candidates?.[0]?.content?.parts?.[0]?.text?.trim() || 'No response generated.';
+  const l1Answer = l1Data?.choices?.[0]?.message?.content?.trim() || 'No response generated.';
 
   // ── L2: OpenAI GPT-4o Supervisor ──────────────────────────────────────────
   let rating = { score: 5, label: 'Acceptable', rationale: 'Quality evaluator not configured — defaulting to Acceptable.' };
@@ -359,7 +362,6 @@ module.exports = async (req, res) => {
   // Read env vars inside handler to avoid stale module-scope cache on Vercel
   const JWT_SECRET        = process.env.JWT_SECRET        || 'operrai-poc-secret-change-in-prod';
   const OPENAI_API_KEY    = process.env.OPENAI_API_KEY    || '';
-  const GEMINI_API_KEY    = process.env.GEMINI_API_KEY    || '';
   const SUPABASE_URL      = process.env.SUPABASE_URL      || '';
   const SUPABASE_ANON_KEY = process.env.SUPABASE_ANON_KEY || '';
 
@@ -383,7 +385,7 @@ module.exports = async (req, res) => {
   if (!question?.trim()) return res.status(400).json({ error: 'Question is required' });
 
   const startTime = Date.now();
-  const envVars = { openaiKey: OPENAI_API_KEY, geminiKey: GEMINI_API_KEY, supabaseUrl: SUPABASE_URL, supabaseKey: SUPABASE_ANON_KEY };
+  const envVars = { openaiKey: OPENAI_API_KEY, supabaseUrl: SUPABASE_URL, supabaseKey: SUPABASE_ANON_KEY };
 
   let result;
   try {
@@ -426,7 +428,7 @@ module.exports = async (req, res) => {
       accuracy_score,
       accuracy_label,
       rating_rationale: accuracy_rationale,
-      rated_by_model:   OPENAI_API_KEY ? 'gpt-4o' : 'default',
+      rated_by_model:   OPENAI_API_KEY ? 'gpt-4o-l2' : 'default',
     }, SUPABASE_URL, SUPABASE_ANON_KEY).catch(() => {});
   }
 

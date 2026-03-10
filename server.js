@@ -103,5 +103,5 @@ server.listen(PORT, () => {
   console.log('  Ingest page:  http://localhost:' + PORT + '/ingest');
   console.log('');
   console.log('Make sure your .env or environment variables are set:');
-  console.log('  OPENAI_API_KEY, GEMINI_API_KEY, SUPABASE_URL, SUPABASE_ANON_KEY, INGEST_SECRET');
+  console.log('  OPENAI_API_KEY, SUPABASE_URL, SUPABASE_ANON_KEY, INGEST_SECRET');
 });
