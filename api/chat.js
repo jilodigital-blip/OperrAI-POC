@@ -228,7 +228,7 @@ ${context}`;
   const l1Data = await l1Resp.json();
   const l1Answer = l1Data?.choices?.[0]?.message?.content?.trim() || 'No response generated.';
 
-  // ── L2: OpenAI GPT-4o Supervisor ──────────────────────────────────────────
+  // ── L2: OpenAI GPT-4.1 Supervisor ─────────────────────────────────────────
   let rating = { score: 5, label: 'Acceptable', rationale: 'Quality evaluator not configured — defaulting to Acceptable.' };
   if (openaiKey) {
     const evalPrompt = `You are a strict QA evaluator for an AI customer support system.
@@ -259,7 +259,7 @@ Scoring: 9-10=Excellent, 7-8=Good, 5-6=Acceptable, 0-4=Poor`;
           'Content-Type': 'application/json',
         },
         body: JSON.stringify({
-          model: 'gpt-4o',
+          model: 'gpt-4.1',
           max_tokens: 256,
           temperature: 0.1,
           messages: [
@@ -311,7 +311,7 @@ ${context}`;
           'Content-Type': 'application/json',
         },
         body: JSON.stringify({
-          model: 'gpt-4o',
+          model: 'gpt-4.1',
           max_tokens: channel === 'email' ? 1024 : 512,
           temperature: 0.15,
           messages: [
@@ -428,7 +428,7 @@ module.exports = async (req, res) => {
       accuracy_score,
       accuracy_label,
       rating_rationale: accuracy_rationale,
-      rated_by_model:   OPENAI_API_KEY ? 'gpt-4o-l2' : 'default',
+      rated_by_model:   OPENAI_API_KEY ? 'gpt-4.1' : 'default',
     }, SUPABASE_URL, SUPABASE_ANON_KEY).catch(() => {});
   }
 
