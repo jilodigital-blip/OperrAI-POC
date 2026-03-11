@@ -1695,6 +1695,17 @@
   </style>
 </head>
 <body>
+<!-- Console warning: deters social engineering / self-XSS attacks -->
+<script>
+(function(){
+  if(location.hostname==='localhost'||location.hostname==='127.0.0.1')return;
+  try{
+    console.log('%c\u26d4 STOP!','color:red;font-size:2rem;font-weight:bold');
+    console.log('%cThis browser feature is intended for developers only.\n\nIf someone told you to copy-paste something here, it is likely a scam that could compromise your account.','font-size:1rem;color:#D4AF37');
+  }catch(e){}
+})();
+</script>
+
 <div class="page">
 
   <!-- ── Topbar ────────────────────────────────────────────────── -->
@@ -2189,25 +2200,16 @@
 </div><!-- /page -->
 
 <script>
-  // ── Auth guard ─────────────────────────────────────────────────────────────
-  const TOKEN_KEY = 'raymidi_token';
-  let authToken = null;
+  // ── Auth guard (token is in httpOnly cookie — not accessible from JS) ─────
   let sessionId = null;
 
   (function checkAuth() {
-    const token = localStorage.getItem(TOKEN_KEY);
-    if (!token) { window.location.href = '/login'; return; }
-    try {
-      const payload = JSON.parse(atob(token.split('.')[1].replace(/-/g, '+').replace(/_/g, '/')));
-      if (payload.exp < Math.floor(Date.now() / 1000)) {
-        localStorage.removeItem(TOKEN_KEY);
-        window.location.href = '/login';
-        return;
-      }
-      authToken = token;
-    } catch {
-      localStorage.removeItem(TOKEN_KEY);
+    const exp = parseInt(sessionStorage.getItem('raymidi_exp') || '0', 10);
+    if (!exp || exp < Math.floor(Date.now() / 1000)) {
+      sessionStorage.removeItem('raymidi_exp');
+      sessionStorage.removeItem('raymidi_role');
       window.location.href = '/login';
+      return;
     }
   })();
 
@@ -2215,9 +2217,11 @@
   sessionId = sessionStorage.getItem('poc_session') || crypto.randomUUID();
   sessionStorage.setItem('poc_session', sessionId);
 
-  // ── Logout ────────────────────────────────────────────────────────────────
+  // ── Logout (clear httpOnly cookie via server + session metadata) ──────────
   document.getElementById('logoutBtn').addEventListener('click', () => {
-    localStorage.removeItem(TOKEN_KEY);
+    fetch('/api/auth', { method: 'DELETE', credentials: 'same-origin' }).catch(() => {});
+    sessionStorage.removeItem('raymidi_exp');
+    sessionStorage.removeItem('raymidi_role');
     sessionStorage.removeItem('poc_session');
     window.location.href = '/';
   });
@@ -2342,17 +2346,15 @@
     try {
       const resp = await fetch('/api/chat', {
         method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          'Authorization': `Bearer ${authToken}`,
-        },
+        headers: { 'Content-Type': 'application/json' },
+        credentials: 'same-origin',
         body: JSON.stringify({ question, sessionId, channel }),
       });
 
       typingEl.classList.remove('visible');
 
       if (resp.status === 401) {
-        localStorage.removeItem(TOKEN_KEY);
+        sessionStorage.removeItem('raymidi_exp');
         window.location.href = '/login';
         return;
       }
@@ -2501,11 +2503,11 @@
   async function loadDashboard() {
     try {
       const resp = await fetch('/api/dashboard', {
-        headers: { 'Authorization': `Bearer ${authToken}` },
+        credentials: 'same-origin',
       });
 
       if (resp.status === 401) {
-        localStorage.removeItem(TOKEN_KEY);
+        sessionStorage.removeItem('raymidi_exp');
         window.location.href = '/login';
         return;
       }
@@ -2695,10 +2697,8 @@
       try {
         const resp = await fetch('/api/feedback', {
           method: 'POST',
-          headers: {
-            'Content-Type': 'application/json',
-            'Authorization': `Bearer ${authToken}`,
-          },
+          headers: { 'Content-Type': 'application/json' },
+          credentials: 'same-origin',
           body: JSON.stringify({
             rating:      selectedRating,
             category:    selectedCategory,
@@ -2709,7 +2709,7 @@
         });
 
         if (resp.status === 401) {
-          localStorage.removeItem(TOKEN_KEY);
+          sessionStorage.removeItem('raymidi_exp');
           window.location.href = '/login';
           return;
         }
@@ -2788,7 +2788,7 @@
         aiFaqQuestions = extractFaqQuestions(faqs);
       }
     } catch (err) {
-      console.error('loadFaqQuestions error:', err);
+      if (location.hostname === 'localhost') console.error('loadFaqQuestions error:', err);
     }
     return aiFaqQuestions;
   }
@@ -2886,10 +2886,8 @@
       try {
         const resp = await fetch('/api/chat', {
           method: 'POST',
-          headers: {
-            'Content-Type': 'application/json',
-            'Authorization': `Bearer ${authToken}`,
-          },
+          headers: { 'Content-Type': 'application/json' },
+          credentials: 'same-origin',
           body: JSON.stringify({ question, sessionId: testSessionId, channel }),
         });
 
@@ -2950,10 +2948,8 @@
     try {
       await fetch('/api/ai-test', {
         method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          'Authorization': `Bearer ${authToken}`,
-        },
+        headers: { 'Content-Type': 'application/json' },
+        credentials: 'same-origin',
         body: JSON.stringify(aiTestResultData),
       });
     } catch { /* non-blocking */ }
@@ -3065,7 +3061,7 @@
     let runs = [];
     try {
       const resp = await fetch('/api/ai-test', {
-        headers: { 'Authorization': `Bearer ${authToken}` },
+        credentials: 'same-origin',
       });
       if (resp.ok) {
         const data = await resp.json();

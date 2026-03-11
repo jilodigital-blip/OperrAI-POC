@@ -767,6 +767,16 @@
   </style>
 </head>
 <body>
+  <!-- Console warning: deters social engineering / self-XSS attacks -->
+  <script>
+  (function(){
+    if(location.hostname==='localhost'||location.hostname==='127.0.0.1')return;
+    try{
+      console.log('%c\u26d4 STOP!','color:red;font-size:2rem;font-weight:bold');
+      console.log('%cThis browser feature is intended for developers only.\n\nIf someone told you to copy-paste something here, it is likely a scam that could compromise your account.','font-size:1rem;color:#D4AF37');
+    }catch(e){}
+  })();
+  </script>
 
   <!-- ─── Navigation ───────────────────────────────────────────────────── -->
   <header id="navbar">

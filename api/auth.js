@@ -49,11 +49,20 @@ module.exports = async (req, res) => {
   const ADMIN_PASS  = process.env.ADMIN_PASS  || 'Admin@Raymidi2024';
   const JWT_SECRET  = process.env.JWT_SECRET  || 'raymidi-poc-secret-change-in-prod';
 
-  res.setHeader('Access-Control-Allow-Origin', process.env.CORS_ORIGIN || '*');
-  res.setHeader('Access-Control-Allow-Methods', 'POST, OPTIONS');
+  const corsOrigin = process.env.CORS_ORIGIN || '*';
+  res.setHeader('Access-Control-Allow-Origin', corsOrigin);
+  res.setHeader('Access-Control-Allow-Methods', 'POST, DELETE, OPTIONS');
   res.setHeader('Access-Control-Allow-Headers', 'Content-Type');
+  res.setHeader('Access-Control-Allow-Credentials', 'true');
 
   if (req.method === 'OPTIONS') return res.status(200).end();
+
+  // ── Logout: clear httpOnly auth cookie ────────────────────────────────────
+  if (req.method === 'DELETE') {
+    res.setHeader('Set-Cookie', 'raymidi_auth=; HttpOnly; Secure; SameSite=Strict; Path=/; Max-Age=0');
+    return res.status(200).json({ ok: true });
+  }
+
   if (req.method !== 'POST') return res.status(405).json({ error: 'Method not allowed' });
 
   // Rate limiting: 5 attempts per IP per 15 minutes
@@ -83,5 +92,11 @@ module.exports = async (req, res) => {
   const exp  = iat + 8 * 3600; // 8-hour session
   const token = signJWT({ sub: username, client: 'ev_scooter', role, iat, exp }, JWT_SECRET);
 
-  return res.status(200).json({ token, expiresAt: exp, role });
+  // Set httpOnly cookie — invisible to JavaScript / browser console
+  const isSecure = (req.headers['x-forwarded-proto'] || '').includes('https');
+  const cookieFlags = `HttpOnly; ${isSecure ? 'Secure; ' : ''}SameSite=Strict; Path=/; Max-Age=28800`;
+  res.setHeader('Set-Cookie', `raymidi_auth=${token}; ${cookieFlags}`);
+
+  // Return session metadata (no token) — frontend uses cookie for auth
+  return res.status(200).json({ expiresAt: exp, role });
 };

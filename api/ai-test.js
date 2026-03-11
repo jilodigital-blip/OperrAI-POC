@@ -58,6 +58,15 @@ async function supabaseInsert(table, row, supabaseUrl, supabaseKey) {
   return Array.isArray(data) ? data[0] : data;
 }
 
+// ── Auth token extraction (httpOnly cookie or Authorization header) ────────────
+function extractAuthToken(req) {
+  const cookies = req.headers.cookie || '';
+  const match = cookies.match(/(?:^|;\s*)raymidi_auth=([^\s;]+)/);
+  if (match) return match[1];
+  const authHeader = req.headers['authorization'] || '';
+  return authHeader.startsWith('Bearer ') ? authHeader.slice(7) : '';
+}
+
 module.exports = async (req, res) => {
   const JWT_SECRET        = process.env.JWT_SECRET        || 'raymidi-poc-secret-change-in-prod';
   const SUPABASE_URL      = process.env.SUPABASE_URL      || '';
@@ -66,12 +75,12 @@ module.exports = async (req, res) => {
   res.setHeader('Access-Control-Allow-Origin', process.env.CORS_ORIGIN || '*');
   res.setHeader('Access-Control-Allow-Methods', 'GET, POST, OPTIONS');
   res.setHeader('Access-Control-Allow-Headers', 'Content-Type, Authorization');
+  res.setHeader('Access-Control-Allow-Credentials', 'true');
 
   if (req.method === 'OPTIONS') return res.status(200).end();
 
-  // Verify JWT and require admin role
-  const authHeader = req.headers['authorization'] || '';
-  const token = authHeader.startsWith('Bearer ') ? authHeader.slice(7) : '';
+  // Verify JWT and require admin role — prefer httpOnly cookie
+  const token = extractAuthToken(req);
   const claims = verifyJWT(token, JWT_SECRET);
   if (!claims) return res.status(401).json({ error: 'Unauthorized' });
   if (claims.role !== 'admin') return res.status(403).json({ error: 'Admin access required' });

@@ -30,6 +30,15 @@ async function supabaseFetch(path, supabaseUrl, supabaseKey) {
   return resp.json();
 }
 
+// ── Auth token extraction (httpOnly cookie or Authorization header) ────────────
+function extractAuthToken(req) {
+  const cookies = req.headers.cookie || '';
+  const match = cookies.match(/(?:^|;\s*)raymidi_auth=([^\s;]+)/);
+  if (match) return match[1];
+  const authHeader = req.headers['authorization'] || '';
+  return authHeader.startsWith('Bearer ') ? authHeader.slice(7) : '';
+}
+
 module.exports = async (req, res) => {
   // Read env vars inside handler to avoid stale module-scope cache on Vercel
   const JWT_SECRET      = process.env.JWT_SECRET      || 'raymidi-poc-secret-change-in-prod';
@@ -39,12 +48,12 @@ module.exports = async (req, res) => {
   res.setHeader('Access-Control-Allow-Origin', process.env.CORS_ORIGIN || '*');
   res.setHeader('Access-Control-Allow-Methods', 'GET, OPTIONS');
   res.setHeader('Access-Control-Allow-Headers', 'Content-Type, Authorization');
+  res.setHeader('Access-Control-Allow-Credentials', 'true');
 
   if (req.method === 'OPTIONS') return res.status(200).end();
   if (req.method !== 'GET') return res.status(405).json({ error: 'Method not allowed' });
 
-  const authHeader = req.headers['authorization'] || '';
-  const token = authHeader.startsWith('Bearer ') ? authHeader.slice(7) : '';
+  const token = extractAuthToken(req);
   if (!verifyJWT(token, JWT_SECRET)) return res.status(401).json({ error: 'Unauthorized' });
 
   try {
