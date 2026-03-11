@@ -2027,11 +2027,7 @@
             <button class="ai-test-stop-btn" id="aiTestStopBtn" onclick="stopAITest()">
               ■ Stop Test
             </button>
-            <div class="ai-test-config">
-              <label>Threshold:</label>
-              <input type="number" id="aiTestThreshold" value="80" min="0" max="100" step="5" />
-              <label>%</label>
-            </div>
+            <input type="hidden" id="aiTestThreshold" value="80" />
           </div>
 
           <!-- Progress -->
@@ -2057,16 +2053,12 @@
                 </svg>
                 <div class="gauge-text">
                   <div class="gauge-pct" id="gaugePct">—</div>
-                  <div class="gauge-label" id="gaugeLabel" style="color:var(--muted);">Confidence</div>
+                  <div class="gauge-label" id="gaugeLabel" style="color:var(--muted);">Accuracy</div>
                 </div>
               </div>
               <div class="gauge-meta">
-                <div class="gauge-meta-row">
-                  <span id="gaugePassBadge" class="badge-pass pass">PASS</span>
-                </div>
                 <div class="gauge-meta-row">Questions tested: <strong id="gaugeTotalQ">—</strong></div>
                 <div class="gauge-meta-row">Duration: <strong id="gaugeDuration">—</strong></div>
-                <div class="gauge-meta-row">Threshold: <strong id="gaugeThreshold">—</strong></div>
               </div>
             </div>
 
@@ -2133,15 +2125,13 @@
                   <thead>
                     <tr>
                       <th>Date</th>
-                      <th>Confidence</th>
-                      <th>Result</th>
+                      <th>Accuracy</th>
                       <th>Questions</th>
                       <th>Duration</th>
-                      <th>Threshold</th>
                     </tr>
                   </thead>
                   <tbody id="testHistoryBody">
-                    <tr><td colspan="6" class="table-empty">No test runs yet.</td></tr>
+                    <tr><td colspan="4" class="table-empty">No test runs yet.</td></tr>
                   </tbody>
                 </table>
               </div>
@@ -2996,23 +2986,21 @@
 
     // Gauge
     const circumference = 2 * Math.PI * 58;
-    const offset = circumference - (data.overallConfidence / 100) * circumference;
+    const pctVal = data.overallConfidence;
+    const offset = circumference - (pctVal / 100) * circumference;
     const gaugeEl = document.getElementById('gaugeFill');
     gaugeEl.style.strokeDashoffset = offset;
-    gaugeEl.style.stroke = data.passed ? '#22c55e' : '#ef4444';
+    // Color based on accuracy level
+    const gaugeColor = pctVal >= 80 ? '#22c55e' : pctVal >= 60 ? '#D4AF37' : pctVal >= 40 ? '#f97316' : '#ef4444';
+    gaugeEl.style.stroke = gaugeColor;
 
-    document.getElementById('gaugePct').textContent = data.overallConfidence.toFixed(1) + '%';
+    document.getElementById('gaugePct').textContent = pctVal.toFixed(1) + '%';
     const labelEl = document.getElementById('gaugeLabel');
-    labelEl.textContent = 'Confidence';
-    labelEl.style.color = data.passed ? '#22c55e' : '#ef4444';
-
-    const passBadge = document.getElementById('gaugePassBadge');
-    passBadge.textContent = data.passed ? 'PASS' : 'FAIL';
-    passBadge.className = 'badge-pass ' + (data.passed ? 'pass' : 'fail');
+    labelEl.textContent = 'Accuracy';
+    labelEl.style.color = gaugeColor;
 
     document.getElementById('gaugeTotalQ').textContent = data.totalQuestions;
     document.getElementById('gaugeDuration').textContent = (data.durationMs / 1000).toFixed(1) + 's';
-    document.getElementById('gaugeThreshold').textContent = data.passThreshold + '%';
 
     // Channel cards
     const ch = data.chatResults;
@@ -3095,21 +3083,18 @@
   function renderTestHistory(runs) {
     const tbody = document.getElementById('testHistoryBody');
     if (runs.length === 0) {
-      tbody.innerHTML = '<tr><td colspan="6" class="table-empty">No test runs yet.</td></tr>';
+      tbody.innerHTML = '<tr><td colspan="4" class="table-empty">No test runs yet.</td></tr>';
       return;
     }
     tbody.innerHTML = runs.map(r => {
       const conf = typeof r.overall_confidence === 'number' ? r.overall_confidence : parseFloat(r.overall_confidence) || 0;
-      const threshold = typeof r.pass_threshold === 'number' ? r.pass_threshold : parseFloat(r.pass_threshold) || 80;
-      const passed = r.passed;
       const dur = r.duration_ms ? (r.duration_ms / 1000).toFixed(1) + 's' : '—';
+      const color = conf >= 80 ? '#22c55e' : conf >= 60 ? '#D4AF37' : conf >= 40 ? '#f97316' : '#ef4444';
       return `<tr>
         <td style="white-space:nowrap;color:var(--muted);">${formatDate(r.created_at)}</td>
-        <td style="font-weight:700;color:${passed ? '#22c55e' : '#ef4444'};">${conf.toFixed(1)}%</td>
-        <td><span class="badge-pass ${passed ? 'pass' : 'fail'}">${passed ? 'PASS' : 'FAIL'}</span></td>
+        <td style="font-weight:700;color:${color};">${conf.toFixed(1)}%</td>
         <td style="color:var(--text);">${r.total_questions}</td>
         <td style="color:var(--muted);">${dur}</td>
-        <td style="color:var(--muted);">${threshold}%</td>
       </tr>`;
     }).join('');
   }
