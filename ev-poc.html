@@ -1267,17 +1267,6 @@
     }
     .test-detail-toggle:hover { background: var(--gold-dim); }
 
-    .test-export-btn {
-      font-family: var(--font-body);
-      font-size: 0.78rem;
-      color: var(--muted);
-      background: none;
-      border: 1px solid var(--border2);
-      border-radius: 6px;
-      padding: 0.35rem 0.75rem;
-      cursor: pointer;
-    }
-    .test-export-btn:hover { color: #fff; }
 
     .test-details-table { display: none; margin-top: 1rem; }
     .test-details-table.show { display: block; }
@@ -2110,7 +2099,6 @@
             <!-- Actions -->
             <div style="margin-bottom:1rem;">
               <button class="test-detail-toggle" id="toggleDetailsBtn" onclick="toggleTestDetails()">Show Details</button>
-              <button class="test-export-btn" onclick="exportTestResults()">Export JSON</button>
             </div>
 
             <!-- Per-question details table -->
@@ -2860,11 +2848,15 @@
     const testSessionId = `ai-test-${runId}`;
 
     const testQueue = [];
-    const questions = await loadFaqQuestions();
-    if (questions.length === 0) {
+    const allQuestions = await loadFaqQuestions();
+    if (allQuestions.length === 0) {
       alert('No FAQ questions found. Please check that /ingest/faqs.json is accessible.');
       return;
     }
+
+    // Cap at 50 unique questions – shuffle first so each run samples different ones
+    const shuffled = [...allQuestions].sort(() => Math.random() - 0.5);
+    const questions = shuffled.slice(0, 50);
 
     questions.forEach(q => {
       testQueue.push({ question: q, channel: 'chat', testType: 'faq', type: 'positive' });
@@ -2976,6 +2968,16 @@
       });
     } catch { /* non-blocking */ }
 
+    // Save to local storage so history persists even without backend
+    saveLocalTestRun({
+      created_at: new Date().toISOString(),
+      overall_confidence: aiTestResultData.overallConfidence,
+      pass_threshold: aiTestResultData.passThreshold,
+      passed: aiTestResultData.passed,
+      total_questions: aiTestResultData.totalQuestions,
+      duration_ms: aiTestResultData.durationMs,
+    });
+
     aiTestRunning = false;
     document.getElementById('aiTestRunBtn').disabled = false;
     document.getElementById('aiTestStopBtn').style.display = 'none';
@@ -3058,26 +3060,36 @@
     }
   }
 
-  function exportTestResults() {
-    if (!aiTestResultData) return;
-    const blob = new Blob([JSON.stringify(aiTestResultData, null, 2)], { type: 'application/json' });
-    const url = URL.createObjectURL(blob);
-    const a = document.createElement('a');
-    a.href = url;
-    a.download = `ai-test-${aiTestResultData.runId.slice(0, 8)}.json`;
-    a.click();
-    URL.revokeObjectURL(url);
+  const TEST_HISTORY_KEY = 'raymidi_test_history';
+
+  function getLocalTestHistory() {
+    try { return JSON.parse(localStorage.getItem(TEST_HISTORY_KEY) || '[]'); } catch { return []; }
+  }
+
+  function saveLocalTestRun(run) {
+    const hist = getLocalTestHistory();
+    hist.unshift(run);
+    // Keep last 20
+    localStorage.setItem(TEST_HISTORY_KEY, JSON.stringify(hist.slice(0, 20)));
   }
 
   async function loadTestHistory() {
+    let runs = [];
     try {
       const resp = await fetch('/api/ai-test', {
         headers: { 'Authorization': `Bearer ${authToken}` },
       });
-      if (!resp.ok) return;
-      const data = await resp.json();
-      renderTestHistory(data.testRuns || []);
+      if (resp.ok) {
+        const data = await resp.json();
+        runs = data.testRuns || [];
+      }
     } catch { /* ignore */ }
+
+    // Fall back to local history if API returned nothing
+    if (runs.length === 0) {
+      runs = getLocalTestHistory();
+    }
+    renderTestHistory(runs);
   }
 
   function renderTestHistory(runs) {
