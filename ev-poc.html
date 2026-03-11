@@ -360,35 +360,7 @@
       border-radius: 100px;
     }
 
-    .welcome-assurance {
-      flex-shrink: 0;
-      background: rgba(34,197,94,0.08);
-      border: 1px solid rgba(34,197,94,0.2);
-      border-radius: 10px;
-      padding: 0.75rem 1rem;
-      text-align: center;
-      min-width: 120px;
-    }
-
-    .assurance-num {
-      font-family: var(--font-heading);
-      font-size: 1.4rem;
-      font-weight: 800;
-      color: #22c55e;
-      line-height: 1;
-    }
-
-    .assurance-label {
-      font-size: 0.62rem;
-      font-weight: 600;
-      text-transform: uppercase;
-      letter-spacing: 0.07em;
-      color: rgba(34,197,94,0.7);
-      margin-top: 0.2rem;
-    }
-
     @media (max-width: 700px) {
-      .welcome-assurance { display: none; }
       .welcome-banner-inner { padding: 1rem 1.25rem; }
     }
 
@@ -713,44 +685,6 @@
       30%           { transform: translateY(-5px); }
     }
 
-    /* Channel toggle */
-    .channel-toggle {
-      display: flex;
-      align-items: center;
-      gap: 0.5rem;
-      padding: 0.5rem 1.25rem;
-      border-top: 1px solid var(--border);
-      background: var(--surface2);
-      font-size: 0.75rem;
-      color: var(--muted);
-    }
-
-    .channel-toggle-label { flex-shrink: 0; }
-
-    .channel-switch {
-      display: flex;
-      background: rgba(255,255,255,0.04);
-      border: 1px solid var(--border2);
-      border-radius: 6px;
-      overflow: hidden;
-    }
-
-    .channel-opt {
-      padding: 0.3rem 0.7rem;
-      cursor: pointer;
-      font-size: 0.72rem;
-      font-weight: 500;
-      color: var(--muted);
-      transition: background 0.2s, color 0.2s;
-      border: none;
-      background: none;
-      font-family: var(--font-body);
-    }
-    .channel-opt.active {
-      background: var(--gold-dim);
-      color: var(--gold);
-    }
-
     /* Chat input area */
     .chat-input-area {
       padding: 1rem 1.25rem;
@@ -1008,7 +942,60 @@
       flex-shrink: 0;
     }
 
-    /* Source docs list */
+    /* Source docs list (expandable) */
+    .source-docs-wrapper {
+      border: 1px solid var(--border);
+      border-radius: 10px;
+      overflow: hidden;
+      background: var(--surface);
+    }
+
+    .source-docs-toggle {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 0.65rem 0.85rem;
+      cursor: pointer;
+      font-size: 0.78rem;
+      font-weight: 600;
+      color: rgba(255,255,255,0.7);
+      background: var(--surface2);
+      border: none;
+      width: 100%;
+      font-family: var(--font-body);
+      transition: background 0.2s;
+    }
+    .source-docs-toggle:hover { background: rgba(255,255,255,0.06); }
+    body.light-theme .source-docs-toggle { color: rgba(0,0,0,0.7); }
+    body.light-theme .source-docs-toggle:hover { background: rgba(0,0,0,0.04); }
+
+    .source-docs-toggle .toggle-arrow {
+      transition: transform 0.3s ease;
+      font-size: 0.7rem;
+      color: var(--muted);
+    }
+    .source-docs-toggle.open .toggle-arrow { transform: rotate(180deg); }
+
+    .source-docs-toggle .toggle-count {
+      font-size: 0.68rem;
+      color: var(--muted);
+      font-weight: 400;
+      margin-left: 0.4rem;
+    }
+
+    .source-docs-content {
+      max-height: 0;
+      overflow: hidden;
+      transition: max-height 0.35s ease;
+    }
+    .source-docs-content.open {
+      max-height: 500px;
+    }
+
+    .source-docs-content-inner {
+      padding: 0.5rem 0.75rem;
+    }
+
     .source-docs-list { display: flex; flex-direction: column; gap: 0.4rem; }
 
     .source-doc-item {
@@ -1041,6 +1028,312 @@
       color: var(--muted);
       text-align: right;
       margin-top: 0.75rem;
+    }
+
+    /* ── AI Test Section ────────────────────────────────────── */
+    .ai-test-section { margin-bottom: 2rem; }
+
+    .ai-test-controls {
+      display: flex;
+      align-items: center;
+      gap: 1rem;
+      flex-wrap: wrap;
+      margin-bottom: 1rem;
+    }
+
+    .ai-test-run-btn {
+      font-family: var(--font-heading);
+      font-size: 0.9rem;
+      font-weight: 700;
+      color: var(--ink);
+      background: var(--gold);
+      border: none;
+      border-radius: 10px;
+      padding: 0.7rem 1.5rem;
+      cursor: pointer;
+      transition: opacity 0.2s;
+      display: inline-flex;
+      align-items: center;
+      gap: 0.5rem;
+    }
+    .ai-test-run-btn:hover { opacity: 0.88; }
+    .ai-test-run-btn:disabled { opacity: 0.45; cursor: not-allowed; }
+
+    .ai-test-stop-btn {
+      font-family: var(--font-heading);
+      font-size: 0.85rem;
+      font-weight: 700;
+      color: #ef4444;
+      background: rgba(239,68,68,0.08);
+      border: 1px solid rgba(239,68,68,0.25);
+      border-radius: 10px;
+      padding: 0.65rem 1.2rem;
+      cursor: pointer;
+      display: none;
+    }
+    .ai-test-stop-btn:hover { background: rgba(239,68,68,0.15); }
+
+    .ai-test-config {
+      display: flex;
+      align-items: center;
+      gap: 0.75rem;
+      flex-wrap: wrap;
+    }
+
+    .ai-test-config label {
+      font-size: 0.75rem;
+      color: var(--muted);
+      font-weight: 600;
+    }
+
+    .ai-test-config input[type="number"] {
+      background: var(--surface2);
+      border: 1px solid var(--border2);
+      border-radius: 8px;
+      color: #fff;
+      font-family: var(--font-body);
+      font-size: 0.82rem;
+      padding: 0.4rem 0.6rem;
+      outline: none;
+      width: 60px;
+      text-align: center;
+    }
+    .ai-test-config input:focus { border-color: rgba(212,175,55,0.5); }
+
+    .ai-test-progress { display: none; margin-bottom: 1.25rem; }
+    .ai-test-progress.show { display: block; }
+
+    .progress-bar-wrap {
+      height: 10px;
+      background: var(--border2);
+      border-radius: 5px;
+      overflow: hidden;
+      margin-bottom: 0.5rem;
+    }
+
+    .progress-bar-fill {
+      height: 100%;
+      background: linear-gradient(90deg, var(--gold), #f5d060);
+      border-radius: 5px;
+      transition: width 0.3s ease;
+      width: 0%;
+    }
+
+    .progress-info {
+      display: flex;
+      justify-content: space-between;
+      font-size: 0.75rem;
+      color: var(--muted);
+    }
+
+    .progress-question {
+      font-size: 0.78rem;
+      color: rgba(255,255,255,0.5);
+      font-style: italic;
+      margin-top: 0.35rem;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+
+    .ai-test-results { display: none; }
+    .ai-test-results.show { display: block; }
+
+    .confidence-gauge {
+      display: flex;
+      align-items: center;
+      gap: 2rem;
+      margin-bottom: 1.5rem;
+      flex-wrap: wrap;
+    }
+
+    .gauge-circle {
+      position: relative;
+      width: 140px;
+      height: 140px;
+      flex-shrink: 0;
+    }
+
+    .gauge-circle svg { width: 140px; height: 140px; transform: rotate(-90deg); }
+
+    .gauge-circle .gauge-bg {
+      fill: none;
+      stroke: var(--border2);
+      stroke-width: 10;
+    }
+
+    .gauge-circle .gauge-fill {
+      fill: none;
+      stroke-width: 10;
+      stroke-linecap: round;
+      transition: stroke-dashoffset 1s ease, stroke 0.5s;
+    }
+
+    .gauge-text {
+      position: absolute;
+      inset: 0;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+    }
+
+    .gauge-pct {
+      font-family: var(--font-heading);
+      font-size: 2rem;
+      font-weight: 800;
+      color: #fff;
+      line-height: 1;
+    }
+
+    .gauge-label {
+      font-size: 0.68rem;
+      font-weight: 600;
+      text-transform: uppercase;
+      letter-spacing: 0.08em;
+      margin-top: 0.25rem;
+    }
+
+    .gauge-meta {
+      display: flex;
+      flex-direction: column;
+      gap: 0.6rem;
+    }
+
+    .gauge-meta-row {
+      display: flex;
+      align-items: center;
+      gap: 0.5rem;
+      font-size: 0.82rem;
+      color: rgba(255,255,255,0.7);
+    }
+    .gauge-meta-row strong { color: #fff; }
+
+    .badge-pass {
+      display: inline-block;
+      font-size: 0.75rem;
+      font-weight: 700;
+      letter-spacing: 0.06em;
+      text-transform: uppercase;
+      padding: 0.3rem 0.8rem;
+      border-radius: 100px;
+    }
+    .badge-pass.pass { color: #22c55e; border: 1px solid rgba(34,197,94,0.3); background: rgba(34,197,94,0.08); }
+    .badge-pass.fail { color: #ef4444; border: 1px solid rgba(239,68,68,0.3); background: rgba(239,68,68,0.08); }
+
+    .channel-results-row {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 1rem;
+      margin-bottom: 1.5rem;
+    }
+
+    .channel-result-card {
+      background: var(--surface2);
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      padding: 1rem 1.25rem;
+    }
+
+    .channel-result-card .cr-header {
+      display: flex;
+      align-items: center;
+      gap: 0.5rem;
+      margin-bottom: 0.75rem;
+      font-family: var(--font-heading);
+      font-size: 0.85rem;
+      font-weight: 700;
+    }
+
+    .cr-stats {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 0.4rem 1rem;
+      font-size: 0.78rem;
+      color: rgba(255,255,255,0.65);
+    }
+    .cr-stats span.val { color: #fff; font-weight: 600; }
+
+    .test-detail-toggle {
+      font-family: var(--font-body);
+      font-size: 0.78rem;
+      color: var(--gold);
+      background: none;
+      border: 1px solid var(--gold-border);
+      border-radius: 6px;
+      padding: 0.35rem 0.75rem;
+      cursor: pointer;
+      margin-right: 0.5rem;
+    }
+    .test-detail-toggle:hover { background: var(--gold-dim); }
+
+    .test-export-btn {
+      font-family: var(--font-body);
+      font-size: 0.78rem;
+      color: var(--muted);
+      background: none;
+      border: 1px solid var(--border2);
+      border-radius: 6px;
+      padding: 0.35rem 0.75rem;
+      cursor: pointer;
+    }
+    .test-export-btn:hover { color: #fff; }
+
+    .test-details-table { display: none; margin-top: 1rem; }
+    .test-details-table.show { display: block; }
+
+    .test-history-section { margin-top: 1.5rem; }
+
+    .badge-test-type {
+      display: inline-block;
+      font-size: 0.65rem;
+      font-weight: 600;
+      padding: 0.15rem 0.45rem;
+      border-radius: 100px;
+      text-transform: uppercase;
+      letter-spacing: 0.04em;
+    }
+    .badge-test-type.faq { color: var(--gold); border: 1px solid var(--gold-border); background: var(--gold-dim); }
+
+    /* AI Test data table styles */
+    .ai-test-section .data-table-wrap { overflow-x: auto; }
+    .ai-test-section .data-table { width: 100%; border-collapse: collapse; font-size: 0.82rem; }
+    .ai-test-section .data-table thead tr { background: var(--surface2); border-bottom: 1px solid var(--border2); }
+    .ai-test-section .data-table th {
+      padding: 0.75rem 1rem; text-align: left;
+      font-size: 0.68rem; font-weight: 700; letter-spacing: 0.07em;
+      text-transform: uppercase; color: var(--muted); white-space: nowrap;
+    }
+    .ai-test-section .data-table td {
+      padding: 0.75rem 1rem; border-bottom: 1px solid var(--border);
+      color: rgba(255,255,255,0.75); vertical-align: top;
+    }
+    .ai-test-section .data-table tbody tr:hover { background: rgba(255,255,255,0.02); }
+    .ai-test-section .data-table tbody tr:last-child td { border-bottom: none; }
+    .ai-test-section .badge {
+      display: inline-block; font-size: 0.68rem; font-weight: 700;
+      letter-spacing: 0.05em; text-transform: uppercase;
+      padding: 0.2rem 0.55rem; border-radius: 100px; border: 1px solid;
+    }
+    .ai-test-section .badge-chat { color: #60a5fa; border-color: rgba(96,165,250,0.25); background: rgba(96,165,250,0.08); }
+    .ai-test-section .badge-email { color: #a78bfa; border-color: rgba(167,139,250,0.25); background: rgba(167,139,250,0.08); }
+    .ai-test-section .badge-excellent { color: #22c55e; border-color: rgba(34,197,94,0.25); background: rgba(34,197,94,0.08); }
+    .ai-test-section .badge-good { color: var(--gold); border-color: rgba(212,175,55,0.25); background: rgba(212,175,55,0.08); }
+    .ai-test-section .badge-acceptable { color: #f97316; border-color: rgba(249,115,22,0.25); background: rgba(249,115,22,0.08); }
+    .ai-test-section .badge-poor { color: #ef4444; border-color: rgba(239,68,68,0.25); background: rgba(239,68,68,0.08); }
+    .ai-test-section .q-text { max-width: 280px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; display: block; }
+    .ai-test-section .table-empty { text-align: center; padding: 2rem; color: var(--muted); font-size: 0.85rem; font-style: italic; }
+    .ai-test-section .card-head {
+      display: flex; align-items: center; gap: 0.6rem;
+      padding: 1rem 1.25rem; border-bottom: 1px solid var(--border);
+      background: var(--surface2); font-family: var(--font-heading);
+      font-size: 0.9rem; font-weight: 700;
+    }
+
+    @media (max-width: 600px) {
+      .channel-results-row { grid-template-columns: 1fr; }
+      .ai-test-controls { gap: 0.6rem; }
+      .confidence-gauge { gap: 1.25rem; justify-content: center; }
     }
 
     /* Loading skeleton */
@@ -1301,6 +1594,13 @@
       .channel-divider { padding: 0.5rem 1.25rem 0.75rem; }
     }
 
+    /* ── Large screens (≥ 1400px) ──────────────────────────────── */
+    @media (min-width: 1400px) {
+      .main-grid, .dashboard-section, .info-panel, .channel-divider { max-width: 1400px; }
+      .poc-selector { max-width: 1080px; }
+      .hero-banner { max-width: 1000px; }
+    }
+
     /* ── Mobile: Small tablets & large phones (≤ 640px) ──────── */
     @media (max-width: 640px) {
       /* Topbar: icon-only buttons */
@@ -1341,6 +1641,15 @@
       .stat-value { font-size: 1.35rem; }
       .stat-label { font-size: 0.65rem; }
       .stat-card { padding: 0.75rem 0.85rem; }
+
+      /* AI Test responsive */
+      .channel-results-row { grid-template-columns: 1fr; }
+      .ai-test-controls { gap: 0.6rem; }
+      .confidence-gauge { gap: 1.25rem; justify-content: center; }
+      .gauge-circle { width: 120px; height: 120px; }
+      .gauge-circle svg { width: 120px; height: 120px; }
+      .gauge-pct { font-size: 1.6rem; }
+      .progress-question { max-width: 100%; }
     }
 
     /* ── Mobile: Small phones (≤ 480px) ──────────────────────── */
@@ -1374,6 +1683,12 @@
 
       /* Stats */
       .stat-value { font-size: 1.2rem; }
+
+      /* AI Test: tighter padding */
+      .ai-test-section .data-table th { padding: 0.5rem 0.6rem; font-size: 0.6rem; }
+      .ai-test-section .data-table td { padding: 0.5rem 0.6rem; font-size: 0.75rem; }
+      .ai-test-run-btn { padding: 0.6rem 1rem; font-size: 0.82rem; }
+      .gauge-meta-row { font-size: 0.75rem; }
     }
 
     /* ── Mobile: Very small phones (≤ 400px) ─────────────────── */
@@ -1470,10 +1785,6 @@
           <span class="welcome-badge">✓ Real-Time Analytics</span>
         </div>
       </div>
-      <div class="welcome-assurance">
-        <div class="assurance-num">99%</div>
-        <div class="assurance-label">Uptime SLA</div>
-      </div>
     </div>
   </div>
 
@@ -1559,14 +1870,6 @@
             <div class="typing-dot"></div>
             <div class="typing-dot"></div>
           </div>
-        </div>
-      </div>
-
-      <div class="channel-toggle">
-        <span class="channel-toggle-label">Response mode:</span>
-        <div class="channel-switch">
-          <button class="channel-opt active" data-channel="chat" onclick="setChannel('chat')">💬 Chat</button>
-          <button class="channel-opt" data-channel="email" onclick="setChannel('email')">📧 Email</button>
         </div>
       </div>
 
@@ -1695,14 +1998,169 @@
           <div class="refresh-note" id="refreshNote">Auto-refreshes every 30 s</div>
         </div>
 
-        <!-- Column 3: Source docs -->
+        <!-- Column 3: Source docs (expandable) -->
         <div class="dash-col">
           <div class="section-heading">Knowledge Sources Used</div>
-          <div class="source-docs-list" id="sourceDocs">
-            <div class="doc-empty">No documents queried yet.</div>
+          <div class="source-docs-wrapper">
+            <button class="source-docs-toggle" id="sourceDocsToggle" onclick="toggleSourceDocs()">
+              <span>📚 Sources <span class="toggle-count" id="sourceDocsCount">(0)</span></span>
+              <span class="toggle-arrow">▼</span>
+            </button>
+            <div class="source-docs-content" id="sourceDocsContent">
+              <div class="source-docs-content-inner">
+                <div class="source-docs-list" id="sourceDocs">
+                  <div class="doc-empty">No documents queried yet.</div>
+                </div>
+              </div>
+            </div>
           </div>
         </div>
 
+      </div>
+    </div>
+  </div>
+
+  <!-- ── AI Test Run Section ─────────────────────────────────────── -->
+  <div class="dashboard-section">
+    <div class="dashboard-card">
+      <div class="dashboard-card-title">
+        <div class="icon">🧪</div>
+        AI Test Run
+      </div>
+      <div style="padding:1.5rem;">
+        <div class="ai-test-section">
+
+          <!-- Controls -->
+          <div class="ai-test-controls">
+            <button class="ai-test-run-btn" id="aiTestRunBtn" onclick="startAITest()">
+              ▶ Run FAQ Test
+            </button>
+            <button class="ai-test-stop-btn" id="aiTestStopBtn" onclick="stopAITest()">
+              ■ Stop Test
+            </button>
+            <div class="ai-test-config">
+              <label>Threshold:</label>
+              <input type="number" id="aiTestThreshold" value="80" min="0" max="100" step="5" />
+              <label>%</label>
+            </div>
+          </div>
+
+          <!-- Progress -->
+          <div class="ai-test-progress" id="aiTestProgress">
+            <div class="progress-bar-wrap">
+              <div class="progress-bar-fill" id="aiTestBar"></div>
+            </div>
+            <div class="progress-info">
+              <span id="aiTestCount">Testing 0/0…</span>
+              <span id="aiTestChannel">—</span>
+            </div>
+            <div class="progress-question" id="aiTestCurrentQ"></div>
+          </div>
+
+          <!-- Results -->
+          <div class="ai-test-results" id="aiTestResults">
+            <div class="confidence-gauge">
+              <div class="gauge-circle">
+                <svg viewBox="0 0 140 140">
+                  <circle class="gauge-bg" cx="70" cy="70" r="58" />
+                  <circle class="gauge-fill" id="gaugeFill" cx="70" cy="70" r="58"
+                    stroke-dasharray="364.42" stroke-dashoffset="364.42" />
+                </svg>
+                <div class="gauge-text">
+                  <div class="gauge-pct" id="gaugePct">—</div>
+                  <div class="gauge-label" id="gaugeLabel" style="color:var(--muted);">Confidence</div>
+                </div>
+              </div>
+              <div class="gauge-meta">
+                <div class="gauge-meta-row">
+                  <span id="gaugePassBadge" class="badge-pass pass">PASS</span>
+                </div>
+                <div class="gauge-meta-row">Questions tested: <strong id="gaugeTotalQ">—</strong></div>
+                <div class="gauge-meta-row">Duration: <strong id="gaugeDuration">—</strong></div>
+                <div class="gauge-meta-row">Threshold: <strong id="gaugeThreshold">—</strong></div>
+              </div>
+            </div>
+
+            <!-- Channel breakdown -->
+            <div class="channel-results-row">
+              <div class="channel-result-card" id="chatResultCard">
+                <div class="cr-header">💬 Chat Channel</div>
+                <div class="cr-stats">
+                  <span>Avg Score:</span> <span class="val" id="crChatScore">—</span>
+                  <span>Excellent:</span> <span class="val" id="crChatExcellent">—</span>
+                  <span>Good:</span> <span class="val" id="crChatGood">—</span>
+                  <span>Acceptable:</span> <span class="val" id="crChatAcceptable">—</span>
+                  <span>Poor:</span> <span class="val" id="crChatPoor">—</span>
+                  <span>Blocked:</span> <span class="val" id="crChatBlocked">—</span>
+                </div>
+              </div>
+              <div class="channel-result-card" id="emailResultCard">
+                <div class="cr-header">📧 Email Channel</div>
+                <div class="cr-stats">
+                  <span>Avg Score:</span> <span class="val" id="crEmailScore">—</span>
+                  <span>Excellent:</span> <span class="val" id="crEmailExcellent">—</span>
+                  <span>Good:</span> <span class="val" id="crEmailGood">—</span>
+                  <span>Acceptable:</span> <span class="val" id="crEmailAcceptable">—</span>
+                  <span>Poor:</span> <span class="val" id="crEmailPoor">—</span>
+                  <span>Blocked:</span> <span class="val" id="crEmailBlocked">—</span>
+                </div>
+              </div>
+            </div>
+
+            <!-- Actions -->
+            <div style="margin-bottom:1rem;">
+              <button class="test-detail-toggle" id="toggleDetailsBtn" onclick="toggleTestDetails()">Show Details</button>
+              <button class="test-export-btn" onclick="exportTestResults()">Export JSON</button>
+            </div>
+
+            <!-- Per-question details table -->
+            <div class="test-details-table" id="testDetailsTable">
+              <div class="card">
+                <div class="card-head">Per-Question Results</div>
+                <div class="data-table-wrap">
+                  <table class="data-table">
+                    <thead>
+                      <tr>
+                        <th>#</th>
+                        <th>Channel</th>
+                        <th>Question</th>
+                        <th>Score</th>
+                        <th>Rating</th>
+                        <th>Response Time</th>
+                      </tr>
+                    </thead>
+                    <tbody id="testDetailsBody"></tbody>
+                  </table>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <!-- Test History -->
+          <div class="test-history-section">
+            <div class="card">
+              <div class="card-head">Test Run History</div>
+              <div class="data-table-wrap">
+                <table class="data-table">
+                  <thead>
+                    <tr>
+                      <th>Date</th>
+                      <th>Confidence</th>
+                      <th>Result</th>
+                      <th>Questions</th>
+                      <th>Duration</th>
+                      <th>Threshold</th>
+                    </tr>
+                  </thead>
+                  <tbody id="testHistoryBody">
+                    <tr><td colspan="6" class="table-empty">No test runs yet.</td></tr>
+                  </tbody>
+                </table>
+              </div>
+            </div>
+          </div>
+
+        </div>
       </div>
     </div>
   </div>
@@ -2120,6 +2578,7 @@
     // Source docs
     const docsEl = document.getElementById('sourceDocs');
     const docs = (d.sourceDocs || []).filter(Boolean);
+    document.getElementById('sourceDocsCount').textContent = `(${docs.length})`;
     if (docs.length > 0) {
       docsEl.innerHTML = docs.map(doc =>
         `<div class="source-doc-item">
@@ -2152,6 +2611,14 @@
     return html;
   }
 
+
+  // ── Knowledge Sources toggle ─────────────────────────────────────────────
+  function toggleSourceDocs() {
+    const toggle = document.getElementById('sourceDocsToggle');
+    const content = document.getElementById('sourceDocsContent');
+    toggle.classList.toggle('open');
+    content.classList.toggle('open');
+  }
 
   // ── Init ──────────────────────────────────────────────────────────────────
   loadDashboard();
@@ -2294,6 +2761,349 @@
       }
     });
   })();
+
+  // ══════════════════════════════════════════════════════════════════════════
+  // ── AI Test Run (FAQ only — No Negative Tests) ──────────────────────────
+  // ══════════════════════════════════════════════════════════════════════════
+  let aiFaqQuestions = [];
+  let aiTestRunning = false;
+  let aiTestStopped = false;
+  let aiTestResultData = null;
+
+  function genUUID() {
+    return 'xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx'.replace(/[xy]/g, c => {
+      const r = Math.random() * 16 | 0;
+      return (c === 'x' ? r : (r & 0x3 | 0x8)).toString(16);
+    });
+  }
+
+  function formatDate(isoStr) {
+    if (!isoStr) return '—';
+    const d = new Date(isoStr);
+    return d.toLocaleDateString('en-IN', { day: '2-digit', month: 'short' }) +
+           ' ' + d.toLocaleTimeString('en-IN', { hour: '2-digit', minute: '2-digit', hour12: true });
+  }
+
+  function extractFaqQuestions(faqs) {
+    const questions = [];
+    faqs.forEach(faq => {
+      const matches = faq.content.match(/Question:\s*(.+?)(?:\n|$)/g);
+      if (matches) {
+        matches.forEach(m => {
+          const q = m.replace(/^Question:\s*/, '').trim();
+          if (q) questions.push(q);
+        });
+      }
+    });
+    return questions;
+  }
+
+  async function loadFaqQuestions() {
+    if (aiFaqQuestions.length > 0) return aiFaqQuestions;
+    try {
+      const resp = await fetch('/ingest/faqs.json');
+      if (resp.ok) {
+        const contentType = resp.headers.get('content-type') || '';
+        if (!contentType.includes('json')) return aiFaqQuestions;
+        const faqs = await resp.json();
+        if (!Array.isArray(faqs)) return aiFaqQuestions;
+        aiFaqQuestions = extractFaqQuestions(faqs);
+      }
+    } catch (err) {
+      console.error('loadFaqQuestions error:', err);
+    }
+    return aiFaqQuestions;
+  }
+
+  function computeChannelStats(results) {
+    if (results.length === 0) return { total: 0, avgScore: 0, excellent: 0, good: 0, acceptable: 0, poor: 0, blocked: 0 };
+    const stats = { total: results.length, excellent: 0, good: 0, acceptable: 0, poor: 0, blocked: 0 };
+    let scoreSum = 0;
+    results.forEach(r => {
+      scoreSum += r.score || 0;
+      const lbl = (r.label || '').toLowerCase();
+      if (lbl === 'excellent') stats.excellent++;
+      else if (lbl === 'good') stats.good++;
+      else if (lbl === 'acceptable') stats.acceptable++;
+      else if (lbl === 'poor') stats.poor++;
+      if (r.blocked) stats.blocked++;
+    });
+    stats.avgScore = Math.round((scoreSum / results.length) * 100) / 100;
+    return stats;
+  }
+
+  function computeConfidence(chatStats, emailStats) {
+    const chatScore = chatStats.total > 0 ? (chatStats.avgScore / 10) * 100 : 0;
+    const emailScore = emailStats.total > 0 ? (emailStats.avgScore / 10) * 100 : 0;
+    const totalQuestions = chatStats.total + emailStats.total;
+    const totalPoor = chatStats.poor + emailStats.poor;
+
+    let confidence;
+    if (chatStats.total > 0 && emailStats.total > 0) {
+      confidence = (chatScore + emailScore) / 2;
+    } else if (chatStats.total > 0) {
+      confidence = chatScore;
+    } else {
+      confidence = emailScore;
+    }
+
+    const penalty = totalQuestions > 0 ? (totalPoor / totalQuestions) * 15 : 0;
+    return Math.max(0, Math.round((confidence - penalty) * 100) / 100);
+  }
+
+  // Main test runner (FAQ only, no negative tests)
+  async function startAITest() {
+    if (aiTestRunning) return;
+
+    const threshold = parseInt(document.getElementById('aiTestThreshold').value) || 80;
+    const runId = genUUID();
+    const testSessionId = `ai-test-${runId}`;
+
+    const testQueue = [];
+    const questions = await loadFaqQuestions();
+    if (questions.length === 0) {
+      alert('No FAQ questions found. Please check that /ingest/faqs.json is accessible.');
+      return;
+    }
+
+    questions.forEach(q => {
+      testQueue.push({ question: q, channel: 'chat', testType: 'faq', type: 'positive' });
+      testQueue.push({ question: q, channel: 'email', testType: 'faq', type: 'positive' });
+    });
+
+    // Shuffle the test queue
+    testQueue.sort(() => Math.random() - 0.5);
+
+    aiTestRunning = true;
+    aiTestStopped = false;
+    aiTestResultData = null;
+
+    document.getElementById('aiTestRunBtn').disabled = true;
+    document.getElementById('aiTestStopBtn').style.display = 'inline-block';
+    document.getElementById('aiTestProgress').classList.add('show');
+    document.getElementById('aiTestResults').classList.remove('show');
+    document.getElementById('aiTestBar').style.width = '0%';
+    document.getElementById('aiTestCount').textContent = `Testing 0/${testQueue.length}…`;
+    document.getElementById('aiTestCurrentQ').textContent = '';
+
+    const startTime = Date.now();
+    const allResults = [];
+
+    for (let i = 0; i < testQueue.length; i++) {
+      if (aiTestStopped) break;
+
+      const item = testQueue[i];
+      const { question, channel } = item;
+      const pct = Math.round(((i + 1) / testQueue.length) * 100);
+
+      document.getElementById('aiTestBar').style.width = pct + '%';
+      document.getElementById('aiTestCount').textContent = `Testing ${i + 1}/${testQueue.length}…`;
+      document.getElementById('aiTestChannel').textContent = channel === 'chat' ? '💬 Chat' : '📧 Email';
+      document.getElementById('aiTestCurrentQ').textContent = question;
+
+      try {
+        const resp = await fetch('/api/chat', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            'Authorization': `Bearer ${authToken}`,
+          },
+          body: JSON.stringify({ question, sessionId: testSessionId, channel }),
+        });
+
+        if (resp.ok) {
+          const data = await resp.json();
+          allResults.push({
+            question, channel,
+            testType: 'faq', type: 'positive',
+            score: data.accuracyScore ?? 0,
+            label: data.accuracyLabel || 'Unknown',
+            responseTimeMs: data.responseTimeMs || 0,
+            blocked: !!data.blocked,
+            answer: data.answer || '',
+          });
+        } else {
+          allResults.push({
+            question, channel,
+            testType: 'faq', type: 'positive',
+            score: 0, label: 'Error',
+            responseTimeMs: 0, blocked: false, error: `HTTP ${resp.status}`,
+          });
+        }
+      } catch (err) {
+        allResults.push({
+          question, channel,
+          testType: 'faq', type: 'positive',
+          score: 0, label: 'Error',
+          responseTimeMs: 0, blocked: false, error: err.message,
+        });
+      }
+    }
+
+    const durationMs = Date.now() - startTime;
+
+    const chatResults = computeChannelStats(allResults.filter(r => r.channel === 'chat'));
+    const emailResults = computeChannelStats(allResults.filter(r => r.channel === 'email'));
+    const overallConfidence = computeConfidence(chatResults, emailResults);
+    const passed = overallConfidence >= threshold;
+
+    aiTestResultData = {
+      runId,
+      sessionId: testSessionId,
+      testMode: 'faq',
+      totalQuestions: allResults.length,
+      chatResults,
+      emailResults,
+      overallConfidence,
+      passThreshold: threshold,
+      passed,
+      durationMs,
+      questionDetails: allResults.map(r => {
+        const { answer, ...rest } = r;
+        return rest;
+      }),
+    };
+
+    // Save to backend
+    try {
+      await fetch('/api/ai-test', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${authToken}`,
+        },
+        body: JSON.stringify(aiTestResultData),
+      });
+    } catch { /* non-blocking */ }
+
+    aiTestRunning = false;
+    document.getElementById('aiTestRunBtn').disabled = false;
+    document.getElementById('aiTestStopBtn').style.display = 'none';
+    document.getElementById('aiTestProgress').classList.remove('show');
+
+    renderAITestResults(aiTestResultData);
+    loadTestHistory();
+  }
+
+  function stopAITest() {
+    aiTestStopped = true;
+  }
+
+  function renderAITestResults(data) {
+    document.getElementById('aiTestResults').classList.add('show');
+
+    // Gauge
+    const circumference = 2 * Math.PI * 58;
+    const offset = circumference - (data.overallConfidence / 100) * circumference;
+    const gaugeEl = document.getElementById('gaugeFill');
+    gaugeEl.style.strokeDashoffset = offset;
+    gaugeEl.style.stroke = data.passed ? '#22c55e' : '#ef4444';
+
+    document.getElementById('gaugePct').textContent = data.overallConfidence.toFixed(1) + '%';
+    const labelEl = document.getElementById('gaugeLabel');
+    labelEl.textContent = 'Confidence';
+    labelEl.style.color = data.passed ? '#22c55e' : '#ef4444';
+
+    const passBadge = document.getElementById('gaugePassBadge');
+    passBadge.textContent = data.passed ? 'PASS' : 'FAIL';
+    passBadge.className = 'badge-pass ' + (data.passed ? 'pass' : 'fail');
+
+    document.getElementById('gaugeTotalQ').textContent = data.totalQuestions;
+    document.getElementById('gaugeDuration').textContent = (data.durationMs / 1000).toFixed(1) + 's';
+    document.getElementById('gaugeThreshold').textContent = data.passThreshold + '%';
+
+    // Channel cards
+    const ch = data.chatResults;
+    document.getElementById('crChatScore').textContent = ch.avgScore + '/10';
+    document.getElementById('crChatExcellent').textContent = ch.excellent;
+    document.getElementById('crChatGood').textContent = ch.good;
+    document.getElementById('crChatAcceptable').textContent = ch.acceptable;
+    document.getElementById('crChatPoor').textContent = ch.poor;
+    document.getElementById('crChatBlocked').textContent = ch.blocked;
+
+    const em = data.emailResults;
+    document.getElementById('crEmailScore').textContent = em.avgScore + '/10';
+    document.getElementById('crEmailExcellent').textContent = em.excellent;
+    document.getElementById('crEmailGood').textContent = em.good;
+    document.getElementById('crEmailAcceptable').textContent = em.acceptable;
+    document.getElementById('crEmailPoor').textContent = em.poor;
+    document.getElementById('crEmailBlocked').textContent = em.blocked;
+
+    // Details table
+    const accColors = { Excellent: 'excellent', Good: 'good', Acceptable: 'acceptable', Poor: 'poor' };
+    const tbody = document.getElementById('testDetailsBody');
+    tbody.innerHTML = (data.questionDetails || []).map((r, i) => {
+      const labelClass = accColors[r.label] || 'acceptable';
+      const tStr = r.responseTimeMs >= 1000 ? (r.responseTimeMs / 1000).toFixed(1) + 's' : r.responseTimeMs + 'ms';
+      return `<tr>
+        <td style="color:var(--muted);">${i + 1}</td>
+        <td><span class="badge badge-${r.channel}">${r.channel}</span></td>
+        <td><span class="q-text" title="${escapeHtml(r.question)}">${escapeHtml(r.question)}</span></td>
+        <td style="color:#fff;font-weight:600;">${r.score}/10</td>
+        <td><span class="badge badge-${labelClass}">${escapeHtml(r.label)}</span></td>
+        <td style="color:var(--muted);white-space:nowrap;">${tStr}</td>
+      </tr>`;
+    }).join('');
+  }
+
+  function toggleTestDetails() {
+    const el = document.getElementById('testDetailsTable');
+    const btn = document.getElementById('toggleDetailsBtn');
+    if (el.classList.contains('show')) {
+      el.classList.remove('show');
+      btn.textContent = 'Show Details';
+    } else {
+      el.classList.add('show');
+      btn.textContent = 'Hide Details';
+    }
+  }
+
+  function exportTestResults() {
+    if (!aiTestResultData) return;
+    const blob = new Blob([JSON.stringify(aiTestResultData, null, 2)], { type: 'application/json' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = `ai-test-${aiTestResultData.runId.slice(0, 8)}.json`;
+    a.click();
+    URL.revokeObjectURL(url);
+  }
+
+  async function loadTestHistory() {
+    try {
+      const resp = await fetch('/api/ai-test', {
+        headers: { 'Authorization': `Bearer ${authToken}` },
+      });
+      if (!resp.ok) return;
+      const data = await resp.json();
+      renderTestHistory(data.testRuns || []);
+    } catch { /* ignore */ }
+  }
+
+  function renderTestHistory(runs) {
+    const tbody = document.getElementById('testHistoryBody');
+    if (runs.length === 0) {
+      tbody.innerHTML = '<tr><td colspan="6" class="table-empty">No test runs yet.</td></tr>';
+      return;
+    }
+    tbody.innerHTML = runs.map(r => {
+      const conf = typeof r.overall_confidence === 'number' ? r.overall_confidence : parseFloat(r.overall_confidence) || 0;
+      const threshold = typeof r.pass_threshold === 'number' ? r.pass_threshold : parseFloat(r.pass_threshold) || 80;
+      const passed = r.passed;
+      const dur = r.duration_ms ? (r.duration_ms / 1000).toFixed(1) + 's' : '—';
+      return `<tr>
+        <td style="white-space:nowrap;color:var(--muted);">${formatDate(r.created_at)}</td>
+        <td style="font-weight:700;color:${passed ? '#22c55e' : '#ef4444'};">${conf.toFixed(1)}%</td>
+        <td><span class="badge-pass ${passed ? 'pass' : 'fail'}">${passed ? 'PASS' : 'FAIL'}</span></td>
+        <td style="color:var(--text);">${r.total_questions}</td>
+        <td style="color:var(--muted);">${dur}</td>
+        <td style="color:var(--muted);">${threshold}%</td>
+      </tr>`;
+    }).join('');
+  }
+
+  // Load test history on page load
+  loadTestHistory();
 </script>
 </body>
 </html>
