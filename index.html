@@ -351,6 +351,9 @@
       padding: 0.4rem 1rem;
       border-radius: 100px;
       margin-bottom: 1.25rem;
+      overflow: hidden;
+      min-width: 220px;
+      justify-content: center;
     }
     .hero-badge::before {
       content: '';
@@ -359,6 +362,20 @@
       border-radius: 50%;
       background: var(--gold);
       flex-shrink: 0;
+    }
+
+    .hero-badge-text {
+      display: inline-block;
+      position: relative;
+      transition: opacity 0.4s ease, transform 0.4s ease;
+    }
+    .hero-badge-text.fade-out {
+      opacity: 0;
+      transform: translateY(-10px);
+    }
+    .hero-badge-text.fade-in {
+      opacity: 0;
+      transform: translateY(10px);
     }
 
     /* Hero logo */
@@ -796,7 +813,9 @@
           <path d="M96 150 Q146 150, 146 96" fill="none" stroke="url(#heroGrad)" stroke-width="4" stroke-linecap="round" opacity="0.22"/>
           <text x="96" y="114" font-family="'Syne',sans-serif" font-size="72" font-weight="800" fill="url(#heroGrad)" text-anchor="middle">R</text>
         </svg>
-        <div class="hero-badge reveal">Custom AI Solutions</div>
+        <div class="hero-badge reveal">
+          <span class="hero-badge-text">Custom AI Solutions</span>
+        </div>
         <h1 class="reveal reveal-delay-1">
           Beyond Bots.<br />
           This is Business<br />
@@ -940,7 +959,7 @@
             <p>Raymidi was founded on a simple belief: the gap between a business's potential and its performance is filled by automation. We're not an agency that wraps a chatbot around a language model and calls it done. We engineer end-to-end AI systems — custom-designed, deeply integrated, and built to run your operations with precision.</p>
             <p>Every engagement begins by understanding your workflows, your data, and your goals. Then we build. Our solutions are deployed in production environments across finance, logistics, healthcare administration, and professional services — not as experiments, but as operating infrastructure.</p>
             <p>We work at the intersection of AI engineering and business strategy, because the most powerful AI system is worthless if it doesn't fit how your business actually moves.</p>
-            <a href="#contact" class="btn btn-primary">Work With Us</a>
+            <a href="#contact" class="btn btn-primary">Let's Build Together</a>
           </div>
 
           <div class="about-stats reveal reveal-delay-2">
@@ -1055,7 +1074,44 @@
       initActiveNav();
       initReveal();
       initCounters();
+      initTaglineRotator();
     });
+
+    /* ── 0. Hero badge tagline rotator ────────────────────────────────────── */
+    function initTaglineRotator() {
+      const taglines = [
+        'Custom AI Solutions',
+        'Hours to Seconds',
+        'Many to None',
+        'Complexity Made Simple',
+        'Ideas to Reality',
+        'Manual to Automated',
+        'Data to Decisions',
+        'Chaos to Clarity',
+      ];
+
+      const badgeText = document.querySelector('.hero-badge-text');
+      if (!badgeText) return;
+
+      let currentIndex = 0;
+
+      setInterval(() => {
+        badgeText.classList.add('fade-out');
+
+        setTimeout(() => {
+          currentIndex = (currentIndex + 1) % taglines.length;
+          badgeText.textContent = taglines[currentIndex];
+          badgeText.classList.remove('fade-out');
+          badgeText.classList.add('fade-in');
+
+          requestAnimationFrame(() => {
+            requestAnimationFrame(() => {
+              badgeText.classList.remove('fade-in');
+            });
+          });
+        }, 400);
+      }, 3000);
+    }
 
     /* ── 1. Navbar: hide/show + mobile menu ─────────────────────────────── */
     function initNavbar() {
