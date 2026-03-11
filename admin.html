@@ -1004,6 +1004,17 @@
   </style>
 </head>
 <body>
+<!-- Console warning: deters social engineering / self-XSS attacks -->
+<script>
+(function(){
+  if(location.hostname==='localhost'||location.hostname==='127.0.0.1')return;
+  try{
+    console.log('%c\u26d4 STOP!','color:red;font-size:2rem;font-weight:bold');
+    console.log('%cThis browser feature is intended for developers only.\n\nIf someone told you to copy-paste something here, it is likely a scam that could compromise your account.','font-size:1rem;color:#D4AF37');
+  }catch(e){}
+})();
+</script>
+
 <div class="page">
 
   <!-- ── Loading overlay ────────────────────────────────────────── -->
@@ -1442,25 +1453,23 @@
 
 </div><!-- /page -->
 <script>
-  const ADMIN_TOKEN_KEY = 'raymidi_admin_token';
-  let adminToken = null;
+  // Production-safe logger — suppresses debug output on deployed site
+  var _dbg = (location.hostname === 'localhost' || location.hostname === '127.0.0.1')
+    ? console.error.bind(console) : function(){};
+
   let allMessages = [];
   let currentFilter = 'all';
 
-  // ── Check existing session ─────────────────────────────────────────────────
+  // ── Check existing session (token in httpOnly cookie, metadata in sessionStorage) ─
   (function init() {
-    const stored = localStorage.getItem(ADMIN_TOKEN_KEY);
-    if (stored) {
-      try {
-        const payload = JSON.parse(atob(stored.split('.')[1].replace(/-/g, '+').replace(/_/g, '/')));
-        if (payload.exp >= Math.floor(Date.now() / 1000) && payload.role === 'admin') {
-          adminToken = stored;
-          showDash();
-          return;
-        }
-      } catch { /* fall through */ }
-      localStorage.removeItem(ADMIN_TOKEN_KEY);
+    const exp = parseInt(sessionStorage.getItem('raymidi_admin_exp') || '0', 10);
+    const role = sessionStorage.getItem('raymidi_admin_role');
+    if (exp >= Math.floor(Date.now() / 1000) && role === 'admin') {
+      showDash();
+      return;
     }
+    sessionStorage.removeItem('raymidi_admin_exp');
+    sessionStorage.removeItem('raymidi_admin_role');
     showLogin();
   })();
 
@@ -1491,6 +1500,7 @@
       const resp = await fetch('/api/auth', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
+        credentials: 'same-origin',
         body: JSON.stringify({ username, password }),
       });
 
@@ -1508,8 +1518,9 @@
         return;
       }
 
-      adminToken = data.token;
-      localStorage.setItem(ADMIN_TOKEN_KEY, adminToken);
+      // Token is in httpOnly cookie — store only metadata in sessionStorage
+      sessionStorage.setItem('raymidi_admin_exp', String(data.expiresAt));
+      sessionStorage.setItem('raymidi_admin_role', data.role);
       showDash();
 
     } catch {
@@ -1521,10 +1532,11 @@
     }
   }
 
-  // ── Logout ─────────────────────────────────────────────────────────────────
+  // ── Logout (clear httpOnly cookie via server + session metadata) ──────────
   document.getElementById('logoutBtn').addEventListener('click', () => {
-    localStorage.removeItem(ADMIN_TOKEN_KEY);
-    adminToken = null;
+    fetch('/api/auth', { method: 'DELETE', credentials: 'same-origin' }).catch(() => {});
+    sessionStorage.removeItem('raymidi_admin_exp');
+    sessionStorage.removeItem('raymidi_admin_role');
     showLogin();
   });
 
@@ -1535,12 +1547,12 @@
 
     try {
       const resp = await fetch('/api/admin', {
-        headers: { 'Authorization': `Bearer ${adminToken}` },
+        credentials: 'same-origin',
       });
 
       if (resp.status === 401) {
-        localStorage.removeItem(ADMIN_TOKEN_KEY);
-        adminToken = null;
+        sessionStorage.removeItem('raymidi_admin_exp');
+        sessionStorage.removeItem('raymidi_admin_role');
         showLogin();
         return;
       }
@@ -1686,13 +1698,13 @@
   }
 
   // Auto-refresh every 60 seconds
-  setInterval(() => { if (adminToken) loadAdminData(); }, 60000);
+  setInterval(() => { if (sessionStorage.getItem('raymidi_admin_exp')) loadAdminData(); }, 60000);
 
   // ── Tester Feedback ────────────────────────────────────────────────────────
   async function loadFeedbacks() {
     try {
       const resp = await fetch('/api/feedback', {
-        headers: { 'Authorization': `Bearer ${adminToken}` },
+        credentials: 'same-origin',
       });
       if (!resp.ok) return;
       const data = await resp.json();
@@ -1744,13 +1756,13 @@
   };
 
   // Load feedbacks on initial page load (handles the stored-token path from init IIFE)
-  if (adminToken) loadFeedbacks();
+  if (sessionStorage.getItem('raymidi_admin_exp')) loadFeedbacks();
 
   // Also reload when refresh button is clicked
   document.getElementById('refreshBtn').addEventListener('click', loadFeedbacks);
 
   // Auto-refresh feedbacks every 60 seconds
-  setInterval(() => { if (adminToken) loadFeedbacks(); }, 60000);
+  setInterval(() => { if (sessionStorage.getItem('raymidi_admin_exp')) loadFeedbacks(); }, 60000);
 
   // ── AI Testing Agent ────────────────────────────────────────────────────────
 
@@ -1825,20 +1837,20 @@
       if (resp.ok) {
         const contentType = resp.headers.get('content-type') || '';
         if (!contentType.includes('json')) {
-          console.error('loadFaqQuestions: /ingest/faqs.json returned non-JSON content-type:', contentType);
+          _dbg('loadFaqQuestions: /ingest/faqs.json returned non-JSON content-type:', contentType);
           return aiFaqQuestions;
         }
         const faqs = await resp.json();
         if (!Array.isArray(faqs)) {
-          console.error('loadFaqQuestions: expected array, got', typeof faqs);
+          _dbg('loadFaqQuestions: expected array, got', typeof faqs);
           return aiFaqQuestions;
         }
         aiFaqQuestions = extractFaqQuestions(faqs);
       } else {
-        console.error('loadFaqQuestions: fetch failed with status', resp.status);
+        _dbg('loadFaqQuestions: fetch failed with status', resp.status);
       }
     } catch (err) {
-      console.error('loadFaqQuestions error:', err);
+      _dbg('loadFaqQuestions error:', err);
     }
     return aiFaqQuestions;
   }
@@ -1855,10 +1867,10 @@
         const data = await resp.json();
         aiSecurityTests = data.testCases || [];
       } else {
-        console.error('loadSecurityTests: fetch failed with status', resp.status);
+        _dbg('loadSecurityTests: fetch failed with status', resp.status);
       }
     } catch (err) {
-      console.error('loadSecurityTests error:', err);
+      _dbg('loadSecurityTests error:', err);
     }
     return aiSecurityTests;
   }
@@ -2190,10 +2202,8 @@
       try {
         const resp = await fetch('/api/chat', {
           method: 'POST',
-          headers: {
-            'Content-Type': 'application/json',
-            'Authorization': `Bearer ${adminToken}`,
-          },
+          headers: { 'Content-Type': 'application/json' },
+          credentials: 'same-origin',
           body: JSON.stringify({ question, sessionId: testSessionId, channel }),
         });
 
@@ -2326,10 +2336,8 @@
     try {
       await fetch('/api/ai-test', {
         method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          'Authorization': `Bearer ${adminToken}`,
-        },
+        headers: { 'Content-Type': 'application/json' },
+        credentials: 'same-origin',
         body: JSON.stringify(aiTestResultData),
       });
     } catch { /* non-blocking */ }
@@ -2476,7 +2484,7 @@
   async function loadTestHistory() {
     try {
       const resp = await fetch('/api/ai-test', {
-        headers: { 'Authorization': `Bearer ${adminToken}` },
+        credentials: 'same-origin',
       });
       if (!resp.ok) return;
       const data = await resp.json();
@@ -2520,7 +2528,7 @@
   };
 
   // Load test history on initial page load if already authenticated
-  if (adminToken) loadTestHistory();
+  if (sessionStorage.getItem('raymidi_admin_exp')) loadTestHistory();
 
   // Reload history on refresh button
   document.getElementById('refreshBtn').addEventListener('click', loadTestHistory);

@@ -229,6 +229,17 @@
   </style>
 </head>
 <body>
+  <!-- Console warning: deters social engineering / self-XSS attacks -->
+  <script>
+  (function(){
+    if(location.hostname==='localhost'||location.hostname==='127.0.0.1')return;
+    try{
+      console.log('%c\u26d4 STOP!','color:red;font-size:2rem;font-weight:bold');
+      console.log('%cThis browser feature is intended for developers only.\n\nIf someone told you to copy-paste something here, it is likely a scam that could compromise your account.','font-size:1rem;color:#D4AF37');
+    }catch(e){}
+  })();
+  </script>
+
   <div class="login-wrap">
     <a href="/" class="logo">Ray<span>midi</span></a>
 
@@ -260,16 +271,11 @@
   </div>
 
   <script>
-    // Redirect if already logged in
+    // Redirect if already logged in (session metadata in sessionStorage, token in httpOnly cookie)
     (function () {
-      const token = localStorage.getItem('raymidi_token');
-      if (token) {
-        try {
-          const payload = JSON.parse(atob(token.split('.')[1].replace(/-/g, '+').replace(/_/g, '/')));
-          if (payload.exp > Math.floor(Date.now() / 1000)) {
-            window.location.href = '/ev-poc';
-          }
-        } catch { /* invalid token, stay on login */ }
+      const exp = parseInt(sessionStorage.getItem('raymidi_exp') || '0', 10);
+      if (exp > Math.floor(Date.now() / 1000)) {
+        window.location.href = '/ev-poc';
       }
     })();
 
@@ -331,13 +337,16 @@
         const resp = await fetchWithRetry('/api/auth', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
+          credentials: 'same-origin',
           body: JSON.stringify({ username, password }),
         });
 
         const data = await resp.json();
 
-        if (resp.ok && data.token) {
-          localStorage.setItem('raymidi_token', data.token);
+        if (resp.ok && data.expiresAt) {
+          // Token is now in httpOnly cookie (set by server) — not accessible via JS
+          sessionStorage.setItem('raymidi_exp', String(data.expiresAt));
+          sessionStorage.setItem('raymidi_role', data.role || 'user');
           showAlert('info', 'Access granted. Redirecting…');
           setTimeout(() => { window.location.href = '/ev-poc'; }, 600);
         } else if (resp.status === 429) {

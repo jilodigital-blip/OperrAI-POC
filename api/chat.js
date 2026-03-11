@@ -1,5 +1,8 @@
 const crypto = require('crypto');
 
+// ── In-memory rate limiter for chat endpoint (resets on cold start) ────────────
+const chatAttempts = {};
+
 // ── Bundled FAQ fallback (used when Supabase documents table is empty) ─────────
 // Use require() so Vercel's bundler includes the file in the serverless function.
 let BUNDLED_FAQS = [];
@@ -25,6 +28,18 @@ function verifyJWT(token, secret) {
   } catch {
     return null;
   }
+}
+
+// ── Auth token extraction (httpOnly cookie or Authorization header) ────────────
+
+function extractAuthToken(req) {
+  // 1. Check httpOnly cookie (set by /api/auth on login)
+  const cookies = req.headers.cookie || '';
+  const match = cookies.match(/(?:^|;\s*)raymidi_auth=([^\s;]+)/);
+  if (match) return match[1];
+  // 2. Fall back to Authorization: Bearer header
+  const authHeader = req.headers['authorization'] || '';
+  return authHeader.startsWith('Bearer ') ? authHeader.slice(7) : '';
 }
 
 // ── Body parsing ───────────────────────────────────────────────────────────────
@@ -500,15 +515,26 @@ module.exports = async (req, res) => {
   res.setHeader('Access-Control-Allow-Origin', process.env.CORS_ORIGIN || '*');
   res.setHeader('Access-Control-Allow-Methods', 'POST, OPTIONS');
   res.setHeader('Access-Control-Allow-Headers', 'Content-Type, Authorization');
+  res.setHeader('Access-Control-Allow-Credentials', 'true');
 
   if (req.method === 'OPTIONS') return res.status(200).end();
   if (req.method !== 'POST') return res.status(405).json({ error: 'Method not allowed' });
 
-  // Auth check
-  const authHeader = req.headers['authorization'] || '';
-  const token = authHeader.startsWith('Bearer ') ? authHeader.slice(7) : '';
+  // Auth check — prefer httpOnly cookie, fall back to Authorization header
+  const token = extractAuthToken(req);
   const claims = verifyJWT(token, JWT_SECRET);
   if (!claims) return res.status(401).json({ error: 'Unauthorized' });
+
+  // Rate limiting: 20 messages per IP per 5 minutes
+  const ip = (req.headers['x-forwarded-for'] || req.socket?.remoteAddress || 'unknown')
+    .split(',')[0].trim();
+  const now = Date.now();
+  if (!chatAttempts[ip]) chatAttempts[ip] = [];
+  chatAttempts[ip] = chatAttempts[ip].filter(t => now - t < 5 * 60 * 1000);
+  if (chatAttempts[ip].length >= 20) {
+    return res.status(429).json({ error: 'Rate limit exceeded. Please wait a few minutes.' });
+  }
+  chatAttempts[ip].push(now);
 
   // Vercel pre-parses JSON bodies onto req.body; fall back to manual stream read
   const body = req.body && typeof req.body === 'object' ? req.body : await readBody(req);
