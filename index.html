@@ -50,7 +50,7 @@
 
     html {
       scroll-behavior: smooth;
-      scroll-padding-top: var(--nav-h);
+      scroll-padding-top: calc(var(--nav-h) + env(safe-area-inset-top, 0px));
     }
 
     body {
@@ -182,6 +182,7 @@
       left: 0;
       width: 100%;
       z-index: 1000;
+      padding-top: env(safe-area-inset-top);
       transition: transform 0.35s cubic-bezier(0.4, 0, 0.2, 1),
                   background 0.3s ease, box-shadow 0.3s ease;
     }
@@ -300,7 +301,7 @@
       min-height: min(100vh, 820px);
       display: flex;
       align-items: center;
-      padding-top: var(--nav-h);
+      padding-top: calc(var(--nav-h) + env(safe-area-inset-top, 0px));
       background: var(--bg);
       overflow: hidden;
     }
