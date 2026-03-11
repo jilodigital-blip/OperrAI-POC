@@ -33,10 +33,10 @@ async function supabaseFetch(path, supabaseUrl, supabaseKey) {
 module.exports = async (req, res) => {
   // Read env vars inside handler to avoid stale module-scope cache on Vercel
   const JWT_SECRET      = process.env.JWT_SECRET      || 'raymidi-poc-secret-change-in-prod';
-  const SUPABASE_URL    = process.env.SUPABASE_URL    || 'https://qjajoayybuvxvpgysoih.supabase.co';
+  const SUPABASE_URL    = process.env.SUPABASE_URL    || '';
   const SUPABASE_ANON_KEY = process.env.SUPABASE_ANON_KEY || '';
 
-  res.setHeader('Access-Control-Allow-Origin', '*');
+  res.setHeader('Access-Control-Allow-Origin', process.env.CORS_ORIGIN || '*');
   res.setHeader('Access-Control-Allow-Methods', 'GET, OPTIONS');
   res.setHeader('Access-Control-Allow-Headers', 'Content-Type, Authorization');
 
