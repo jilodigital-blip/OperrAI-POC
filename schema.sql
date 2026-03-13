@@ -75,6 +75,10 @@ CREATE TABLE IF NOT EXISTS feedbacks (
 
 CREATE INDEX IF NOT EXISTS feedbacks_created_idx ON feedbacks (created_at DESC);
 
+-- ── Client column (multi-tenant feedback isolation) ──────────────────────────
+ALTER TABLE feedbacks ADD COLUMN IF NOT EXISTS client TEXT NOT NULL DEFAULT 'ather';
+CREATE INDEX IF NOT EXISTS feedbacks_client_idx ON feedbacks (client);
+
 ALTER TABLE feedbacks ENABLE ROW LEVEL SECURITY;
 CREATE POLICY "anon can insert feedbacks" ON feedbacks FOR INSERT TO anon WITH CHECK (true);
 CREATE POLICY "anon can select feedbacks" ON feedbacks FOR SELECT TO anon USING (true);
@@ -100,6 +104,10 @@ CREATE INDEX IF NOT EXISTS test_runs_created_idx ON test_runs (created_at DESC);
 ALTER TABLE test_runs ENABLE ROW LEVEL SECURITY;
 CREATE POLICY "anon can insert test_runs" ON test_runs FOR INSERT TO anon WITH CHECK (true);
 CREATE POLICY "anon can select test_runs" ON test_runs FOR SELECT TO anon USING (true);
+
+-- ── Client column (multi-tenant support) ─────────────────────────────────────
+ALTER TABLE messages ADD COLUMN IF NOT EXISTS client TEXT NOT NULL DEFAULT 'ather';
+CREATE INDEX IF NOT EXISTS messages_client_idx ON messages (client);
 
 -- ── Dashboard view ─────────────────────────────────────────────────────────────
 CREATE OR REPLACE VIEW dashboard_summary AS

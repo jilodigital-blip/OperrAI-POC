@@ -31,16 +31,23 @@ ALTER TABLE documents ENABLE ROW LEVEL SECURITY;
 CREATE POLICY "anon can insert documents" ON documents FOR INSERT TO anon WITH CHECK (true);
 CREATE POLICY "anon can select documents" ON documents FOR SELECT TO anon USING (true);
 
+-- ── Client column (multi-tenant knowledge base isolation) ────────────────────
+ALTER TABLE documents ADD COLUMN IF NOT EXISTS client TEXT NOT NULL DEFAULT 'ather';
+CREATE INDEX IF NOT EXISTS documents_client_idx ON documents (client);
+
 -- RPC function used by /api/chat for RAG retrieval
+-- client_key param filters by tenant; NULL returns all documents (backward compatible)
 CREATE OR REPLACE FUNCTION match_documents(
   query_embedding vector(1536),
-  match_count     int DEFAULT 5
+  match_count     int  DEFAULT 5,
+  client_key      text DEFAULT NULL
 )
 RETURNS TABLE (id bigint, doc_id text, doc_name text, content text, metadata jsonb, similarity float)
 LANGUAGE sql STABLE
 AS $$
   SELECT id, doc_id, doc_name, content, metadata, 1 - (embedding <=> query_embedding) AS similarity
   FROM documents
+  WHERE (client_key IS NULL OR client = client_key)
   ORDER BY embedding <=> query_embedding
   LIMIT match_count;
 $$;

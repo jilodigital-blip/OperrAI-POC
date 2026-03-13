@@ -275,7 +275,8 @@
     (function () {
       const exp = parseInt(sessionStorage.getItem('raymidi_exp') || '0', 10);
       if (exp > Math.floor(Date.now() / 1000)) {
-        window.location.href = '/ev-poc';
+        const role = sessionStorage.getItem('raymidi_role');
+        window.location.href = role === 'admin' ? '/admin' : '/ev-poc';
       }
     })();
 
@@ -347,8 +348,10 @@
           // Token is now in httpOnly cookie (set by server) — not accessible via JS
           sessionStorage.setItem('raymidi_exp', String(data.expiresAt));
           sessionStorage.setItem('raymidi_role', data.role || 'user');
+          sessionStorage.setItem('raymidi_client', data.client || 'ather');
           showAlert('info', 'Access granted. Redirecting…');
-          setTimeout(() => { window.location.href = '/ev-poc'; }, 600);
+          const dest = data.role === 'admin' ? '/admin' : '/ev-poc';
+          setTimeout(() => { window.location.href = dest; }, 600);
         } else if (resp.status === 429) {
           showAlert('error', data.error || 'Too many attempts. Please wait.');
           submitBtn.disabled = false;

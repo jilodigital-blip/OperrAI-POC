@@ -51,6 +51,13 @@
         <label>API Base URL (your Vercel deployment URL)</label>
         <input type="text" id="baseUrl" placeholder="https://your-app.vercel.app"/>
       </div>
+      <div>
+        <label>Client (tenant)</label>
+        <select id="client" style="width:100%;background:#111;border:1px solid var(--border);border-radius:8px;color:var(--text);font-size:0.9rem;padding:0.65rem 0.9rem;outline:none;">
+          <option value="ather">Ather Energy</option>
+          <option value="apb">Airtel Payments Bank</option>
+        </select>
+      </div>
     </div>
   </div>
 
@@ -105,11 +112,11 @@
     return { secret, baseUrl };
   }
 
-  async function ingestOne(baseUrl, secret, doc_id, doc_name, content) {
+  async function ingestOne(baseUrl, secret, doc_id, doc_name, content, client) {
     const resp = await fetch(`${baseUrl}/api/ingest`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ secret, doc_id, doc_name, content }),
+      body: JSON.stringify({ secret, doc_id, doc_name, content, client }),
     });
     const data = await resp.json();
     if (!resp.ok) throw new Error(data.error || `HTTP ${resp.status}`);
@@ -129,7 +136,8 @@
     btn.textContent = 'Uploading…';
     log(`Uploading: "${doc_name}"…`);
     try {
-      const res = await ingestOne(cfg.baseUrl, cfg.secret, '', doc_name, content);
+      const client = document.getElementById('client').value;
+      const res = await ingestOne(cfg.baseUrl, cfg.secret, '', doc_name, content, client);
       log(`Saved: "${res.doc_name}" (id: ${res.id})`, 'ok');
       document.getElementById('docName').value = '';
       document.getElementById('content').value = '';
@@ -163,7 +171,8 @@
       if (!doc_name || !content) { log(`[${i+1}] Skipped — missing doc_name or content`, 'err'); fail++; continue; }
       log(`[${i+1}/${docs.length}] Uploading: "${doc_id || doc_name}"…`);
       try {
-        const res = await ingestOne(cfg.baseUrl, cfg.secret, doc_id || '', doc_name, content);
+        const client = document.getElementById('client').value;
+        const res = await ingestOne(cfg.baseUrl, cfg.secret, doc_id || '', doc_name, content, client);
         log(`[${i+1}/${docs.length}] Saved: "${res.doc_name}"`, 'ok');
         ok++;
       } catch (e) {
