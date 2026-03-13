@@ -191,10 +191,10 @@ async function callAgenticPipeline(question, channel, sessionId, clientKey, { op
   // ── RAG: Vector search (scoped to client's knowledge base) ────────────────
   let chunks = [];
   try {
-    chunks = await supabaseRPC('match_documents', {
+    const matchRpc = clientKey === 'apb' ? 'match_documents_apb' : 'match_documents';
+    chunks = await supabaseRPC(matchRpc, {
       query_embedding: embedding,
       match_count: 5,
-      client_key: clientKey,
     }, supabaseUrl, supabaseKey);
   } catch {
     chunks = [];
