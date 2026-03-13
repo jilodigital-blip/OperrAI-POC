@@ -82,7 +82,7 @@
   <!-- Bulk upload -->
   <div class="card">
     <label style="font-size:1rem;text-transform:none;color:var(--text);margin-bottom:0.5rem;">Bulk Upload (JSON)</label>
-    <p class="bulk-hint" style="margin-bottom:1rem;">Paste a JSON array of <code>{"doc_id":"unique-slug","doc_name":"…","content":"Question: …\n\nAnswer: …"}</code> objects. <strong>doc_id</strong> is optional but recommended — it prevents duplicates on re-upload. Content should use <em>Question: …\n\nAnswer: …</em> format for best search quality.</p>
+    <p class="bulk-hint" style="margin-bottom:1rem;">Paste a JSON array. Supports two formats: <code>{"doc_name":"…","content":"…"}</code> or <code>{"section":"…","question":"…","answer":"…"}</code>. Optional <strong>doc_id</strong> (or <strong>id</strong>) prevents duplicates on re-upload.</p>
     <textarea id="bulkJson" placeholder='[{"doc_id":"faq-slug","doc_name":"Category - Topic","content":"Question: …\n\nAnswer: …"},{"doc_id":"faq-slug-2","doc_name":"Category - Topic 2","content":"Question: …\n\nAnswer: …"}]' style="min-height:120px;"></textarea>
     <button class="btn" id="bulkBtn" onclick="uploadBulk()" style="background:#444;color:var(--text);">Bulk Upload</button>
   </div>
@@ -167,7 +167,13 @@
 
     let ok = 0, fail = 0;
     for (let i = 0; i < docs.length; i++) {
-      const { doc_id, doc_name, content } = docs[i];
+      // Support both formats: {doc_name, content} and {section, question, answer}
+      const doc_id  = docs[i].doc_id || docs[i].id || '';
+      const doc_name = docs[i].doc_name || docs[i].section || '';
+      const content  = docs[i].content ||
+        (docs[i].question && docs[i].answer
+          ? `Question: ${docs[i].question}\n\nAnswer: ${docs[i].answer}`
+          : '');
       if (!doc_name || !content) { log(`[${i+1}] Skipped — missing doc_name or content`, 'err'); fail++; continue; }
       log(`[${i+1}/${docs.length}] Uploading: "${doc_id || doc_name}"…`);
       try {
