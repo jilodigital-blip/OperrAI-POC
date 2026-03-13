@@ -176,17 +176,25 @@
           : '');
       if (!doc_name || !content) { log(`[${i+1}] Skipped — missing doc_name or content`, 'err'); fail++; continue; }
       log(`[${i+1}/${docs.length}] Uploading: "${doc_id || doc_name}"…`);
-      try {
-        const client = document.getElementById('client').value;
-        const res = await ingestOne(cfg.baseUrl, cfg.secret, doc_id || '', doc_name, content, client);
-        log(`[${i+1}/${docs.length}] Saved: "${res.doc_name}"`, 'ok');
-        ok++;
-      } catch (e) {
-        log(`[${i+1}/${docs.length}] Failed "${doc_name}": ${e.message}`, 'err');
-        fail++;
+      const client = document.getElementById('client').value;
+      let success = false;
+      for (let attempt = 0; attempt < 2; attempt++) {
+        try {
+          const res = await ingestOne(cfg.baseUrl, cfg.secret, String(doc_id || ''), doc_name, content, client);
+          log(`[${i+1}/${docs.length}] Saved: "${res.doc_name}"`, 'ok');
+          ok++; success = true; break;
+        } catch (e) {
+          if (attempt === 0) {
+            log(`[${i+1}] Retrying after error…`, 'inf');
+            await new Promise(r => setTimeout(r, 3000));
+          } else {
+            log(`[${i+1}/${docs.length}] Failed "${doc_name}": ${e.message}`, 'err');
+            fail++;
+          }
+        }
       }
-      // small delay between requests
-      if (i < docs.length - 1) await new Promise(r => setTimeout(r, 400));
+      // delay between requests to avoid OpenAI rate limits
+      if (i < docs.length - 1) await new Promise(r => setTimeout(r, 1500));
     }
 
     log(`Bulk upload complete: ${ok} succeeded, ${fail} failed.`, ok > 0 ? 'ok' : 'err');
