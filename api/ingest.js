@@ -22,7 +22,7 @@ module.exports = async (req, res) => {
 
   // Vercel pre-parses JSON bodies onto req.body; fall back to manual read
   const body = req.body && typeof req.body === 'object' ? req.body : await readBody(req);
-  const { secret, doc_id, doc_name, content } = body;
+  const { secret, doc_id, doc_name, content, client } = body;
 
   // Guard with a secret so only you can ingest
   if (!INGEST_SECRET || secret !== INGEST_SECRET) {
@@ -31,6 +31,10 @@ module.exports = async (req, res) => {
   if (!doc_name?.trim() || !content?.trim()) {
     return res.status(400).json({ error: 'doc_name and content are required' });
   }
+
+  // Validate client against allowlist — defaults to 'ather'
+  const VALID_CLIENTS = ['ather', 'apb'];
+  const safeClient = VALID_CLIENTS.includes(client) ? client : 'ather';
 
   // Use provided doc_id or generate a slug from doc_name for upsert deduplication
   const stableDocId = (doc_id?.trim()) ||
@@ -62,7 +66,7 @@ module.exports = async (req, res) => {
       'Content-Type': 'application/json',
       'Prefer': 'resolution=merge-duplicates,return=representation',
     },
-    body: JSON.stringify({ doc_id: stableDocId, doc_name: doc_name.trim(), content: content.trim(), embedding }),
+    body: JSON.stringify({ doc_id: stableDocId, doc_name: doc_name.trim(), content: content.trim(), embedding, client: safeClient }),
   });
   if (!sbResp.ok) {
     return res.status(502).json({ error: 'Database error. Please try again.' });
@@ -70,5 +74,5 @@ module.exports = async (req, res) => {
   const saved = await sbResp.json();
   const id = Array.isArray(saved) ? saved[0]?.id : saved?.id;
 
-  return res.status(200).json({ success: true, id, doc_id: stableDocId, doc_name: doc_name.trim() });
+  return res.status(200).json({ success: true, id, doc_id: stableDocId, doc_name: doc_name.trim(), client: safeClient });
 };

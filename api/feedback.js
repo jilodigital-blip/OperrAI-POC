@@ -89,6 +89,9 @@ module.exports = async (req, res) => {
     const VALID_CATEGORIES = ['accuracy', 'speed', 'ui', 'general', 'other'];
     const safeCategory = VALID_CATEGORIES.includes(category) ? category : 'general';
 
+    // Tag feedback with client from JWT for tenant isolation
+    const feedbackClient = claims.client && claims.client !== 'admin' ? claims.client : 'ather';
+
     try {
       const rows = await supabaseRequest(
         'feedbacks',
@@ -99,6 +102,7 @@ module.exports = async (req, res) => {
           category:    safeCategory,
           comment:     comment.trim().slice(0, 2000),
           tester_name: (testerName || '').trim().slice(0, 100) || null,
+          client:      feedbackClient,
         },
         SUPABASE_URL,
         SUPABASE_ANON_KEY
@@ -120,8 +124,13 @@ module.exports = async (req, res) => {
     }
 
     try {
+      // Optional client filter for admin (e.g. ?client=apb)
+      const url = new URL(req.url, `http://${req.headers.host || 'localhost'}`);
+      const clientFilter = url.searchParams.get('client') || '';
+      const clientClause = clientFilter ? `&client=eq.${encodeURIComponent(clientFilter)}` : '';
+
       const rows = await supabaseRequest(
-        'feedbacks?select=*&order=created_at.desc&limit=200',
+        `feedbacks?select=*&order=created_at.desc&limit=200${clientClause}`,
         'GET',
         null,
         SUPABASE_URL,

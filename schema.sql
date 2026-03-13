@@ -75,6 +75,10 @@ CREATE TABLE IF NOT EXISTS feedbacks (
 
 CREATE INDEX IF NOT EXISTS feedbacks_created_idx ON feedbacks (created_at DESC);
 
+-- ── Client column (multi-tenant feedback isolation) ──────────────────────────
+ALTER TABLE feedbacks ADD COLUMN IF NOT EXISTS client TEXT NOT NULL DEFAULT 'ather';
+CREATE INDEX IF NOT EXISTS feedbacks_client_idx ON feedbacks (client);
+
 ALTER TABLE feedbacks ENABLE ROW LEVEL SECURITY;
 CREATE POLICY "anon can insert feedbacks" ON feedbacks FOR INSERT TO anon WITH CHECK (true);
 CREATE POLICY "anon can select feedbacks" ON feedbacks FOR SELECT TO anon USING (true);

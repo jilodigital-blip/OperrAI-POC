@@ -5,10 +5,10 @@ const chatAttempts = {};
 
 // ── Bundled FAQ fallback (used when Supabase documents table is empty) ─────────
 // Use require() so Vercel's bundler includes the file in the serverless function.
-let BUNDLED_FAQS = [];
-try {
-  BUNDLED_FAQS = require('../ingest/faqs.json');
-} catch { /* no local fallback available */ }
+// Per-client FAQ files ensure tenant isolation even in fallback mode.
+const BUNDLED_FAQS = {};
+try { BUNDLED_FAQS.ather = require('../ingest/faqs-ather.json'); } catch { BUNDLED_FAQS.ather = []; }
+try { BUNDLED_FAQS.apb   = require('../ingest/faqs-apb.json');   } catch { BUNDLED_FAQS.apb   = []; }
 
 // ── JWT helpers ────────────────────────────────────────────────────────────────
 
@@ -188,12 +188,13 @@ async function callAgenticPipeline(question, channel, sessionId, clientKey, { op
   const embedData = await embedResp.json();
   const embedding = embedData.data[0].embedding;
 
-  // ── RAG: Vector search ─────────────────────────────────────────────────────
+  // ── RAG: Vector search (scoped to client's knowledge base) ────────────────
   let chunks = [];
   try {
     chunks = await supabaseRPC('match_documents', {
       query_embedding: embedding,
       match_count: 5,
+      client_key: clientKey,
     }, supabaseUrl, supabaseKey);
   } catch {
     chunks = [];
@@ -201,8 +202,10 @@ async function callAgenticPipeline(question, channel, sessionId, clientKey, { op
 
   // ── Fallback: use bundled FAQs when Supabase returns nothing ───────────────
   // This ensures the demo works even before the knowledge base is seeded.
-  if (chunks.length === 0 && BUNDLED_FAQS.length > 0) {
-    console.warn('Supabase returned 0 documents — falling back to bundled FAQs');
+  // Each client has its own bundled FAQ file for tenant isolation.
+  const clientFaqs = BUNDLED_FAQS[clientKey] || [];
+  if (chunks.length === 0 && clientFaqs.length > 0) {
+    console.warn(`Supabase returned 0 documents for client '${clientKey}' — falling back to bundled FAQs`);
     const lq = question.toLowerCase();
     // Keep terms of 2+ chars; also extract bigrams for better matching
     const words = lq.split(/\W+/).filter(t => t.length >= 2);
@@ -210,7 +213,7 @@ async function callAgenticPipeline(question, channel, sessionId, clientKey, { op
     for (let i = 0; i < words.length - 1; i++) bigrams.push(words[i] + ' ' + words[i + 1]);
 
     // Score each FAQ by keyword overlap with term-length weighting
-    const scored = BUNDLED_FAQS.map(f => {
+    const scored = clientFaqs.map(f => {
       const hay = (f.doc_name + ' ' + f.content).toLowerCase();
       // Bigram matches are worth 3 points (phrase match)
       let score = bigrams.filter(bg => hay.includes(bg)).length * 3;
