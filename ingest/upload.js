@@ -76,7 +76,7 @@ async function upsertDocument(doc) {
 
 async function main() {
   const faqs = JSON.parse(
-    fs.readFileSync(path.join(__dirname, 'faqs.json'), 'utf8')
+    fs.readFileSync(path.join(__dirname, 'faqs-ather.json'), 'utf8')
   );
 
   console.log(`Ingesting ${faqs.length} FAQ documents into Supabase…\n`);
