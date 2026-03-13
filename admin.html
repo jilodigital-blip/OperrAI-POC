@@ -224,6 +224,27 @@
     }
     .logout-btn:hover { color: #fff; }
 
+    .company-select {
+      font-family: var(--font-body);
+      font-size: 0.78rem;
+      font-weight: 600;
+      color: #fff;
+      background: var(--surface);
+      border: 1px solid var(--gold-border);
+      border-radius: 8px;
+      padding: 0.35rem 0.65rem;
+      cursor: pointer;
+      outline: none;
+      appearance: auto;
+      transition: border-color 0.2s;
+    }
+    .company-select:hover,
+    .company-select:focus { border-color: var(--gold); }
+    .company-select option {
+      background: var(--surface);
+      color: #fff;
+    }
+
     .refresh-btn {
       font-family: var(--font-body);
       font-size: 0.8rem;
@@ -1060,6 +1081,11 @@
       <a href="/" class="logo" style="text-decoration:none;">Ray<span>midi</span></a>
       <div style="display:flex;align-items:center;gap:0.5rem;">
         <span class="admin-role-badge">Admin</span>
+        <select id="companySelect" class="company-select" onchange="onCompanyChange()">
+          <option value="all">All Companies</option>
+          <option value="ather">Ather Energy</option>
+          <option value="apb">Airtel Payments Bank</option>
+        </select>
         <span id="topbarStatus" class="status-bar"></span>
       </div>
       <div class="topbar-right">
@@ -1540,13 +1566,21 @@
     showLogin();
   });
 
+  // ── Company selector ───────────────────────────────────────────────────────
+  let selectedCompany = 'all';
+  function onCompanyChange() {
+    selectedCompany = document.getElementById('companySelect').value;
+    loadAdminData();
+  }
+
   // ── Load admin data ────────────────────────────────────────────────────────
   async function loadAdminData() {
     const statusEl = document.getElementById('topbarStatus');
     statusEl.textContent = 'Refreshing…';
 
     try {
-      const resp = await fetch('/api/admin', {
+      const qs = selectedCompany !== 'all' ? `?client=${selectedCompany}` : '';
+      const resp = await fetch('/api/admin' + qs, {
         credentials: 'same-origin',
       });
 

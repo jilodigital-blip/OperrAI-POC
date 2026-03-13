@@ -54,12 +54,17 @@ module.exports = async (req, res) => {
   if (req.method !== 'GET') return res.status(405).json({ error: 'Method not allowed' });
 
   const token = extractAuthToken(req);
-  if (!verifyJWT(token, JWT_SECRET)) return res.status(401).json({ error: 'Unauthorized' });
+  const claims = verifyJWT(token, JWT_SECRET);
+  if (!claims) return res.status(401).json({ error: 'Unauthorized' });
 
   try {
+    // Use client from JWT claims to scope dashboard data
+    const clientKey = claims.client && claims.client !== 'admin' ? claims.client : '';
+    const clientClause = clientKey ? `&client=eq.${encodeURIComponent(clientKey)}` : '';
+
     // Fetch messages with their ratings joined
     const messages = await supabaseFetch(
-      'messages?select=id,question_hash,response_time_ms,sources,created_at,ratings(accuracy_score,accuracy_label)&order=created_at.desc&limit=500',
+      `messages?select=id,question_hash,response_time_ms,sources,created_at,ratings(accuracy_score,accuracy_label)&order=created_at.desc&limit=500${clientClause}`,
       SUPABASE_URL,
       SUPABASE_ANON_KEY
     );

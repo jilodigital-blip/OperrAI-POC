@@ -101,6 +101,10 @@ ALTER TABLE test_runs ENABLE ROW LEVEL SECURITY;
 CREATE POLICY "anon can insert test_runs" ON test_runs FOR INSERT TO anon WITH CHECK (true);
 CREATE POLICY "anon can select test_runs" ON test_runs FOR SELECT TO anon USING (true);
 
+-- ── Client column (multi-tenant support) ─────────────────────────────────────
+ALTER TABLE messages ADD COLUMN IF NOT EXISTS client TEXT NOT NULL DEFAULT 'ather';
+CREATE INDEX IF NOT EXISTS messages_client_idx ON messages (client);
+
 -- ── Dashboard view ─────────────────────────────────────────────────────────────
 CREATE OR REPLACE VIEW dashboard_summary AS
 SELECT

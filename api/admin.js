@@ -59,9 +59,14 @@ module.exports = async (req, res) => {
   if (claims.role !== 'admin') return res.status(403).json({ error: 'Admin access required' });
 
   try {
-    // Fetch messages with ratings, including channel and session_id
+    // ── Optional client filter (query param ?client=ather or ?client=apb) ────
+    const url = new URL(req.url, `http://${req.headers.host || 'localhost'}`);
+    const clientFilter = url.searchParams.get('client') || '';
+    const clientClause = clientFilter ? `&client=eq.${encodeURIComponent(clientFilter)}` : '';
+
+    // Fetch messages with ratings, including channel, session_id, and client
     const messages = await supabaseFetch(
-      'messages?select=id,session_id,question,channel,response,response_time_ms,sources,created_at,ratings(accuracy_score,accuracy_label,rating_rationale)&order=created_at.desc&limit=500',
+      `messages?select=id,session_id,question,channel,client,response,response_time_ms,sources,created_at,ratings(accuracy_score,accuracy_label,rating_rationale)&order=created_at.desc&limit=500${clientClause}`,
       SUPABASE_URL,
       SUPABASE_ANON_KEY
     );

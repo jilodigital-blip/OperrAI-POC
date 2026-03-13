@@ -10,7 +10,7 @@
   <meta name="apple-mobile-web-app-title" content="Raymidi" />
   <link rel="manifest" href="/manifest.json" />
   <link rel="apple-touch-icon" href="/icons/icon-192.svg" />
-  <title>AI POC Hub — Ather | Raymidi</title>
+  <title>AI POC Hub — Raymidi</title>
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
   <link href="https://fonts.googleapis.com/css2?family=Syne:wght@400;600;700;800&family=DM+Sans:ital,opsz,wght@0,9..40,300;0,9..40,400;0,9..40,500;1,9..40,300&display=swap" rel="stylesheet" />
@@ -2213,6 +2213,114 @@
     }
   })();
 
+  // ── Multi-tenant client config ─────────────────────────────────────────────
+  const CLIENT_CONFIG = {
+    ather: {
+      label: 'Ather Energy',
+      shortLabel: 'Ather',
+      icon: '⚡',
+      welcomeTitle: 'Welcome, <span class="gold">Team Ather</span> — Your AI Support Hub is Live!',
+      welcomeDesc: 'Your intelligent customer support system is ready to serve. Every response is grounded in your product knowledge base, quality-evaluated by Claude Opus 4.6, and designed to delight your customers with speed and accuracy — across both live chat and email.',
+      chatLabel: 'Customer Chat',
+      chatBadge: 'Live Chat',
+      chatIcon: '💬',
+      chatWelcomeIcon: '🛵',
+      chatWelcomeTitle: 'Ask anything about your Ather scooter',
+      chatWelcomeDesc: 'Instant answers from your product knowledge base in English, Hindi, or Hinglish. Sourced and accuracy-rated on every reply.',
+      chatChips: ['What is the battery range?', 'How do I claim warranty?', 'Battery kitna chalti hai?', 'Warranty kaise claim karein?'],
+      emailLabel: 'Email Support',
+      emailBadge: 'Email Channel',
+      emailWelcomeTitle: 'Compose an email query',
+      emailWelcomeDesc: 'Get a fully-formatted, professional email response drafted by AI in your language — ready to review and send.',
+      emailChips: ["What's the warranty coverage?", 'Request service appointment', 'Warranty mein kya cover hota hai?', 'Service appointment book karna hai'],
+      badges: ['✓ RAG-Grounded Answers', '✓ AI Quality Gate', '✓ Chat & Email Ready', '✓ Real-Time Analytics'],
+      pocBox1Title: 'Email & Chat POC',
+      pocBox1Desc: 'Agentic AI handles customer queries across live chat and email, grounded in your product knowledge base.',
+      channelPills: ['Live Chat', 'Email Support', 'AI Quality Assessment'],
+    },
+    apb: {
+      label: 'Airtel Payments Bank',
+      shortLabel: 'APB',
+      icon: '🏦',
+      welcomeTitle: 'Welcome, <span class="gold">Team Airtel Payments Bank</span> — Your AI Support Hub is Live!',
+      welcomeDesc: 'Your intelligent customer support system is ready to serve. Every response is grounded in your product knowledge base, quality-evaluated by Claude Opus 4.6, and designed to delight your customers with speed and accuracy — across both ODR and email.',
+      chatLabel: 'Customer ODR',
+      chatBadge: 'Live ODR',
+      chatIcon: '🏦',
+      chatWelcomeIcon: '🏦',
+      chatWelcomeTitle: 'Ask anything about Airtel Payments Bank services',
+      chatWelcomeDesc: 'Instant answers from your product knowledge base in English, Hindi, or Hinglish. Sourced and accuracy-rated on every reply.',
+      chatChips: ['How to open a savings account?', 'What are the interest rates?', 'Savings account kaise kholein?', 'FD ke interest rates kya hain?'],
+      emailLabel: 'Email Support',
+      emailBadge: 'Email Channel',
+      emailWelcomeTitle: 'Compose an email query',
+      emailWelcomeDesc: 'Get a fully-formatted, professional email response drafted by AI in your language — ready to review and send.',
+      emailChips: ['Account balance enquiry', 'Request account statement', 'Account ka balance kaise check karein?', 'Mini statement chahiye'],
+      badges: ['✓ RAG-Grounded Answers', '✓ AI Quality Gate', '✓ ODR & Email Ready', '✓ Real-Time Analytics'],
+      pocBox1Title: 'Email & ODR POC',
+      pocBox1Desc: 'Agentic AI handles customer queries across live ODR and email, grounded in your product knowledge base.',
+      channelPills: ['Live ODR', 'Email Support', 'AI Quality Assessment'],
+    },
+  };
+
+  const clientKey = sessionStorage.getItem('raymidi_client') || 'ather';
+  const CC = CLIENT_CONFIG[clientKey] || CLIENT_CONFIG.ather;
+
+  // Apply dynamic branding to the page
+  (function applyClientBranding() {
+    // Title
+    document.title = `AI POC Hub — ${CC.shortLabel} | Raymidi`;
+
+    // Topbar
+    document.querySelector('.topbar-center span:last-child').innerHTML = `Live Demo &mdash; ${CC.shortLabel}`;
+
+    // Welcome banner
+    document.querySelector('.welcome-avatar').textContent = CC.icon;
+    document.querySelector('.welcome-content h2').innerHTML = CC.welcomeTitle;
+    document.querySelector('.welcome-content p').innerHTML = CC.welcomeDesc;
+    const badgesEl = document.querySelector('.welcome-badges');
+    badgesEl.innerHTML = CC.badges.map(b => `<span class="welcome-badge">${b}</span>`).join('');
+
+    // POC selector box 1
+    document.querySelector('#pocEmailChat .poc-box-title').textContent = CC.pocBox1Title;
+    document.querySelector('#pocEmailChat .poc-box-desc').textContent = CC.pocBox1Desc;
+
+    // Channel pills
+    const pillsEl = document.querySelector('.channels');
+    pillsEl.innerHTML = CC.channelPills.map(p => `<div class="channel-pill"><span class="dot"></span> ${p}</div>`).join('');
+
+    // Chat card
+    const chatTitle = document.querySelector('#chatCard .card-title');
+    chatTitle.querySelector('.icon').textContent = CC.chatIcon;
+    chatTitle.childNodes.forEach(n => { if (n.nodeType === 3 && n.textContent.trim()) n.textContent = `\n        ${CC.chatLabel}\n        `; });
+    chatTitle.querySelector('.channel-badge').textContent = CC.chatBadge;
+
+    // Chat welcome
+    document.querySelector('#chatWelcome .welcome-icon').textContent = CC.chatWelcomeIcon;
+    document.querySelector('#chatWelcome h3').textContent = CC.chatWelcomeTitle;
+    document.querySelector('#chatWelcome p').textContent = CC.chatWelcomeDesc;
+    const chatChipsEl = document.querySelector('#chatWelcome .suggestion-chips');
+    chatChipsEl.innerHTML = CC.chatChips.map(c => `<span class="chip" onclick="sendChatChip(this)">${c}</span>`).join('');
+
+    // Email welcome
+    document.querySelector('#emailWelcome h3').textContent = CC.emailWelcomeTitle;
+    document.querySelector('#emailWelcome p').textContent = CC.emailWelcomeDesc;
+    const emailChipsEl = document.querySelector('#emailWelcome .suggestion-chips');
+    emailChipsEl.innerHTML = CC.emailChips.map(c => `<span class="chip" onclick="sendEmailChip(this)">${c}</span>`).join('');
+
+    // How it works panel — update chat channel label
+    const infoCards = document.querySelectorAll('.info-card h3');
+    infoCards.forEach(h3 => {
+      if (h3.textContent.includes('Chat Channel')) {
+        h3.textContent = CC.chatIcon + ' ' + CC.chatLabel.replace('Customer ', '') + ' Channel';
+      }
+    });
+
+    // Test channel labels
+    const chatResultHeader = document.querySelector('#chatResultCard .cr-header');
+    if (chatResultHeader) chatResultHeader.textContent = CC.chatIcon + ' ' + CC.chatLabel.replace('Customer ', '') + ' Channel';
+  })();
+
   // Session ID (persists within browser tab)
   sessionId = sessionStorage.getItem('poc_session') || crypto.randomUUID();
   sessionStorage.setItem('poc_session', sessionId);
@@ -2222,6 +2330,7 @@
     fetch('/api/auth', { method: 'DELETE', credentials: 'same-origin' }).catch(() => {});
     sessionStorage.removeItem('raymidi_exp');
     sessionStorage.removeItem('raymidi_role');
+    sessionStorage.removeItem('raymidi_client');
     sessionStorage.removeItem('poc_session');
     window.location.href = '/';
   });
@@ -2348,7 +2457,7 @@
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         credentials: 'same-origin',
-        body: JSON.stringify({ question, sessionId, channel }),
+        body: JSON.stringify({ question, sessionId, channel, client: clientKey }),
       });
 
       typingEl.classList.remove('visible');
