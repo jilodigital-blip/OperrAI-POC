@@ -57,8 +57,9 @@ module.exports = async (req, res) => {
   const embedData = await embedResp.json();
   const embedding = embedData.data[0].embedding;
 
-  // Upsert into Supabase — on_conflict=doc_id prevents duplicates when re-ingesting
-  const sbResp = await fetch(`${SUPABASE_URL}/rest/v1/documents?on_conflict=doc_id`, {
+  // Upsert into client-specific table — on_conflict=doc_id prevents duplicates when re-ingesting
+  const tableName = safeClient === 'apb' ? 'documents_apb' : 'documents';
+  const sbResp = await fetch(`${SUPABASE_URL}/rest/v1/${tableName}?on_conflict=doc_id`, {
     method: 'POST',
     headers: {
       'apikey': SUPABASE_ANON_KEY,
@@ -66,7 +67,7 @@ module.exports = async (req, res) => {
       'Content-Type': 'application/json',
       'Prefer': 'resolution=merge-duplicates,return=representation',
     },
-    body: JSON.stringify({ doc_id: stableDocId, doc_name: doc_name.trim(), content: content.trim(), embedding, client: safeClient }),
+    body: JSON.stringify({ doc_id: stableDocId, doc_name: doc_name.trim(), content: content.trim(), embedding }),
   });
   if (!sbResp.ok) {
     return res.status(502).json({ error: 'Database error. Please try again.' });
