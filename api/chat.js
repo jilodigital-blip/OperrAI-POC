@@ -146,6 +146,15 @@ async function fetchWithRetry(url, options, { retries = 2, baseDelay = 1000, tim
   }
 }
 
+// ── Sanitize env-var keys (strip quotes, newlines, invisible chars from paste) ─
+function sanitizeKey(raw) {
+  return raw
+    .replace(/^["']+|["']+$/g, '')   // surrounding quotes
+    .replace(/[\r\n]+/g, '')          // embedded newlines
+    .replace(/[\u200B-\u200D\uFEFF\u00A0]/g, '') // zero-width / non-breaking chars
+    .trim();
+}
+
 // ── Agentic pipeline: Embed → RAG → OpenAI L1 → OpenAI L2 → Quality Gate ──────
 
 // ── Per-client prompt configuration ─────────────────────────────────────────
@@ -176,6 +185,9 @@ async function callAgenticPipeline(question, channel, sessionId, clientKey, { op
   const CP = CLIENT_PROMPTS[clientKey] || CLIENT_PROMPTS.ather;
   // ── L0: Embed ──────────────────────────────────────────────────────────────
   if (!openaiKey) throw new Error('OPENAI_API_KEY is not configured');
+  if (!openaiKey.startsWith('sk-') || openaiKey.length < 20) {
+    throw new Error('OPENAI_API_KEY format invalid (expected sk-... key, got length ' + openaiKey.length + ')');
+  }
   const embedResp = await fetchWithRetry('https://api.openai.com/v1/embeddings', {
     method: 'POST',
     headers: {
@@ -544,7 +556,7 @@ ${context}`;
 module.exports = async (req, res) => {
   // Read env vars inside handler to avoid stale module-scope cache on Vercel
   const JWT_SECRET        = (process.env.JWT_SECRET        || '').trim();
-  const OPENAI_API_KEY    = (process.env.OPENAI_API_KEY    || '').trim();
+  const OPENAI_API_KEY    = sanitizeKey(process.env.OPENAI_API_KEY || '');
   const SUPABASE_URL      = (process.env.SUPABASE_URL      || '').trim();
   const SUPABASE_ANON_KEY = (process.env.SUPABASE_ANON_KEY || '').trim();
 
@@ -593,7 +605,7 @@ module.exports = async (req, res) => {
 
     // Classify the error for a more helpful response
     const msg = err.message || '';
-    if (msg.includes('OPENAI_API_KEY is not configured')) {
+    if (msg.includes('OPENAI_API_KEY is not configured') || msg.includes('OPENAI_API_KEY format invalid')) {
       return res.status(503).json({ error: 'AI service is not configured. Please contact support.' });
     }
     if (msg.includes('returned 401')) {
@@ -647,25 +659,34 @@ module.exports = async (req, res) => {
   }
 
   // Persist accuracy rating (already computed — no extra API call)
+  // NOTE: Must await to prevent Vercel from freezing the function before the insert completes
   if (savedMessage?.id) {
-    supabaseInsert(tbl('ratings'), {
-      message_id:       savedMessage.id,
-      accuracy_score,
-      accuracy_label,
-      rating_rationale: accuracy_rationale,
-      rated_by_model:   OPENAI_API_KEY ? 'gpt-4.1' : 'default',
-    }, SUPABASE_URL, SUPABASE_ANON_KEY).catch(() => {});
+    try {
+      await supabaseInsert(tbl('ratings'), {
+        message_id:       savedMessage.id,
+        accuracy_score,
+        accuracy_label,
+        rating_rationale: accuracy_rationale,
+        rated_by_model:   OPENAI_API_KEY ? 'gpt-4.1' : 'default',
+      }, SUPABASE_URL, SUPABASE_ANON_KEY);
+    } catch {
+      // DB rating failure does not block the response
+    }
   }
 
   // Persist service request for blocked responses
   if (blocked && ticket_id) {
-    supabaseInsert(tbl('service_requests'), {
-      message_id: savedMessage?.id || null,
-      ticket_id,
-      question:   question.trim(),
-      channel,
-      status:     'open',
-    }, SUPABASE_URL, SUPABASE_ANON_KEY).catch(() => {});
+    try {
+      await supabaseInsert(tbl('service_requests'), {
+        message_id: savedMessage?.id || null,
+        ticket_id,
+        question:   question.trim(),
+        channel,
+        status:     'open',
+      }, SUPABASE_URL, SUPABASE_ANON_KEY);
+    } catch {
+      // DB service request failure does not block the response
+    }
   }
 
   return res.status(200).json({
