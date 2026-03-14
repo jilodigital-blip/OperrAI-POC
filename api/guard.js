@@ -49,48 +49,65 @@ function parseCookies(cookieHeader) {
 }
 
 module.exports = (req, res) => {
-  const page = req.query && req.query.page;
-
-  // Validate page parameter against allowlist
-  if (!page || !ALLOWED_PAGES[page]) {
-    res.writeHead(302, { Location: '/login' });
-    return res.end();
-  }
-
-  const JWT_SECRET = process.env.JWT_SECRET;
-  if (!JWT_SECRET) {
-    res.writeHead(302, { Location: '/login' });
-    return res.end();
-  }
-
-  // Parse JWT from httpOnly cookie
-  const cookies = parseCookies(req.headers.cookie);
-  const token = cookies['raymidi_auth'];
-  const payload = verifyJWT(token, JWT_SECRET);
-
-  if (!payload) {
-    res.writeHead(302, { Location: '/login' });
-    return res.end();
-  }
-
-  // Admin page requires admin role
-  if (page === 'admin' && payload.role !== 'admin') {
-    res.writeHead(302, { Location: '/login' });
-    return res.end();
-  }
-
-  // Serve the HTML file
   try {
+    const page = req.query && req.query.page;
+
+    // Validate page parameter against allowlist
+    if (!page || !ALLOWED_PAGES[page]) {
+      console.error('[guard] Invalid or missing page param:', page);
+      res.writeHead(302, { Location: '/login' });
+      return res.end();
+    }
+
+    const JWT_SECRET = process.env.JWT_SECRET;
+    if (!JWT_SECRET) {
+      console.error('[guard] JWT_SECRET env var is missing');
+      res.writeHead(500, { 'Content-Type': 'application/json' });
+      return res.end(JSON.stringify({ error: 'JWT_SECRET not configured' }));
+    }
+
+    // Parse JWT from httpOnly cookie
+    const cookies = parseCookies(req.headers.cookie);
+    const token = cookies['raymidi_auth'];
+
+    if (!token) {
+      console.error('[guard] No raymidi_auth cookie found');
+      res.writeHead(302, { Location: '/login' });
+      return res.end();
+    }
+
+    const payload = verifyJWT(token, JWT_SECRET);
+
+    if (!payload) {
+      console.error('[guard] JWT verification failed for page:', page);
+      res.writeHead(302, { Location: '/login' });
+      return res.end();
+    }
+
+    // Admin page requires admin role
+    if (page === 'admin' && payload.role !== 'admin') {
+      console.error('[guard] Non-admin user tried to access admin page');
+      res.writeHead(302, { Location: '/login' });
+      return res.end();
+    }
+
+    // Serve the HTML file
     const filePath = join(process.cwd(), ALLOWED_PAGES[page]);
-    const html = readFileSync(filePath, 'utf-8');
-    res.setHeader('Content-Type', 'text/html; charset=utf-8');
-    res.setHeader('Cache-Control', 'no-store, no-cache, must-revalidate');
-    res.setHeader('Pragma', 'no-cache');
-    res.writeHead(200);
-    res.end(html);
-  } catch {
-    // File not found — redirect to login
-    res.writeHead(302, { Location: '/login' });
-    return res.end();
+    try {
+      const html = readFileSync(filePath, 'utf-8');
+      res.setHeader('Content-Type', 'text/html; charset=utf-8');
+      res.setHeader('Cache-Control', 'no-store, no-cache, must-revalidate');
+      res.setHeader('Pragma', 'no-cache');
+      res.writeHead(200);
+      res.end(html);
+    } catch (fileErr) {
+      console.error('[guard] Failed to read file:', filePath, fileErr.message);
+      res.writeHead(500, { 'Content-Type': 'application/json' });
+      return res.end(JSON.stringify({ error: `Page file not found: ${ALLOWED_PAGES[page]}`, path: filePath }));
+    }
+  } catch (err) {
+    console.error('[guard] Unexpected error:', err.message, err.stack);
+    res.writeHead(500, { 'Content-Type': 'application/json' });
+    return res.end(JSON.stringify({ error: 'Guard function crashed: ' + err.message }));
   }
 };
