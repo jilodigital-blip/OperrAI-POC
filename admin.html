@@ -1867,11 +1867,11 @@
   async function loadFaqQuestions() {
     if (aiFaqQuestions.length > 0) return aiFaqQuestions;
     try {
-      const resp = await fetch('/ingest/faqs.json');
+      const resp = await fetch('/ingest/faqs-ather.json');
       if (resp.ok) {
         const contentType = resp.headers.get('content-type') || '';
         if (!contentType.includes('json')) {
-          _dbg('loadFaqQuestions: /ingest/faqs.json returned non-JSON content-type:', contentType);
+          _dbg('loadFaqQuestions: /ingest/faqs-ather.json returned non-JSON content-type:', contentType);
           return aiFaqQuestions;
         }
         const faqs = await resp.json();
