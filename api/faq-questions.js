@@ -82,11 +82,10 @@ module.exports = async (req, res) => {
   if (req.method === 'OPTIONS') return res.status(200).end();
   if (req.method !== 'GET') return res.status(405).json({ error: 'Method not allowed' });
 
-  // Verify JWT and require admin role
+  // Verify JWT — any authenticated user (admin or demo) may fetch FAQ questions
   const token = extractAuthToken(req);
   const claims = verifyJWT(token, JWT_SECRET);
   if (!claims) return res.status(401).json({ error: 'Unauthorized' });
-  if (claims.role !== 'admin') return res.status(403).json({ error: 'Admin access required' });
 
   const clientKey = (req.query?.client || 'ather').toLowerCase();
   if (!['ather', 'apb'].includes(clientKey)) {
