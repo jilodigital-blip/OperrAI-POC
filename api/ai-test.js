@@ -87,11 +87,16 @@ module.exports = async (req, res) => {
   if (!claims) return res.status(401).json({ error: 'Unauthorized' });
   if (claims.role !== 'admin') return res.status(403).json({ error: 'Admin access required' });
 
+  // Determine client for table selection (from query param or body)
+  const urlParsed = new URL(req.url, `http://${req.headers.host || 'localhost'}`);
+  const clientParam = urlParsed.searchParams.get('client') || '';
+  const tbl = (name) => clientParam === 'apb' ? `${name}_apb` : name;
+
   // ── GET: Retrieve past test runs ──────────────────────────────────────────
   if (req.method === 'GET') {
     try {
       const runs = await supabaseFetch(
-        'test_runs?select=*&order=created_at.desc&limit=20',
+        `${tbl('test_runs')}?select=*&order=created_at.desc&limit=20`,
         SUPABASE_URL,
         SUPABASE_ANON_KEY
       );
@@ -143,7 +148,10 @@ module.exports = async (req, res) => {
     };
 
     try {
-      const saved = await supabaseInsert('test_runs', row, SUPABASE_URL, SUPABASE_ANON_KEY);
+      // Use client from body for POST if not in query param
+      const postClient = body.client || clientParam || '';
+      const tblPost = (name) => postClient === 'apb' ? `${name}_apb` : name;
+      const saved = await supabaseInsert(tblPost('test_runs'), row, SUPABASE_URL, SUPABASE_ANON_KEY);
       return res.status(200).json({ success: true, id: saved?.id || null });
     } catch (err) {
       console.error('AI Test POST error:', err);

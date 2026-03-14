@@ -93,10 +93,11 @@ module.exports = async (req, res) => {
 
     // Tag feedback with client from JWT for tenant isolation
     const feedbackClient = claims.client && claims.client !== 'admin' ? claims.client : 'ather';
+    const tbl = (name) => feedbackClient === 'apb' ? `${name}_apb` : name;
 
     try {
       const rows = await supabaseRequest(
-        'feedbacks',
+        tbl('feedbacks'),
         'POST',
         {
           session_id:  sessionId  || null,
@@ -129,10 +130,11 @@ module.exports = async (req, res) => {
       // Optional client filter for admin (e.g. ?client=apb)
       const url = new URL(req.url, `http://${req.headers.host || 'localhost'}`);
       const clientFilter = url.searchParams.get('client') || '';
+      const tblAdmin = (name) => clientFilter === 'apb' ? `${name}_apb` : name;
       const clientClause = clientFilter ? `&client=eq.${encodeURIComponent(clientFilter)}` : '';
 
       const rows = await supabaseRequest(
-        `feedbacks?select=*&order=created_at.desc&limit=200${clientClause}`,
+        `${tblAdmin('feedbacks')}?select=*&order=created_at.desc&limit=200${clientClause}`,
         'GET',
         null,
         SUPABASE_URL,

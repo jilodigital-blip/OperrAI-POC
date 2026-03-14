@@ -638,16 +638,17 @@ module.exports = async (req, res) => {
     client:           clientKey,
   };
 
+  const tbl = (name) => clientKey === 'apb' ? `${name}_apb` : name;
   let savedMessage = null;
   try {
-    savedMessage = await supabaseInsert('messages', messageRow, SUPABASE_URL, SUPABASE_ANON_KEY);
+    savedMessage = await supabaseInsert(tbl('messages'), messageRow, SUPABASE_URL, SUPABASE_ANON_KEY);
   } catch {
     // DB logging failure does not block the response
   }
 
   // Persist accuracy rating (already computed — no extra API call)
   if (savedMessage?.id) {
-    supabaseInsert('ratings', {
+    supabaseInsert(tbl('ratings'), {
       message_id:       savedMessage.id,
       accuracy_score,
       accuracy_label,
@@ -658,7 +659,7 @@ module.exports = async (req, res) => {
 
   // Persist service request for blocked responses
   if (blocked && ticket_id) {
-    supabaseInsert('service_requests', {
+    supabaseInsert(tbl('service_requests'), {
       message_id: savedMessage?.id || null,
       ticket_id,
       question:   question.trim(),
