@@ -19,6 +19,7 @@ const STATIC_ROUTES = {
   '/ev-poc':    'ev-poc.html',
   '/ingest':    'ingest.html',
   '/voice-pod': 'voice-pod.html',
+  '/admin':     'admin.html',
 };
 
 // Map /api/* → handler modules

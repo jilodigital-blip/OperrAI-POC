@@ -17,7 +17,7 @@
         { "key": "Permissions-Policy", "value": "camera=(), microphone=(self), geolocation=()" },
         {
           "key": "Content-Security-Policy",
-          "value": "default-src 'self'; script-src 'self' 'unsafe-inline'; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; font-src https://fonts.gstatic.com; connect-src 'self' https://qjajoayybuvxvpgysoih.supabase.co wss://raymidi-voice-relay.onrender.com; img-src 'self' data:; frame-ancestors 'none'; media-src 'self' blob:"
+          "value": "default-src 'self'; script-src 'self' 'unsafe-inline'; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; font-src https://fonts.gstatic.com; connect-src 'self' https://qjajoayybuvxvpgysoih.supabase.co https://api.sarvam.ai wss://raymidi-voice-relay.onrender.com; img-src 'self' data:; frame-ancestors 'none'; media-src 'self' blob:"
         }
       ]
     }
@@ -28,11 +28,11 @@
     { "src": "/manifest.json", "dest": "/manifest.json" },
     { "src": "/icons/(.*)",    "dest": "/icons/$1" },
     { "src": "/ingest/(.*)",   "dest": "/ingest/$1" },
-    { "src": "/ev-poc",        "dest": "/ev-poc.html" },
-    { "src": "/voice-pod",     "dest": "/voice-pod.html" },
+    { "src": "/ev-poc",        "dest": "/api/guard?page=ev-poc" },
+    { "src": "/voice-pod",     "dest": "/api/guard?page=voice-pod" },
+    { "src": "/admin",         "dest": "/api/guard?page=admin" },
     { "src": "/ingest",        "dest": "/ingest.html" },
     { "src": "/login",         "dest": "/login.html" },
-    { "src": "/admin",         "dest": "/admin.html" },
     { "src": "/(.*)",          "dest": "/index.html" }
   ]
 }
