@@ -2861,12 +2861,21 @@
   function extractFaqQuestions(faqs) {
     const questions = [];
     faqs.forEach(faq => {
-      const matches = faq.content.match(/Question:\s*(.+?)(?:\n|$)/g);
-      if (matches) {
-        matches.forEach(m => {
-          const q = m.replace(/^Question:\s*/, '').trim();
-          if (q) questions.push(q);
-        });
+      // APB format: direct "question" field
+      if (faq.question) {
+        const q = faq.question.trim();
+        if (q) questions.push(q);
+        return;
+      }
+      // Ather format: "content" field with embedded "Question: ..." lines
+      if (faq.content) {
+        const matches = faq.content.match(/Question:\s*(.+?)(?:\n|$)/g);
+        if (matches) {
+          matches.forEach(m => {
+            const q = m.replace(/^Question:\s*/, '').trim();
+            if (q) questions.push(q);
+          });
+        }
       }
     });
     return questions;
