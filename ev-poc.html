@@ -1825,11 +1825,7 @@
       <div class="welcome-avatar">⚡</div>
       <div class="welcome-content">
         <h2>Welcome, <span class="gold">Team Ather</span> — Your AI Support Hub is Live!</h2>
-        <p>
-          Your intelligent customer support system is ready to serve. Every response is grounded in your product
-          knowledge base, quality-evaluated by Claude Opus 4.6, and designed to delight your customers
-          with speed and accuracy — across both live chat and email.
-        </p>
+        <p>Your AI support system is live — grounded in your knowledge base and quality-evaluated on every reply.</p>
         <div class="welcome-badges">
           <span class="welcome-badge">✓ RAG-Grounded Answers</span>
           <span class="welcome-badge">✓ AI Quality Gate</span>
@@ -1861,31 +1857,15 @@
       <div class="poc-box-cta">View Analytics →</div>
     </div>
 
-    <!-- Box 3: Voice Pod — Lead Management (Live) -->
-    <a href="/voice-pod" class="poc-box poc-box--active" style="text-decoration:none;color:inherit;">
+    <!-- Box 3: Voice Pod (Live) -->
+    <a href="/voice-pod" class="poc-box poc-box--active" id="pocVoice" style="text-decoration:none;color:inherit;">
       <span style="background:var(--gold-dim);color:var(--gold);padding:2px 10px;border-radius:99px;font-size:0.75rem;font-weight:600;letter-spacing:0.04em;">Live</span>
       <div class="poc-box-icon">🎙️</div>
-      <div class="poc-box-title">Voice Pod — Lead Management</div>
-      <div class="poc-box-desc">AI voice agent for lead qualification, probing, product Q&amp;A, and hot lead detection with real-time scoring.</div>
+      <div class="poc-box-title" id="pocVoiceTitle">Voice Pod — Lead Management</div>
+      <div class="poc-box-desc" id="pocVoiceDesc">AI voice agent for lead qualification, probing, product Q&amp;A, and hot lead detection with real-time scoring.</div>
     </a>
 
   </div>
-
-  <!-- ── Hero ──────────────────────────────────────────────────── -->
-  <section class="hero-banner">
-    <div class="section-badge">Proof of Concept</div>
-    <h1>Agentic AI Customer<br /><span class="gold">Response System</span></h1>
-    <p class="hero-desc">
-      Our agentic AI retrieves answers directly from your product knowledge base &mdash; manuals,
-      warranties, and FAQs &mdash; and generates precise, context-aware responses. The same
-      intelligence handles both service channels seamlessly.
-    </p>
-    <div class="channels">
-      <div class="channel-pill"><span class="dot"></span> Live Chat</div>
-      <div class="channel-pill"><span class="dot"></span> Email Support</div>
-      <div class="channel-pill"><span class="dot"></span> AI Quality Assessment</div>
-    </div>
-  </section>
 
   <!-- ── Channel divider ───────────────────────────────────────── -->
   <div class="channel-divider">
@@ -2206,48 +2186,6 @@
     </div>
   </div>
 
-  <!-- ── How it works panel ─────────────────────────────────────── -->
-  <div class="info-panel">
-    <div class="panel-title">How the Agentic Workflow Operates</div>
-    <div class="info-cards">
-      <div class="info-card">
-        <h3>💬 Chat Channel</h3>
-        <ul>
-          <li>Customer submits a question through this live chat interface</li>
-          <li>The agentic system retrieves relevant chunks from the product knowledge base using semantic search</li>
-          <li>A concise, direct response (under 150 words) is generated, grounded in your documentation</li>
-          <li>Cited sources are shown with every answer for full transparency</li>
-        </ul>
-      </div>
-      <div class="info-card">
-        <h3>📧 Email Channel</h3>
-        <ul>
-          <li>Customer email queries are processed by the same agentic pipeline</li>
-          <li>Responses are formatted as proper emails — with greeting, body, and professional sign-off</li>
-          <li>Tone and format are automatically adjusted for formal email communication</li>
-          <li>Average email draft time is under 10 seconds, reducing agent workload by 70%+</li>
-        </ul>
-      </div>
-      <div class="info-card">
-        <h3>🤖 Accuracy Rating</h3>
-        <ul>
-          <li>Every response is asynchronously evaluated by a higher-tier AI quality gate</li>
-          <li>Scores reflect relevance, factual accuracy, and completeness (0–10 scale)</li>
-          <li>Low-scoring responses surface for human review and knowledge base improvement</li>
-          <li>Dashboard updates in real time as ratings arrive</li>
-        </ul>
-      </div>
-      <div class="info-card">
-        <h3>📚 Knowledge Base (RAG)</h3>
-        <ul>
-          <li>Answers are sourced from your uploaded product documents, not trained-in data</li>
-          <li>New PDFs, policies, or manuals can be added instantly without retraining</li>
-          <li>Each chunk is embedded and stored in a vector database for semantic retrieval</li>
-          <li>The system cites which document and section the answer was drawn from</li>
-        </ul>
-      </div>
-    </div>
-  </div>
 
 </div><!-- /page -->
 
@@ -2272,7 +2210,7 @@
       shortLabel: 'Ather',
       icon: '⚡',
       welcomeTitle: 'Welcome, <span class="gold">Team Ather</span> — Your AI Support Hub is Live!',
-      welcomeDesc: 'Your intelligent customer support system is ready to serve. Every response is grounded in your product knowledge base, quality-evaluated by Claude Opus 4.6, and designed to delight your customers with speed and accuracy — across both live chat and email.',
+      welcomeDesc: 'Your AI support system is live — grounded in your knowledge base and quality-evaluated on every reply.',
       chatLabel: 'Customer Chat',
       chatBadge: 'Live Chat',
       chatIcon: '💬',
@@ -2288,6 +2226,8 @@
       badges: ['✓ RAG-Grounded Answers', '✓ AI Quality Gate', '✓ Chat & Email Ready', '✓ Real-Time Analytics'],
       pocBox1Title: 'Email & Chat POC',
       pocBox1Desc: 'Agentic AI handles customer queries across live chat and email, grounded in your product knowledge base.',
+      pocVoiceTitle: 'Voice Pod — Lead Management',
+      pocVoiceDesc: 'AI voice agent for lead qualification, probing, product Q&A, and hot lead detection with real-time scoring.',
       channelPills: ['Live Chat', 'Email Support', 'AI Quality Assessment'],
     },
     apb: {
@@ -2295,7 +2235,7 @@
       shortLabel: 'APB',
       icon: '🏦',
       welcomeTitle: 'Welcome, <span class="gold">Team Airtel Payments Bank</span> — Your AI Support Hub is Live!',
-      welcomeDesc: 'Your intelligent customer support system is ready to serve. Every response is grounded in your product knowledge base, quality-evaluated by Claude Opus 4.6, and designed to delight your customers with speed and accuracy — across both ODR and email.',
+      welcomeDesc: 'Your AI support system is live — grounded in your knowledge base and quality-evaluated on every reply.',
       chatLabel: 'Customer ODR',
       chatBadge: 'Live ODR',
       chatIcon: '🏦',
@@ -2311,6 +2251,8 @@
       badges: ['✓ RAG-Grounded Answers', '✓ AI Quality Gate', '✓ ODR & Email Ready', '✓ Real-Time Analytics'],
       pocBox1Title: 'Email & ODR POC',
       pocBox1Desc: 'Agentic AI handles customer queries across live ODR and email, grounded in your product knowledge base.',
+      pocVoiceTitle: 'Voice Pod — Voice Call Handling',
+      pocVoiceDesc: 'AI voice agent for inbound call handling, customer query resolution, and real-time call assistance.',
       channelPills: ['Live ODR', 'Email Support', 'AI Quality Assessment'],
     },
   };
@@ -2337,9 +2279,9 @@
     document.querySelector('#pocEmailChat .poc-box-title').textContent = CC.pocBox1Title;
     document.querySelector('#pocEmailChat .poc-box-desc').textContent = CC.pocBox1Desc;
 
-    // Channel pills
-    const pillsEl = document.querySelector('.channels');
-    pillsEl.innerHTML = CC.channelPills.map(p => `<div class="channel-pill"><span class="dot"></span> ${p}</div>`).join('');
+    // POC selector box 3 (Voice Pod)
+    document.getElementById('pocVoiceTitle').textContent = CC.pocVoiceTitle;
+    document.getElementById('pocVoiceDesc').textContent = CC.pocVoiceDesc;
 
     // Chat card
     const chatTitle = document.querySelector('#chatCard .card-title');
@@ -2359,14 +2301,6 @@
     document.querySelector('#emailWelcome p').textContent = CC.emailWelcomeDesc;
     const emailChipsEl = document.querySelector('#emailWelcome .suggestion-chips');
     emailChipsEl.innerHTML = CC.emailChips.map(c => `<span class="chip" onclick="sendEmailChip(this)">${c}</span>`).join('');
-
-    // How it works panel — update chat channel label
-    const infoCards = document.querySelectorAll('.info-card h3');
-    infoCards.forEach(h3 => {
-      if (h3.textContent.includes('Chat Channel')) {
-        h3.textContent = CC.chatIcon + ' ' + CC.chatLabel.replace('Customer ', '') + ' Channel';
-      }
-    });
 
     // Test channel labels
     const chatResultHeader = document.querySelector('#chatResultCard .cr-header');
@@ -2924,7 +2858,8 @@
   async function loadFaqQuestions() {
     if (aiFaqQuestions.length > 0) return aiFaqQuestions;
     try {
-      const resp = await fetch('/ingest/faqs-ather.json');
+      const faqFile = clientKey === 'apb' ? '/ingest/faqs-apb.json' : '/ingest/faqs-ather.json';
+      const resp = await fetch(faqFile);
       if (resp.ok) {
         const contentType = resp.headers.get('content-type') || '';
         if (!contentType.includes('json')) return aiFaqQuestions;
@@ -2985,7 +2920,7 @@
     const testQueue = [];
     const allQuestions = await loadFaqQuestions();
     if (allQuestions.length === 0) {
-      alert('No FAQ questions found. Please check that /ingest/faqs-ather.json is accessible.');
+      alert('No FAQ questions found. Please check that the FAQ file is accessible.');
       return;
     }
 
