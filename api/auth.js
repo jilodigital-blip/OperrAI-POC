@@ -68,7 +68,7 @@ module.exports = async (req, res) => {
   const missing = requiredEnvVars.filter(v => !process.env[v]);
   if (missing.length > 0) {
     console.error('[auth] Missing required env vars:', missing.join(', '));
-    return res.status(500).json({ error: 'Server credentials not configured. Check Vercel environment variables.' });
+    return res.status(500).json({ error: `Server credentials not configured. Missing: ${missing.join(', ')}. Ensure env vars are enabled for Preview + Production in Vercel dashboard.` });
   }
 
   // Read env vars inside handler to avoid stale module-scope cache on Vercel
