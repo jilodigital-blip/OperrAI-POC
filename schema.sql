@@ -1,7 +1,7 @@
 -- ============================================================
 -- OperrAI POC — Supabase Database Schema  (Part 1 of 2)
 -- Run this first in: SQL Editor → New Query
--- Project: https://qjajoayybuvxvpgysoih.supabase.co
+-- Project: [configured via SUPABASE_URL env var]
 -- ============================================================
 
 -- Messages: one row per customer question/answer pair
