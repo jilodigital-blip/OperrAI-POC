@@ -7,8 +7,13 @@ async function readBody(req) {
   });
 }
 
+function sanitizeKey(raw) {
+  return raw.replace(/^["']+|["']+$/g, '').replace(/[\r\n]+/g, '')
+    .replace(/[\u200B-\u200D\uFEFF\u00A0]/g, '').trim();
+}
+
 module.exports = async (req, res) => {
-  const OPENAI_API_KEY    = (process.env.OPENAI_API_KEY    || '').trim();
+  const OPENAI_API_KEY    = sanitizeKey(process.env.OPENAI_API_KEY || '');
   const SUPABASE_URL      = (process.env.SUPABASE_URL      || '').trim();
   const SUPABASE_ANON_KEY = (process.env.SUPABASE_ANON_KEY || '').trim();
   const INGEST_SECRET     = (process.env.INGEST_SECRET     || '').trim();
