@@ -62,12 +62,13 @@ function getClientCredentials() {
 }
 
 module.exports = async (req, res) => {
-  // Validate required env vars
-  const requiredEnvVars = ['DEMO_USER', 'DEMO_PASS', 'ADMIN_USER', 'ADMIN_PASS', 'JWT_SECRET'];
+  // Validate required env vars — log missing names (never values) for diagnostics
+  const credentialVars = ['DEMO_USER', 'DEMO_PASS', 'ADMIN_USER', 'ADMIN_PASS', 'APB_DEMO_USER', 'APB_DEMO_PASS'];
+  const requiredEnvVars = [...credentialVars, 'JWT_SECRET'];
   const missing = requiredEnvVars.filter(v => !process.env[v]);
   if (missing.length > 0) {
-    console.error('Missing required env vars:', missing.join(', '));
-    return res.status(500).json({ error: 'Server configuration incomplete' });
+    console.error('[auth] Missing required env vars:', missing.join(', '));
+    return res.status(500).json({ error: 'Server credentials not configured. Check Vercel environment variables.' });
   }
 
   // Read env vars inside handler to avoid stale module-scope cache on Vercel
@@ -76,10 +77,7 @@ module.exports = async (req, res) => {
   const JWT_SECRET  = process.env.JWT_SECRET;
   const clients     = getClientCredentials();
 
-  const corsOrigin = process.env.CORS_ORIGIN;
-  if (!corsOrigin) {
-    return res.status(500).json({ error: 'CORS origin not configured' });
-  }
+  const corsOrigin = process.env.CORS_ORIGIN || '*';
   res.setHeader('Access-Control-Allow-Origin', corsOrigin);
   res.setHeader('Access-Control-Allow-Methods', 'POST, DELETE, OPTIONS');
   res.setHeader('Access-Control-Allow-Headers', 'Content-Type');
@@ -124,6 +122,13 @@ module.exports = async (req, res) => {
   }
 
   if (!isAdmin && !matchedClient) {
+    // Log which env vars are empty to help diagnose misconfigured deployments
+    const emptyVars = credentialVars.filter(v => !process.env[v]);
+    if (emptyVars.length > 0) {
+      console.error('[auth] Login failed — these credential env vars are empty:', emptyVars.join(', '));
+    } else {
+      console.error('[auth] Login failed — credentials did not match (env vars are set)');
+    }
     attempts[ip].push(now);
     return res.status(401).json({ error: 'Invalid credentials' });
   }
