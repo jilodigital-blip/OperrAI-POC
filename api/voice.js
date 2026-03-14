@@ -112,6 +112,7 @@ module.exports = async (req, res) => {
   if (!claims) return res.status(401).json({ error: 'Unauthorized' });
 
   const clientKey = claims.client && claims.client !== 'admin' ? claims.client : 'ather';
+  const tbl = (name) => clientKey === 'apb' ? `${name}_apb` : name;
   const url = new URL(req.url, `http://${req.headers.host}`);
 
   // ── GET: List or Get leads ──────────────────────────────────────────────
@@ -121,7 +122,7 @@ module.exports = async (req, res) => {
 
     if (action === 'get' && id) {
       const leads = await supabaseFetch(
-        `voice_leads?id=eq.${encodeURIComponent(id)}&client=eq.${encodeURIComponent(clientKey)}&limit=1`,
+        `${tbl('voice_leads')}?id=eq.${encodeURIComponent(id)}&client=eq.${encodeURIComponent(clientKey)}&limit=1`,
         SUPABASE_URL, SUPABASE_ANON_KEY
       );
       if (!leads.length) return res.status(404).json({ error: 'Lead not found' });
@@ -130,7 +131,7 @@ module.exports = async (req, res) => {
 
     // List leads
     const leads = await supabaseFetch(
-      `voice_leads?client=eq.${encodeURIComponent(clientKey)}&order=created_at.desc&limit=100`,
+      `${tbl('voice_leads')}?client=eq.${encodeURIComponent(clientKey)}&order=created_at.desc&limit=100`,
       SUPABASE_URL, SUPABASE_ANON_KEY
     );
     return res.status(200).json({ leads });
@@ -149,7 +150,7 @@ module.exports = async (req, res) => {
       return res.status(400).json({ error: 'Name, phone, product_interest, and source are required' });
     }
 
-    const lead = await supabaseInsert('voice_leads', {
+    const lead = await supabaseInsert(tbl('voice_leads'), {
       client: clientKey,
       name: name.trim(),
       phone: phone.trim(),
@@ -180,7 +181,7 @@ module.exports = async (req, res) => {
     if (stage) updates.stage = stage;
     if (priority) updates.priority = priority;
 
-    const updated = await supabaseUpdate('voice_leads', id, updates, SUPABASE_URL, SUPABASE_ANON_KEY);
+    const updated = await supabaseUpdate(tbl('voice_leads'), id, updates, SUPABASE_URL, SUPABASE_ANON_KEY);
     if (!updated) return res.status(500).json({ error: 'Failed to update lead' });
     return res.status(200).json(updated);
   }
