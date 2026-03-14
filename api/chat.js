@@ -184,7 +184,11 @@ async function callAgenticPipeline(question, channel, sessionId, clientKey, { op
     },
     body: JSON.stringify({ model: 'text-embedding-3-small', input: question }),
   }, { retries: 2, baseDelay: 1000, timeoutMs: 15000 });
-  if (!embedResp.ok) throw new Error(`OpenAI embed returned ${embedResp.status}`);
+  if (!embedResp.ok) {
+    let detail = '';
+    try { detail = ': ' + (await embedResp.text()).slice(0, 200); } catch {}
+    throw new Error(`OpenAI embed returned ${embedResp.status}${detail}`);
+  }
   const embedData = await embedResp.json();
   const embedding = embedData.data[0].embedding;
 
@@ -324,7 +328,11 @@ ${context}`;
     },
     { retries: 2, baseDelay: 1500, timeoutMs: 30000 }
   );
-  if (!l1Resp.ok) throw new Error(`OpenAI L1 returned ${l1Resp.status}`);
+  if (!l1Resp.ok) {
+    let detail = '';
+    try { detail = ': ' + (await l1Resp.text()).slice(0, 200); } catch {}
+    throw new Error(`OpenAI L1 returned ${l1Resp.status}${detail}`);
+  }
   const l1Data = await l1Resp.json();
   const l1Answer = l1Data?.choices?.[0]?.message?.content?.trim() || 'No response generated.';
 
@@ -581,7 +589,29 @@ module.exports = async (req, res) => {
   try {
     result = await callAgenticPipeline(question.trim(), channel, sessionId, clientKey, envVars);
   } catch (err) {
-    console.error('Pipeline failed:', err.message);
+    console.error('Pipeline failed:', err.message, err.stack);
+
+    // Classify the error for a more helpful response
+    const msg = err.message || '';
+    if (msg.includes('OPENAI_API_KEY is not configured')) {
+      return res.status(503).json({ error: 'AI service is not configured. Please contact support.' });
+    }
+    if (msg.includes('returned 401')) {
+      console.error('OpenAI API key is invalid or expired');
+      return res.status(502).json({ error: 'AI service authentication failed. Please contact support.' });
+    }
+    if (msg.includes('returned 429')) {
+      return res.status(429).json({ error: 'AI service is rate-limited. Please wait a moment and try again.' });
+    }
+    if (msg.includes('returned 4')) {
+      return res.status(502).json({ error: 'AI service request error. Please try again.' });
+    }
+    if (err.name === 'TimeoutError' || err.name === 'AbortError' || msg.includes('ETIMEDOUT')) {
+      return res.status(504).json({ error: 'AI service timed out. Please try again.' });
+    }
+    if (err.code === 'ECONNRESET' || err.code === 'ENOTFOUND' || err.code === 'ECONNREFUSED') {
+      return res.status(502).json({ error: 'Unable to reach AI service. Please try again shortly.' });
+    }
     return res.status(502).json({ error: 'AI service temporarily unavailable. Please try again.' });
   }
 
