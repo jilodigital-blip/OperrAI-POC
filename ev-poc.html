@@ -2888,7 +2888,7 @@
   async function loadFaqQuestions() {
     if (aiFaqQuestions.length > 0) return aiFaqQuestions;
     try {
-      const resp = await fetch('/ingest/faqs.json');
+      const resp = await fetch('/ingest/faqs-ather.json');
       if (resp.ok) {
         const contentType = resp.headers.get('content-type') || '';
         if (!contentType.includes('json')) return aiFaqQuestions;
@@ -2949,7 +2949,7 @@
     const testQueue = [];
     const allQuestions = await loadFaqQuestions();
     if (allQuestions.length === 0) {
-      alert('No FAQ questions found. Please check that /ingest/faqs.json is accessible.');
+      alert('No FAQ questions found. Please check that /ingest/faqs-ather.json is accessible.');
       return;
     }
 
