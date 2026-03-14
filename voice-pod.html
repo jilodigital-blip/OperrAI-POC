@@ -801,6 +801,17 @@
 </div>
 
 <script>
+// ── Auth check ────────────────────────────────────────────────────────────
+(function checkAuth() {
+  const exp = parseInt(sessionStorage.getItem('raymidi_exp') || '0', 10);
+  if (!exp || exp < Math.floor(Date.now() / 1000)) {
+    sessionStorage.removeItem('raymidi_exp');
+    sessionStorage.removeItem('raymidi_role');
+    window.location.href = '/login';
+    return;
+  }
+})();
+
 // ── Config ─────────────────────────────────────────────────────────────────
 const RELAY_HOST = 'raymidi-voice-relay.onrender.com'; // Update after Render deploy
 
