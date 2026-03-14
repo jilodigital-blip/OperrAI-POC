@@ -1456,6 +1456,15 @@
     .fb-cat { border-color: rgba(0,0,0,0.15); color: #555; }
     .fb-close:hover { color: #111; }
     .email-msg.ai .bubble { border-color: rgba(167,139,250,0.2); background: rgba(167,139,250,0.08); }
+    .msg.ai .bubble { background: #F0F0F0; color: rgba(0,0,0,0.88); border-color: rgba(0,0,0,0.1); }
+    .msg.user .bubble { color: #fff; }
+    .msg-meta { color: #777; }
+    .sources-toggle { color: var(--gold); }
+    .sources-list { background: rgba(212,175,55,0.08); border-color: rgba(212,175,55,0.18); }
+    .bubble.blocked-bubble { color: rgba(0,0,0,0.7) !important; }
+    .bubble.error-bubble { color: rgba(0,0,0,0.6) !important; }
+    .typing-bubble { background: #F0F0F0; border-color: rgba(0,0,0,0.1); }
+    .typing-dot { background: #999; }
     input, textarea { background: #F0F0F0; color: #111; border-color: rgba(0,0,0,0.12); }
     .skeleton { background: linear-gradient(90deg, #e8e8e8 25%, rgba(0,0,0,0.04) 50%, #e8e8e8 75%); }
     .stat-label { color: #666; }
@@ -1534,6 +1543,13 @@
     body.dark-theme .progress-question { color: rgba(255,255,255,0.5); }
     body.dark-theme .panel-title { color: rgba(255,255,255,0.6); }
     body.dark-theme .email-msg.ai .bubble { border-color: rgba(167,139,250,0.2); background: rgba(22,16,36,0.7); }
+    body.dark-theme .msg.ai .bubble { background: var(--surface2); color: var(--text); border-color: var(--border2); }
+    body.dark-theme .msg.user .bubble { color: var(--ink); }
+    body.dark-theme .msg-meta { color: var(--muted); }
+    body.dark-theme .bubble.blocked-bubble { color: rgba(255,255,255,0.7) !important; }
+    body.dark-theme .bubble.error-bubble { color: rgba(255,255,255,0.6) !important; }
+    body.dark-theme .typing-bubble { background: var(--surface2); border-color: var(--border2); }
+    body.dark-theme .typing-dot { background: var(--muted); }
     body.dark-theme .skeleton { background: linear-gradient(90deg, var(--surface2) 25%, rgba(255,255,255,0.04) 50%, var(--surface2) 75%); }
     body.dark-theme .fb-close:hover { color: #fff; }
     body.dark-theme .fb-modal-title { color: #fff; }
@@ -2385,7 +2401,7 @@
     const msg = document.createElement('div');
     msg.className = 'msg ai';
     msg.innerHTML = `
-      <div class="bubble" style="border-color:rgba(239,68,68,0.3);color:rgba(255,255,255,0.7);">
+      <div class="bubble blocked-bubble" style="border-color:rgba(239,68,68,0.3);">
         🎫 Your question requires specialist attention and has been escalated to our support team.${ticketNote} We'll be in touch shortly.
       </div>
       <div class="msg-meta">${formatTime(new Date())}</div>`;
@@ -2396,13 +2412,14 @@
     const msg = document.createElement('div');
     msg.className = 'msg ai';
     msg.innerHTML = `
-      <div class="bubble" style="border-color:rgba(239,68,68,0.3);color:rgba(255,255,255,0.6);">
+      <div class="bubble error-bubble" style="border-color:rgba(239,68,68,0.3);">
         ⚠ ${escapeHtml(text)}
       </div>`;
     if (onRetry) {
       const btn = document.createElement('button');
       btn.textContent = 'Retry';
-      btn.style.cssText = 'margin-top:6px;padding:4px 14px;border:1px solid rgba(239,68,68,0.4);border-radius:6px;background:transparent;color:rgba(255,255,255,0.7);cursor:pointer;font-size:0.8rem;';
+      btn.className = 'retry-btn';
+      btn.style.cssText = 'margin-top:6px;padding:4px 14px;border:1px solid rgba(239,68,68,0.4);border-radius:6px;background:transparent;cursor:pointer;font-size:0.8rem;color:inherit;';
       btn.addEventListener('click', () => {
         btn.disabled = true;
         btn.textContent = 'Retrying…';
