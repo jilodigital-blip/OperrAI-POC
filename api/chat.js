@@ -543,10 +543,10 @@ ${context}`;
 
 module.exports = async (req, res) => {
   // Read env vars inside handler to avoid stale module-scope cache on Vercel
-  const JWT_SECRET        = process.env.JWT_SECRET        || '';
-  const OPENAI_API_KEY    = process.env.OPENAI_API_KEY    || '';
-  const SUPABASE_URL      = process.env.SUPABASE_URL      || '';
-  const SUPABASE_ANON_KEY = process.env.SUPABASE_ANON_KEY || '';
+  const JWT_SECRET        = (process.env.JWT_SECRET        || '').trim();
+  const OPENAI_API_KEY    = (process.env.OPENAI_API_KEY    || '').trim();
+  const SUPABASE_URL      = (process.env.SUPABASE_URL      || '').trim();
+  const SUPABASE_ANON_KEY = (process.env.SUPABASE_ANON_KEY || '').trim();
 
   const corsOrigin = process.env.CORS_ORIGIN;
   if (!corsOrigin) return res.status(500).json({ error: 'CORS origin not configured' });
@@ -597,7 +597,10 @@ module.exports = async (req, res) => {
       return res.status(503).json({ error: 'AI service is not configured. Please contact support.' });
     }
     if (msg.includes('returned 401')) {
-      console.error('OpenAI API key is invalid or expired');
+      const key = envVars.openaiKey || '';
+      console.error('OpenAI API key rejected (401). Key length:', key.length,
+        '| Prefix:', key.slice(0, 7) + '...',
+        '| Suffix: ...' + key.slice(-4));
       return res.status(502).json({ error: 'AI service authentication failed. Please contact support.' });
     }
     if (msg.includes('returned 429')) {
