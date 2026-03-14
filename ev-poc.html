@@ -2877,12 +2877,21 @@
   function extractFaqQuestions(faqs) {
     const questions = [];
     faqs.forEach(faq => {
-      const matches = faq.content.match(/Question:\s*(.+?)(?:\n|$)/g);
-      if (matches) {
-        matches.forEach(m => {
-          const q = m.replace(/^Question:\s*/, '').trim();
-          if (q) questions.push(q);
-        });
+      // APB format: direct "question" field
+      if (faq.question) {
+        const q = faq.question.trim();
+        if (q) questions.push(q);
+        return;
+      }
+      // Ather format: "content" field with embedded "Question: ..." lines
+      if (faq.content) {
+        const matches = faq.content.match(/Question:\s*(.+?)(?:\n|$)/g);
+        if (matches) {
+          matches.forEach(m => {
+            const q = m.replace(/^Question:\s*/, '').trim();
+            if (q) questions.push(q);
+          });
+        }
       }
     });
     return questions;
@@ -2891,14 +2900,14 @@
   async function loadFaqQuestions() {
     if (aiFaqQuestions.length > 0) return aiFaqQuestions;
     try {
-      const faqFile = clientKey === 'apb' ? '/ingest/faqs-apb.json' : '/ingest/faqs-ather.json';
-      const resp = await fetch(faqFile);
+      const resp = await fetch(`/api/faq-questions?client=${encodeURIComponent(clientKey)}`, {
+        credentials: 'include',
+      });
       if (resp.ok) {
-        const contentType = resp.headers.get('content-type') || '';
-        if (!contentType.includes('json')) return aiFaqQuestions;
-        const faqs = await resp.json();
-        if (!Array.isArray(faqs)) return aiFaqQuestions;
-        aiFaqQuestions = extractFaqQuestions(faqs);
+        const data = await resp.json();
+        if (Array.isArray(data.questions) && data.questions.length > 0) {
+          aiFaqQuestions = data.questions;
+        }
       }
     } catch (err) {
       if (location.hostname === 'localhost') console.error('loadFaqQuestions error:', err);
