@@ -8,10 +8,10 @@ async function readBody(req) {
 }
 
 module.exports = async (req, res) => {
-  const OPENAI_API_KEY    = process.env.OPENAI_API_KEY    || '';
-  const SUPABASE_URL      = process.env.SUPABASE_URL      || '';
-  const SUPABASE_ANON_KEY = process.env.SUPABASE_ANON_KEY || '';
-  const INGEST_SECRET     = process.env.INGEST_SECRET     || '';
+  const OPENAI_API_KEY    = (process.env.OPENAI_API_KEY    || '').trim();
+  const SUPABASE_URL      = (process.env.SUPABASE_URL      || '').trim();
+  const SUPABASE_ANON_KEY = (process.env.SUPABASE_ANON_KEY || '').trim();
+  const INGEST_SECRET     = (process.env.INGEST_SECRET     || '').trim();
 
   const corsOrigin = process.env.CORS_ORIGIN;
   if (!corsOrigin) return res.status(500).json({ error: 'CORS origin not configured' });
