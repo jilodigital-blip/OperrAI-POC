@@ -112,6 +112,7 @@ module.exports = async (req, res) => {
   if (!claims) return res.status(401).json({ error: 'Unauthorized' });
 
   const clientKey = claims.client && claims.client !== 'admin' ? claims.client : 'ather';
+  const tbl = (name) => clientKey === 'apb' ? `${name}_apb` : name;
   const url = new URL(req.url, `https://${req.headers.host}`);
 
   // ── GET: List or Get leads ──────────────────────────────────────────────
