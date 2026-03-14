@@ -63,7 +63,12 @@ function getClientCredentials() {
 
 module.exports = async (req, res) => {
   // Validate required env vars
-  const requiredEnvVars = ['DEMO_USER', 'DEMO_PASS', 'ADMIN_USER', 'ADMIN_PASS', 'JWT_SECRET'];
+  const requiredEnvVars = [
+    'DEMO_USER', 'DEMO_PASS',
+    'ADMIN_USER', 'ADMIN_PASS',
+    'APB_DEMO_USER', 'APB_DEMO_PASS',
+    'JWT_SECRET', 'CORS_ORIGIN',
+  ];
   const missing = requiredEnvVars.filter(v => !process.env[v]);
   if (missing.length > 0) {
     console.error('Missing required env vars:', missing.join(', '));
@@ -77,9 +82,6 @@ module.exports = async (req, res) => {
   const clients     = getClientCredentials();
 
   const corsOrigin = process.env.CORS_ORIGIN;
-  if (!corsOrigin) {
-    return res.status(500).json({ error: 'CORS origin not configured' });
-  }
   res.setHeader('Access-Control-Allow-Origin', corsOrigin);
   res.setHeader('Access-Control-Allow-Methods', 'POST, DELETE, OPTIONS');
   res.setHeader('Access-Control-Allow-Headers', 'Content-Type');
