@@ -91,11 +91,12 @@ async function supabaseRPC(fn, params, supabaseUrl, supabaseKey) {
 
 // ── Fetch conversation history for session continuity ─────────────────────────
 
-async function fetchConversationHistory(sessionId, supabaseUrl, supabaseKey) {
+async function fetchConversationHistory(sessionId, supabaseUrl, supabaseKey, clientKey = 'ather') {
   if (!sessionId || !supabaseKey) return '';
   try {
+    const messagesTable = clientKey === 'apb' ? 'messages_apb' : 'messages';
     const resp = await fetch(
-      `${supabaseUrl}/rest/v1/messages?session_id=eq.${encodeURIComponent(sessionId)}&order=created_at.desc&limit=6&select=question,response`,
+      `${supabaseUrl}/rest/v1/${messagesTable}?session_id=eq.${encodeURIComponent(sessionId)}&order=created_at.desc&limit=6&select=question,response`,
       {
         headers: {
           'apikey': supabaseKey,
@@ -224,7 +225,7 @@ async function callAgenticPipeline(question, channel, sessionId, clientKey, { op
   }
 
   // ── Conversation History (fetched early for follow-up RAG augmentation) ─────
-  const conversationHistory = await fetchConversationHistory(sessionId, supabaseUrl, supabaseKey);
+  const conversationHistory = await fetchConversationHistory(sessionId, supabaseUrl, supabaseKey, clientKey);
 
   // ── Build embedding input (augment with context for short/follow-up questions) ─
   let embeddingInput = question;
