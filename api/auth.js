@@ -49,26 +49,37 @@ function getClientCredentials() {
     {
       client: 'ather',
       label: 'Ather Energy',
-      username: process.env.DEMO_USER        || 'ather_demo',
-      password: process.env.DEMO_PASS        || 'Ather@Raymidi2024',
+      username: process.env.DEMO_USER,
+      password: process.env.DEMO_PASS,
     },
     {
       client: 'apb',
       label: 'Airtel Payments Bank',
-      username: process.env.APB_DEMO_USER    || 'apb_demo',
-      password: process.env.APB_DEMO_PASS    || 'APB@Raymidi2024',
+      username: process.env.APB_DEMO_USER,
+      password: process.env.APB_DEMO_PASS,
     },
   ];
 }
 
 module.exports = async (req, res) => {
+  // Validate required env vars
+  const requiredEnvVars = ['DEMO_USER', 'DEMO_PASS', 'ADMIN_USER', 'ADMIN_PASS', 'JWT_SECRET'];
+  const missing = requiredEnvVars.filter(v => !process.env[v]);
+  if (missing.length > 0) {
+    console.error('Missing required env vars:', missing.join(', '));
+    return res.status(500).json({ error: 'Server configuration incomplete' });
+  }
+
   // Read env vars inside handler to avoid stale module-scope cache on Vercel
-  const ADMIN_USER  = process.env.ADMIN_USER  || 'raymidi_admin';
-  const ADMIN_PASS  = process.env.ADMIN_PASS  || 'Admin@Raymidi2024';
-  const JWT_SECRET  = process.env.JWT_SECRET  || 'raymidi-poc-secret-change-in-prod';
+  const ADMIN_USER  = process.env.ADMIN_USER;
+  const ADMIN_PASS  = process.env.ADMIN_PASS;
+  const JWT_SECRET  = process.env.JWT_SECRET;
   const clients     = getClientCredentials();
 
-  const corsOrigin = process.env.CORS_ORIGIN || '*';
+  const corsOrigin = process.env.CORS_ORIGIN;
+  if (!corsOrigin) {
+    return res.status(500).json({ error: 'CORS origin not configured' });
+  }
   res.setHeader('Access-Control-Allow-Origin', corsOrigin);
   res.setHeader('Access-Control-Allow-Methods', 'POST, DELETE, OPTIONS');
   res.setHeader('Access-Control-Allow-Headers', 'Content-Type');
