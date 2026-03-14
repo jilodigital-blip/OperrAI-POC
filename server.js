@@ -14,10 +14,11 @@ const PORT = process.env.PORT || 3000;
 
 // Map URL paths → static files
 const STATIC_ROUTES = {
-  '/':       'index.html',
-  '/login':  'login.html',
-  '/ev-poc': 'ev-poc.html',
-  '/ingest': 'ingest.html',
+  '/':          'index.html',
+  '/login':     'login.html',
+  '/ev-poc':    'ev-poc.html',
+  '/ingest':    'ingest.html',
+  '/voice-pod': 'voice-pod.html',
 };
 
 // Map /api/* → handler modules
@@ -29,6 +30,7 @@ const API_HANDLERS = {
   '/api/admin':     './api/admin.js',
   '/api/feedback':  './api/feedback.js',
   '/api/ai-test':   './api/ai-test.js',
+  '/api/voice':     './api/voice.js',
 };
 
 const MIME = {

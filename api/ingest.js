@@ -13,7 +13,9 @@ module.exports = async (req, res) => {
   const SUPABASE_ANON_KEY = process.env.SUPABASE_ANON_KEY || '';
   const INGEST_SECRET     = process.env.INGEST_SECRET     || '';
 
-  res.setHeader('Access-Control-Allow-Origin', process.env.CORS_ORIGIN || '*');
+  const corsOrigin = process.env.CORS_ORIGIN;
+  if (!corsOrigin) return res.status(500).json({ error: 'CORS origin not configured' });
+  res.setHeader('Access-Control-Allow-Origin', corsOrigin);
   res.setHeader('Access-Control-Allow-Methods', 'POST, OPTIONS');
   res.setHeader('Access-Control-Allow-Headers', 'Content-Type');
 
