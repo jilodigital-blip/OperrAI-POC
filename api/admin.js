@@ -62,7 +62,7 @@ module.exports = async (req, res) => {
 
   try {
     // ── Optional client filter (query param ?client=ather or ?client=apb) ────
-    const url = new URL(req.url, `http://${req.headers.host || 'localhost'}`);
+    const url = new URL(req.url, `https://${req.headers.host || 'localhost'}`);
     const clientFilter = url.searchParams.get('client') || '';
     const clientClause = clientFilter ? `&client=eq.${encodeURIComponent(clientFilter)}` : '';
 

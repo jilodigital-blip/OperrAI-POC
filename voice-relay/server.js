@@ -627,7 +627,7 @@ const server = http.createServer((req, res) => {
 const wss = new WebSocketServer({ server, path: '/voice' });
 
 wss.on('connection', async (ws, req) => {
-  const url = new URL(req.url, `http://${req.headers.host}`);
+  const url = new URL(req.url, `https://${req.headers.host}`);
   const token = url.searchParams.get('token');
   const leadId = url.searchParams.get('lead_id');
 
