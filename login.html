@@ -356,7 +356,7 @@
           showAlert('error', data.error || 'Too many attempts. Please wait.');
           submitBtn.disabled = false;
         } else {
-          showAlert('error', 'Invalid credentials. Please try again.');
+          showAlert('error', data.error || 'Invalid credentials. Please try again.');
           document.getElementById('password').value = '';
           submitBtn.disabled = false;
         }
