@@ -77,7 +77,7 @@ module.exports = async (req, res) => {
 
     // Fetch service requests (escalated tickets)
     const serviceRequests = await supabaseFetch(
-      `${tbl('service_requests')}?select=*&order=created_at.desc&limit=100`,
+      `${tbl('service_requests')}?select=*&order=created_at.desc&limit=100${clientClause}`,
       SUPABASE_URL,
       SUPABASE_ANON_KEY
     );
