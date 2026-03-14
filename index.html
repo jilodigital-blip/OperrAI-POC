@@ -764,9 +764,96 @@
       .footer-inner { flex-direction: column; align-items: flex-start; }
       .footer-nav { flex-wrap: wrap; gap: 1rem 1.5rem; }
     }
+
+    /* ─── Theme Toggle ──────────────────────────────────────────────────── */
+    .theme-toggle {
+      display: flex;
+      align-items: center;
+      gap: 0.5rem;
+      margin-left: 1rem;
+    }
+    .theme-toggle-btn {
+      position: relative;
+      width: 48px;
+      height: 26px;
+      background: var(--border);
+      border: 1.5px solid var(--border);
+      border-radius: 100px;
+      cursor: pointer;
+      transition: background 0.3s, border-color 0.3s;
+      flex-shrink: 0;
+    }
+    .theme-toggle-btn::after {
+      content: '';
+      position: absolute;
+      top: 2px;
+      left: 2px;
+      width: 18px;
+      height: 18px;
+      background: var(--gold);
+      border-radius: 50%;
+      transition: transform 0.3s;
+    }
+    .theme-toggle-btn.active {
+      background: var(--gold-bg);
+      border-color: var(--gold);
+    }
+    .theme-toggle-btn.active::after {
+      transform: translateX(22px);
+    }
+    .theme-toggle-label {
+      font-size: 0.78rem;
+      font-weight: 500;
+      color: var(--muted);
+      white-space: nowrap;
+    }
+
+    /* ─── Dark Theme ────────────────────────────────────────────────────── */
+    body.dark-theme {
+      --ink:           #f0ede6;
+      --ink-soft:      #d4d1c9;
+      --muted:         #9b9890;
+      --muted-light:   #6b6960;
+      --bg:            #0f0e0c;
+      --bg-off:        #161412;
+      --bg-subtle:     #1c1a17;
+      --border:        rgba(255, 255, 255, 0.09);
+      --border-light:  rgba(255, 255, 255, 0.06);
+      --shadow-sm:     0 2px 8px rgba(0, 0, 0, 0.25);
+      --shadow-md:     0 6px 20px rgba(0, 0, 0, 0.35);
+      --shadow-lg:     0 16px 48px rgba(0, 0, 0, 0.45);
+      color: var(--ink-soft);
+      background: var(--bg);
+    }
+    body.dark-theme #navbar.scrolled {
+      background: rgba(15, 14, 12, 0.96);
+      box-shadow: 0 1px 0 rgba(255,255,255,0.06), var(--shadow-sm);
+    }
+    body.dark-theme .mobile-menu {
+      background: rgba(15, 14, 12, 0.97);
+    }
+    body.dark-theme .hamburger span { background: var(--ink); }
+    body.dark-theme .btn-ghost {
+      color: var(--ink);
+      border-color: var(--border);
+    }
+    body.dark-theme .btn-ghost:hover { color: var(--gold); border-color: var(--gold); }
+    body.dark-theme .form-group input,
+    body.dark-theme .form-group textarea {
+      background: var(--bg-off);
+      color: var(--ink);
+    }
+    body.dark-theme .footer-brand .logo { color: #fff; }
   </style>
 </head>
 <body>
+  <!-- Apply saved theme immediately to prevent flash -->
+  <script>
+    (function() {
+      var theme = localStorage.getItem('raymidi_theme');
+      if (theme === 'dark') document.body.classList.add('dark-theme');
+    })();
+  </script>
   <!-- Console warning: deters social engineering / self-XSS attacks -->
   <script>
   (function(){
@@ -787,6 +874,10 @@
         <li><a href="#about">About</a></li>
         <li><a href="#contact">Contact</a></li>
       </ul>
+      <div class="theme-toggle">
+        <span class="theme-toggle-label" id="theme-label">Dark</span>
+        <button class="theme-toggle-btn" id="theme-toggle-btn" aria-label="Toggle dark mode" title="Toggle dark mode"></button>
+      </div>
       <a href="/login" class="btn btn-primary nav-cta">Get Started</a>
       <button class="hamburger" aria-label="Toggle navigation menu">
         <span></span>
@@ -1086,7 +1177,29 @@
       initReveal();
       initCounters();
       initTaglineRotator();
+      initThemeToggle();
     });
+
+    /* ── Theme toggle ──────────────────────────────────────────────────── */
+    function initThemeToggle() {
+      const btn = document.getElementById('theme-toggle-btn');
+      const label = document.getElementById('theme-label');
+      if (!btn) return;
+
+      function applyToggleState() {
+        var isDark = document.body.classList.contains('dark-theme');
+        btn.classList.toggle('active', isDark);
+        label.textContent = isDark ? 'Light' : 'Dark';
+      }
+
+      applyToggleState();
+
+      btn.addEventListener('click', function() {
+        var isDark = document.body.classList.toggle('dark-theme');
+        localStorage.setItem('raymidi_theme', isDark ? 'dark' : 'light');
+        applyToggleState();
+      });
+    }
 
     /* ── 0. Hero badge tagline rotator ────────────────────────────────────── */
     function initTaglineRotator() {
