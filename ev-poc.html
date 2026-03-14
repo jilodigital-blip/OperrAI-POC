@@ -3010,7 +3010,7 @@
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           credentials: 'same-origin',
-          body: JSON.stringify({ question, sessionId: testSessionId, channel }),
+          body: JSON.stringify({ question, sessionId: testSessionId, channel, client: clientKey }),
         });
 
         if (resp.ok) {
@@ -3072,7 +3072,7 @@
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         credentials: 'same-origin',
-        body: JSON.stringify(aiTestResultData),
+        body: JSON.stringify({ ...aiTestResultData, client: clientKey }),
       });
     } catch { /* non-blocking */ }
 
@@ -3182,7 +3182,7 @@
   async function loadTestHistory() {
     let runs = [];
     try {
-      const resp = await fetch('/api/ai-test', {
+      const resp = await fetch(`/api/ai-test?client=${encodeURIComponent(clientKey)}`, {
         credentials: 'same-origin',
       });
       if (resp.ok) {
