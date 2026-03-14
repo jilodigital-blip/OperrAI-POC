@@ -1874,12 +1874,12 @@
     </div>
 
     <!-- Box 3: Voice Pod (Live) -->
-    <a href="/voice-pod" class="poc-box poc-box--active" id="pocVoice" style="text-decoration:none;color:inherit;">
-      <span style="background:var(--gold-dim);color:var(--gold);padding:2px 10px;border-radius:99px;font-size:0.75rem;font-weight:600;letter-spacing:0.04em;">Live</span>
+    <div class="poc-box poc-box--active" id="pocVoice" style="text-decoration:none;color:inherit;">
+      <span id="pocVoiceBadge" style="background:var(--gold-dim);color:var(--gold);padding:2px 10px;border-radius:99px;font-size:0.75rem;font-weight:600;letter-spacing:0.04em;">Live</span>
       <div class="poc-box-icon">🎙️</div>
       <div class="poc-box-title" id="pocVoiceTitle">Voice Pod — Lead Management</div>
       <div class="poc-box-desc" id="pocVoiceDesc">AI voice agent for lead qualification, probing, product Q&amp;A, and hot lead detection with real-time scoring.</div>
-    </a>
+    </div>
 
   </div>
 
@@ -2245,6 +2245,7 @@
       pocVoiceTitle: 'Voice Pod — Lead Management',
       pocVoiceDesc: 'AI voice agent for lead qualification, probing, product Q&A, and hot lead detection with real-time scoring.',
       channelPills: ['Live Chat', 'Email Support', 'AI Quality Assessment'],
+      voiceComingSoon: false,
     },
     apb: {
       label: 'Airtel Payments Bank',
@@ -2270,6 +2271,7 @@
       pocVoiceTitle: 'Voice Pod — Voice Call Handling',
       pocVoiceDesc: 'AI voice agent for inbound call handling, customer query resolution, and real-time call assistance.',
       channelPills: ['Live ODR', 'Email Support', 'AI Quality Assessment'],
+      voiceComingSoon: true,
     },
   };
 
@@ -2298,6 +2300,20 @@
     // POC selector box 3 (Voice Pod)
     document.getElementById('pocVoiceTitle').textContent = CC.pocVoiceTitle;
     document.getElementById('pocVoiceDesc').textContent = CC.pocVoiceDesc;
+
+    // Voice box: Coming Soon for APB, clickable for Ather
+    const pocVoiceEl = document.getElementById('pocVoice');
+    const pocVoiceBadge = document.getElementById('pocVoiceBadge');
+    if (CC.voiceComingSoon) {
+      pocVoiceBadge.textContent = 'Coming Soon';
+      pocVoiceBadge.className = 'coming-soon-badge';
+      pocVoiceEl.style.opacity = '0.6';
+      pocVoiceEl.style.cursor = 'default';
+      pocVoiceEl.classList.remove('poc-box--active');
+    } else {
+      pocVoiceEl.style.cursor = 'pointer';
+      pocVoiceEl.onclick = function() { window.location.href = '/voice-pod'; };
+    }
 
     // Chat card
     const chatTitle = document.querySelector('#chatCard .card-title');
