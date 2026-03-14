@@ -606,6 +606,39 @@
       font-size: 0.95rem;
     }
 
+    /* Voice status indicator */
+    .voice-status {
+      display: flex;
+      align-items: center;
+      gap: 0.5rem;
+      font-size: 0.78rem;
+      color: var(--muted);
+      text-transform: uppercase;
+      letter-spacing: 0.04em;
+    }
+    .voice-status .dot {
+      width: 8px;
+      height: 8px;
+      border-radius: 50%;
+      background: var(--muted);
+    }
+    .voice-status.listening .dot { background: var(--green); animation: pulse-dot 1.5s infinite; }
+    .voice-status.speaking .dot { background: var(--gold); animation: pulse-dot 1s infinite; }
+    .voice-status.processing .dot { background: var(--yellow); animation: pulse-dot 0.5s infinite; }
+    @keyframes pulse-dot {
+      0%, 100% { opacity: 1; }
+      50% { opacity: 0.3; }
+    }
+
+    /* Live transcript styling */
+    .msg-live {
+      align-self: flex-start;
+      background: var(--surface2);
+      border: 1px dashed var(--border2);
+      color: var(--muted);
+      font-style: italic;
+    }
+
     /* ── Responsive ──────────────────────────────────────────── */
     @media (max-width: 640px) {
       .container { padding: 1rem; }
@@ -706,7 +739,8 @@
           <span class="stage-badge" id="vpStage">Welcome</span>
           <span class="badge" id="vpStatus">New</span>
         </div>
-        <div style="display:flex;gap:0.5rem;">
+        <div style="display:flex;align-items:center;gap:1rem;">
+          <div class="voice-status" id="voiceStatus"><span class="dot"></span> <span id="voiceStatusText">Ready</span></div>
           <button class="btn-secondary" onclick="closeVoicePanel()">Close</button>
         </div>
       </div>
@@ -767,14 +801,24 @@
 </div>
 
 <script>
+// ── Config ─────────────────────────────────────────────────────────────────
+const RELAY_HOST = 'raymidi-voice-relay.onrender.com'; // Update after Render deploy
+
 // ── State ──────────────────────────────────────────────────────────────────
 let leads = [];
 let activeLead = null;
-let mediaRecorder = null;
-let audioChunks = [];
+let voiceWs = null;           // WebSocket to relay server
+let audioContext = null;       // for playback
+let micStream = null;          // MediaStream from getUserMedia
+let micProcessor = null;       // ScriptProcessorNode (fallback for AudioWorklet)
+let micSource = null;          // MediaStreamAudioSourceNode
 let isRecording = false;
+let isAISpeaking = false;
+let audioQueue = [];           // queued audio chunks for playback
+let currentSource = null;      // currently playing AudioBufferSourceNode
+let liveAITextEl = null;       // live AI text message element
 
-// ── API helper ─────────────────────────────────────────────────────────────
+// ── REST API helper (for lead CRUD — NOT voice) ────────────────────────────
 async function api(method, body) {
   const opts = {
     method,
@@ -814,6 +858,14 @@ function showLoading(text = 'Processing...') {
 }
 function hideLoading() {
   document.getElementById('loadingOverlay').classList.remove('active');
+}
+
+// ── Voice status indicator ─────────────────────────────────────────────────
+function setVoiceStatus(status, text) {
+  const el = document.getElementById('voiceStatus');
+  const textEl = document.getElementById('voiceStatusText');
+  el.className = 'voice-status ' + status;
+  textEl.textContent = text;
 }
 
 // ── Stats ──────────────────────────────────────────────────────────────────
@@ -910,7 +962,17 @@ async function createLead(e) {
   }
 }
 
-// ── Start voice call ───────────────────────────────────────────────────────
+// ── Get auth token from cookie ─────────────────────────────────────────────
+function getAuthToken() {
+  const match = document.cookie.match(/(?:^|;\s*)raymidi_auth=([^\s;]+)/);
+  return match ? match[1] : '';
+}
+
+// ══════════════════════════════════════════════════════════════════════════
+// ── STREAMING VOICE — WebSocket + AudioWorklet ────────────────────────────
+// ══════════════════════════════════════════════════════════════════════════
+
+// ── Start voice call — open WebSocket to relay ─────────────────────────────
 async function startCall(leadId) {
   const lead = leads.find(l => l.id === leadId);
   if (!lead) return;
@@ -932,38 +994,327 @@ async function startCall(leadId) {
     lead.conversation_history.forEach(msg => {
       appendMessage(msg.role, msg.content);
     });
-    document.getElementById('micBtn').disabled = false;
-  } else {
-    // Send welcome message
-    showLoading('Generating welcome message...');
-    try {
-      const resp = await api('POST', { action: 'welcome', lead_id: leadId });
-      appendMessage('assistant', resp.aiResponse);
-
-      // Play welcome audio
-      if (resp.audioBase64) {
-        playAudio(resp.audioBase64);
-      }
-
-      // Update local lead data
-      lead.stage = resp.stage;
-      lead.status = 'contacted';
-      renderLeadTable();
-      updateStats();
-      updateVoicePanelUI(lead);
-
-      document.getElementById('micBtn').disabled = false;
-    } catch (e) {
-      showToast('Failed to start call: ' + e.message, 'error');
-    } finally {
-      hideLoading();
-    }
   }
 
-  // Scroll to panel
+  // Connect WebSocket to relay
+  showLoading('Connecting to voice server...');
+  setVoiceStatus('processing', 'Connecting...');
+
+  try {
+    const token = getAuthToken();
+    const protocol = location.protocol === 'https:' ? 'wss' : 'ws';
+    const relayHost = RELAY_HOST || location.host;
+    const wsUrl = `${protocol}://${relayHost}/voice?token=${encodeURIComponent(token)}&lead_id=${encodeURIComponent(leadId)}`;
+
+    voiceWs = new WebSocket(wsUrl);
+
+    voiceWs.onopen = () => {
+      console.log('[WS] Connected to relay');
+    };
+
+    voiceWs.onmessage = (event) => {
+      try {
+        const msg = JSON.parse(event.data);
+        handleRelayMessage(msg);
+      } catch (err) {
+        console.error('[WS] Parse error:', err);
+      }
+    };
+
+    voiceWs.onerror = (err) => {
+      console.error('[WS] Error:', err);
+      showToast('Voice connection error', 'error');
+      setVoiceStatus('', 'Disconnected');
+    };
+
+    voiceWs.onclose = (event) => {
+      console.log('[WS] Closed:', event.code, event.reason);
+      stopMicStream();
+      setVoiceStatus('', 'Disconnected');
+      document.getElementById('micBtn').disabled = true;
+    };
+  } catch (e) {
+    showToast('Failed to connect: ' + e.message, 'error');
+  } finally {
+    hideLoading();
+  }
+
   panel.scrollIntoView({ behavior: 'smooth' });
 }
 
+// ── Handle messages from relay server ──────────────────────────────────────
+function handleRelayMessage(msg) {
+  switch (msg.type) {
+    case 'ready':
+      hideLoading();
+      setVoiceStatus('listening', 'Ready');
+      document.getElementById('micBtn').disabled = false;
+      document.getElementById('micHint').textContent = 'Click to start talking';
+      break;
+
+    case 'transcript':
+      handleTranscript(msg);
+      break;
+
+    case 'ai_text':
+      handleAIText(msg);
+      break;
+
+    case 'ai_audio':
+      queueAudioChunk(msg.data);
+      break;
+
+    case 'ai_speaking':
+      isAISpeaking = msg.speaking;
+      if (msg.speaking) {
+        setVoiceStatus('speaking', 'AI Speaking');
+      } else {
+        setVoiceStatus('listening', 'Listening');
+      }
+      break;
+
+    case 'interrupt':
+      // AI was interrupted — clear audio queue
+      clearAudioQueue();
+      isAISpeaking = false;
+      setVoiceStatus('listening', 'Listening');
+      break;
+
+    case 'score':
+      handleScoreUpdate(msg);
+      break;
+
+    case 'error':
+      showToast(msg.message || 'Voice error', 'error');
+      break;
+  }
+}
+
+// ── Transcript handling ────────────────────────────────────────────────────
+let liveTranscriptEl = null;
+
+function handleTranscript(msg) {
+  const ta = document.getElementById('transcriptArea');
+  document.getElementById('transcriptEmpty')?.remove();
+
+  if (!msg.final) {
+    // Live partial transcript — update existing or create new
+    if (!liveTranscriptEl) {
+      liveTranscriptEl = document.createElement('div');
+      liveTranscriptEl.className = 'msg msg-user msg-live';
+      liveTranscriptEl.innerHTML = '<div class="msg-label">Lead (listening...)</div><span class="live-text"></span>';
+      ta.appendChild(liveTranscriptEl);
+    }
+    liveTranscriptEl.querySelector('.live-text').textContent = msg.text;
+    ta.scrollTop = ta.scrollHeight;
+  } else {
+    // Final transcript — replace live element with final
+    if (liveTranscriptEl) {
+      liveTranscriptEl.remove();
+      liveTranscriptEl = null;
+    }
+    appendMessage('user', msg.text);
+    setVoiceStatus('processing', 'Processing...');
+  }
+}
+
+// ── AI text streaming ──────────────────────────────────────────────────────
+function handleAIText(msg) {
+  const ta = document.getElementById('transcriptArea');
+
+  if (!msg.done) {
+    // Streaming tokens — append to live AI message
+    if (!liveAITextEl) {
+      liveAITextEl = document.createElement('div');
+      liveAITextEl.className = 'msg msg-ai';
+      liveAITextEl.innerHTML = '<div class="msg-label">AI Agent</div><span class="live-text"></span>';
+      ta.appendChild(liveAITextEl);
+    }
+    const span = liveAITextEl.querySelector('.live-text');
+    span.textContent += msg.text;
+    ta.scrollTop = ta.scrollHeight;
+  } else {
+    // LLM done — finalize the message
+    if (liveAITextEl) {
+      liveAITextEl.classList.remove('msg-live');
+      liveAITextEl = null;
+    }
+  }
+}
+
+// ── Score update ───────────────────────────────────────────────────────────
+function handleScoreUpdate(msg) {
+  if (!activeLead) return;
+  activeLead.lead_score = msg.score;
+  activeLead.stage = msg.stage;
+  activeLead.turn_count = msg.turnCount;
+
+  if (msg.isHot) {
+    activeLead.status = 'qualified';
+    showToast('🔥 Hot lead detected! Score: ' + msg.score, 'success');
+  }
+
+  updateVoicePanelUI(activeLead);
+  renderLeadTable();
+  updateStats();
+}
+
+// ── Audio playback (chunked streaming via AudioContext) ────────────────────
+function initAudioContext() {
+  if (!audioContext) {
+    audioContext = new (window.AudioContext || window.webkitAudioContext)({ sampleRate: 22050 });
+  }
+  if (audioContext.state === 'suspended') {
+    audioContext.resume();
+  }
+}
+
+function queueAudioChunk(base64Audio) {
+  initAudioContext();
+
+  // Decode base64 to ArrayBuffer
+  const raw = atob(base64Audio);
+  const buffer = new Uint8Array(raw.length);
+  for (let i = 0; i < raw.length; i++) buffer[i] = raw.charCodeAt(i);
+
+  audioQueue.push(buffer.buffer);
+  if (!currentSource) playNextChunk();
+}
+
+async function playNextChunk() {
+  if (!audioQueue.length) {
+    currentSource = null;
+    return;
+  }
+
+  try {
+    const buffer = audioQueue.shift();
+    const audioBuffer = await audioContext.decodeAudioData(buffer.slice(0)); // slice to avoid detached buffer
+    const source = audioContext.createBufferSource();
+    source.buffer = audioBuffer;
+    source.connect(audioContext.destination);
+    source.onended = () => {
+      currentSource = null;
+      playNextChunk();
+    };
+    currentSource = source;
+    source.start();
+  } catch (e) {
+    console.error('[Audio] Decode error:', e);
+    currentSource = null;
+    playNextChunk(); // skip bad chunk
+  }
+}
+
+function clearAudioQueue() {
+  audioQueue = [];
+  if (currentSource) {
+    try { currentSource.stop(); } catch {}
+    currentSource = null;
+  }
+}
+
+// ── Mic streaming (ScriptProcessorNode — widely supported) ─────────────────
+async function toggleRecording() {
+  if (isRecording) {
+    stopMicStream();
+    // Tell relay user stopped speaking
+    if (voiceWs && voiceWs.readyState === WebSocket.OPEN) {
+      voiceWs.send(JSON.stringify({ type: 'stop' }));
+    }
+  } else {
+    // If AI is speaking, interrupt first
+    if (isAISpeaking) {
+      clearAudioQueue();
+      isAISpeaking = false;
+      if (voiceWs && voiceWs.readyState === WebSocket.OPEN) {
+        voiceWs.send(JSON.stringify({ type: 'interrupt' }));
+      }
+    }
+    await startMicStream();
+  }
+}
+
+async function startMicStream() {
+  try {
+    initAudioContext();
+
+    micStream = await navigator.mediaDevices.getUserMedia({
+      audio: {
+        sampleRate: 16000,
+        channelCount: 1,
+        echoCancellation: true,
+        noiseSuppression: true,
+      }
+    });
+
+    // Create a separate AudioContext at 16kHz for mic capture
+    const micCtx = new (window.AudioContext || window.webkitAudioContext)({ sampleRate: 16000 });
+    micSource = micCtx.createMediaStreamSource(micStream);
+
+    // ScriptProcessorNode for raw PCM access (widely supported)
+    micProcessor = micCtx.createScriptProcessor(4096, 1, 1);
+    micProcessor.onaudioprocess = (e) => {
+      if (!isRecording || !voiceWs || voiceWs.readyState !== WebSocket.OPEN) return;
+
+      const input = e.inputBuffer.getChannelData(0);
+      // Convert float32 to int16 PCM
+      const pcm16 = new Int16Array(input.length);
+      for (let i = 0; i < input.length; i++) {
+        pcm16[i] = Math.max(-32768, Math.min(32767, Math.round(input[i] * 32768)));
+      }
+
+      // Convert to base64 and send
+      const bytes = new Uint8Array(pcm16.buffer);
+      let binary = '';
+      for (let i = 0; i < bytes.length; i++) binary += String.fromCharCode(bytes[i]);
+      const base64 = btoa(binary);
+
+      voiceWs.send(JSON.stringify({ type: 'audio', data: base64 }));
+    };
+
+    micSource.connect(micProcessor);
+    micProcessor.connect(micCtx.destination); // needed for ScriptProcessor to work
+
+    // Store context for cleanup
+    micProcessor._micCtx = micCtx;
+
+    isRecording = true;
+    document.getElementById('micBtn').classList.add('recording');
+    document.getElementById('micHint').textContent = 'Recording... Click to stop';
+    setVoiceStatus('listening', 'Listening');
+  } catch (e) {
+    if (e.name === 'NotAllowedError') {
+      showToast('Microphone permission denied. Please allow microphone access.', 'error');
+    } else {
+      showToast('Could not access microphone: ' + e.message, 'error');
+    }
+  }
+}
+
+function stopMicStream() {
+  isRecording = false;
+  document.getElementById('micBtn').classList.remove('recording');
+  document.getElementById('micHint').textContent = 'Click to start talking';
+
+  if (micProcessor) {
+    micProcessor.disconnect();
+    if (micProcessor._micCtx) {
+      micProcessor._micCtx.close().catch(() => {});
+    }
+    micProcessor = null;
+  }
+  if (micSource) {
+    micSource.disconnect();
+    micSource = null;
+  }
+  if (micStream) {
+    micStream.getTracks().forEach(t => t.stop());
+    micStream = null;
+  }
+}
+
+// ── Voice panel UI ─────────────────────────────────────────────────────────
 function updateVoicePanelUI(lead) {
   document.getElementById('vpStage').textContent = (lead.stage || 'welcome').charAt(0).toUpperCase() + (lead.stage || 'welcome').slice(1);
   const statusEl = document.getElementById('vpStatus');
@@ -983,7 +1334,6 @@ function updateVoicePanelUI(lead) {
     hotAlert.classList.remove('active');
   }
 
-  // Update score circle border color
   if (score >= 80) circle.style.borderColor = 'var(--gold)';
   else if (score >= 50) circle.style.borderColor = 'var(--green)';
   else if (score >= 25) circle.style.borderColor = 'var(--yellow)';
@@ -1002,120 +1352,23 @@ function appendMessage(role, content) {
 }
 
 function closeVoicePanel() {
+  // Send end to relay
+  if (voiceWs && voiceWs.readyState === WebSocket.OPEN) {
+    voiceWs.send(JSON.stringify({ type: 'end' }));
+    voiceWs.close();
+  }
+  voiceWs = null;
+
+  stopMicStream();
+  clearAudioQueue();
+
   document.getElementById('voicePanel').classList.remove('active');
-  stopRecording();
   activeLead = null;
-}
+  liveAITextEl = null;
+  liveTranscriptEl = null;
 
-// ── Audio recording ────────────────────────────────────────────────────────
-async function toggleRecording() {
-  if (isRecording) {
-    stopRecording();
-  } else {
-    await startRecording();
-  }
-}
-
-async function startRecording() {
-  try {
-    const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
-    mediaRecorder = new MediaRecorder(stream, { mimeType: 'audio/webm;codecs=opus' });
-    audioChunks = [];
-
-    mediaRecorder.ondataavailable = (e) => {
-      if (e.data.size > 0) audioChunks.push(e.data);
-    };
-
-    mediaRecorder.onstop = async () => {
-      stream.getTracks().forEach(t => t.stop());
-      if (audioChunks.length === 0) return;
-
-      const blob = new Blob(audioChunks, { type: 'audio/webm' });
-      await sendAudioToAPI(blob);
-    };
-
-    mediaRecorder.start();
-    isRecording = true;
-    document.getElementById('micBtn').classList.add('recording');
-    document.getElementById('micHint').textContent = 'Recording... Click to stop';
-  } catch (e) {
-    if (e.name === 'NotAllowedError') {
-      showToast('Microphone permission denied. Please allow microphone access.', 'error');
-    } else {
-      showToast('Could not access microphone: ' + e.message, 'error');
-    }
-  }
-}
-
-function stopRecording() {
-  if (mediaRecorder && mediaRecorder.state === 'recording') {
-    mediaRecorder.stop();
-  }
-  isRecording = false;
-  document.getElementById('micBtn').classList.remove('recording');
-  document.getElementById('micHint').textContent = 'Click to start recording';
-}
-
-async function sendAudioToAPI(blob) {
-  if (!activeLead) return;
-
-  const micBtn = document.getElementById('micBtn');
-  micBtn.disabled = true;
-  document.getElementById('micHint').textContent = 'Processing...';
-
-  try {
-    // Convert blob to base64
-    const reader = new FileReader();
-    const base64 = await new Promise((resolve, reject) => {
-      reader.onload = () => {
-        const base64 = reader.result.split(',')[1];
-        resolve(base64);
-      };
-      reader.onerror = reject;
-      reader.readAsDataURL(blob);
-    });
-
-    const resp = await api('POST', {
-      action: 'converse',
-      lead_id: activeLead.id,
-      audio_base64: base64,
-    });
-
-    // Show transcript
-    appendMessage('user', resp.transcript);
-    appendMessage('assistant', resp.aiResponse);
-
-    // Play AI audio
-    if (resp.audioBase64) {
-      playAudio(resp.audioBase64);
-    }
-
-    // Update lead state
-    activeLead.lead_score = resp.score;
-    activeLead.stage = resp.stage;
-    activeLead.turn_count = resp.turnCount;
-    if (resp.isHot) activeLead.status = 'qualified';
-
-    updateVoicePanelUI(activeLead);
-    renderLeadTable();
-    updateStats();
-
-    if (resp.isHot) {
-      showToast('🔥 Hot lead detected! Score: ' + resp.score, 'success');
-    }
-  } catch (e) {
-    showToast('Voice error: ' + e.message, 'error');
-  } finally {
-    micBtn.disabled = false;
-    document.getElementById('micHint').textContent = 'Click to start recording';
-  }
-}
-
-function playAudio(base64Audio) {
-  try {
-    const audio = new Audio(`data:audio/wav;base64,${base64Audio}`);
-    audio.play().catch(() => { /* autoplay blocked — user will see transcript */ });
-  } catch { /* non-critical */ }
+  // Reload leads to get latest data from DB
+  loadLeads();
 }
 
 // ── Transfer to human ─────────────────────────────────────────────────────
@@ -1139,16 +1392,24 @@ async function transferLead() {
 }
 
 // ── End conversation ──────────────────────────────────────────────────────
-async function endConversation() {
+function endConversation() {
   if (!activeLead) return;
-  stopRecording();
+  stopMicStream();
+  clearAudioQueue();
+
+  if (voiceWs && voiceWs.readyState === WebSocket.OPEN) {
+    voiceWs.send(JSON.stringify({ type: 'end' }));
+  }
+
   appendMessage('assistant', 'Conversation ended. Thank you!');
   showToast('Conversation ended.');
   document.getElementById('micBtn').disabled = true;
+  setVoiceStatus('', 'Ended');
 }
 
 // ── Logout ─────────────────────────────────────────────────────────────────
 async function logout() {
+  if (voiceWs) { try { voiceWs.close(); } catch {} }
   try {
     await fetch('/api/auth', { method: 'DELETE', credentials: 'include' });
   } catch { /* ignore */ }
