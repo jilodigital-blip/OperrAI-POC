@@ -85,12 +85,13 @@ module.exports = async (req, res) => {
   const token = extractAuthToken(req);
   const claims = verifyJWT(token, JWT_SECRET);
   if (!claims) return res.status(401).json({ error: 'Unauthorized' });
-  if (claims.role !== 'admin') return res.status(403).json({ error: 'Admin access required' });
 
-  // Determine client for table selection (from query param or body)
+  // Use client from JWT claims (authoritative), fall back to query param
   const urlParsed = new URL(req.url, `http://${req.headers.host || 'localhost'}`);
-  const clientParam = urlParsed.searchParams.get('client') || '';
-  const tbl = (name) => clientParam === 'apb' ? `${name}_apb` : name;
+  const effectiveClient = (claims.client && claims.client !== 'admin')
+    ? claims.client
+    : (urlParsed.searchParams.get('client') || '');
+  const tbl = (name) => effectiveClient === 'apb' ? `${name}_apb` : name;
 
   // ── GET: Retrieve past test runs ──────────────────────────────────────────
   if (req.method === 'GET') {
@@ -148,8 +149,7 @@ module.exports = async (req, res) => {
     };
 
     try {
-      // Use client from body for POST if not in query param
-      const postClient = body.client || clientParam || '';
+      const postClient = effectiveClient || body.client || '';
       const tblPost = (name) => postClient === 'apb' ? `${name}_apb` : name;
       const saved = await supabaseInsert(tblPost('test_runs'), row, SUPABASE_URL, SUPABASE_ANON_KEY);
       return res.status(200).json({ success: true, id: saved?.id || null });
