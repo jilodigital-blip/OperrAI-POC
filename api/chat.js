@@ -157,6 +157,37 @@ function sanitizeKey(raw) {
 
 // ── Agentic pipeline: Embed → RAG → OpenAI L1 → OpenAI L2 → Quality Gate ──────
 
+// ── APB: Detect complaint/issue intent in customer message ───────────────────
+function isComplaintQuery(text) {
+  const lower = text.toLowerCase();
+  const COMPLAINT_KEYWORDS = [
+    'nahi chal raha', 'band ho gaya', 'kaam nahi kar', 'problem hai',
+    'issue hai', 'nahi ho raha', 'not working', 'not opening',
+    'account issue', 'account problem', 'blocked', 'freeze', 'suspend', 'complaint',
+  ];
+  return COMPLAINT_KEYWORDS.some(kw => lower.includes(kw));
+}
+
+// ── Detect follow-up / continuation questions ─────────────────────────────────
+const FOLLOWUP_INDICATORS = [
+  'or ', 'aur ', 'else', 'more', 'other', 'koi', 'kuch',
+  'tarika', 'way', 'option', 'alternatively', 'bhi', 'doosra', 'alag',
+];
+const FOLLOWUP_WORD_LIMIT = 8;
+
+function isFollowUpQuestion(text) {
+  const lower = text.toLowerCase().trim();
+  const wordCount = lower.split(/\s+/).filter(Boolean).length;
+  if (wordCount > FOLLOWUP_WORD_LIMIT) return false;
+  return FOLLOWUP_INDICATORS.some(ind => lower.includes(ind));
+}
+
+function extractLastCustomerQuestion(historyStr) {
+  if (!historyStr) return null;
+  const matches = [...historyStr.matchAll(/^Customer:\s*(.+)$/gm)];
+  return matches.length ? matches[matches.length - 1][1].trim() : null;
+}
+
 // ── Per-client prompt configuration ─────────────────────────────────────────
 const CLIENT_PROMPTS = {
   ather: {
@@ -188,13 +219,27 @@ async function callAgenticPipeline(question, channel, sessionId, clientKey, { op
   if (!openaiKey.startsWith('sk-') || openaiKey.length < 20) {
     throw new Error('OPENAI_API_KEY format invalid (expected sk-... key, got length ' + openaiKey.length + ')');
   }
+
+  // ── Conversation History (fetched early for follow-up RAG augmentation) ─────
+  const conversationHistory = await fetchConversationHistory(sessionId, supabaseUrl, supabaseKey);
+
+  // ── Build embedding input (augment with context for APB follow-up questions) ─
+  let embeddingInput = question;
+  if (clientKey === 'apb' && conversationHistory && isFollowUpQuestion(question)) {
+    const prevQ = extractLastCustomerQuestion(conversationHistory);
+    if (prevQ) {
+      embeddingInput = `${prevQ} - ${question}`;
+      console.log(`[APB] Follow-up detected. Augmented embedding: "${embeddingInput}"`);
+    }
+  }
+
   const embedResp = await fetchWithRetry('https://api.openai.com/v1/embeddings', {
     method: 'POST',
     headers: {
       'Authorization': `Bearer ${openaiKey}`,
       'Content-Type': 'application/json',
     },
-    body: JSON.stringify({ model: 'text-embedding-3-small', input: question }),
+    body: JSON.stringify({ model: 'text-embedding-3-small', input: embeddingInput }),
   }, { retries: 2, baseDelay: 1000, timeoutMs: 15000 });
   if (!embedResp.ok) {
     let detail = '';
@@ -258,9 +303,6 @@ async function callAgenticPipeline(question, channel, sessionId, clientKey, { op
     doc_name: c.doc_name,
     relevance_score: c.similarity !== null ? Math.round((c.similarity || 0) * 100) / 100 : null,
   }));
-
-  // ── Conversation History ───────────────────────────────────────────────────
-  const conversationHistory = await fetchConversationHistory(sessionId, supabaseUrl, supabaseKey);
 
   // ── L1: OpenAI GPT-4o Worker ────────────────────────────────────────────────
   const formatInstruction = channel === 'email'
@@ -533,11 +575,18 @@ ${context}`;
 
   // ── Quality Gate ───────────────────────────────────────────────────────────
   const blocked = rating.label === 'Poor';
+  const isComplaint = clientKey === 'apb' && isComplaintQuery(question);
   let ticket_id = null;
-  if (blocked) {
+  if (blocked || isComplaint) {
     const dateStr = new Date().toISOString().slice(0, 10).replace(/-/g, '');
     const rand    = String(Math.floor(Math.random() * 90000) + 10000);
     ticket_id = `SR-${dateStr}-${rand}`;
+  }
+
+  // For APB complaint queries that are not blocked, append SR number to the answer
+  if (isComplaint && !blocked && ticket_id) {
+    finalAnswer = finalAnswer +
+      `\n\n**Aapka Service Request number hai: ${ticket_id}.** Hamari team jald hi aapse follow up karegi.`;
   }
 
   return {
@@ -674,8 +723,8 @@ module.exports = async (req, res) => {
     }
   }
 
-  // Persist service request for blocked responses
-  if (blocked && ticket_id) {
+  // Persist service request for blocked responses and APB complaint queries
+  if (ticket_id) {
     try {
       await supabaseInsert(tbl('service_requests'), {
         message_id: savedMessage?.id || null,
@@ -695,7 +744,7 @@ module.exports = async (req, res) => {
     responseTimeMs,
     messageId:     savedMessage?.id || null,
     blocked,
-    ticketId:      blocked ? ticket_id : null,
+    ticketId:      ticket_id,
     channel,
     accuracyScore: accuracy_score,
     accuracyLabel: accuracy_label,

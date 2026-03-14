@@ -1,0 +1,187 @@
+{
+  "version": "1.0.0",
+  "client": "apb",
+  "description": "Guardrail rules for Airtel Payments Bank customer support chatbot",
+  "rules": {
+    "CONTEXT_MEMORY": {
+      "description": "Jab user follow-up question kare toh previous topic se link karo, naya topic mat samjho",
+      "trigger_keywords": [
+        "or koi tarika", "aur batao", "else?", "and?", "or?",
+        "koi aur", "aur kuch", "doosra tarika", "alag tarika",
+        "more options", "other way", "anything else", "bhi batao"
+      ],
+      "word_limit_for_followup": 8,
+      "behavior": "Detect if question is short AND contains follow-up keyword. If yes, link answer to the previous conversation topic. Do NOT treat it as a new independent question.",
+      "example": {
+        "previous_question": "account nahi chal raha",
+        "followup_question": "or koi tarika?",
+        "wrong_behavior": "Answer about FASTag recharge (unrelated topic)",
+        "correct_behavior": "Provide additional ways to resolve the account issue (e.g., visit Banking Point, use Airtel Thanks App support section)"
+      }
+    },
+    "CONFIDENCE_FALLBACK": {
+      "description": "Agar answer sure nahi hai toh agent se connect karo. Kabhi galat answer mat do.",
+      "trigger_condition": "Answer confidence is low OR question is outside knowledge base",
+      "required_response": "Main is baare mein sure nahi hoon. Main aapko ek agent se connect karta hoon jo aapki sahi madad kar sake.",
+      "prohibited_behavior": "Guessing an answer or providing information from a different topic as if it were correct",
+      "escalation_action": "Transfer to human agent"
+    },
+    "BLOCKED_PHRASES": {
+      "description": "Yeh phrases kabhi mat use karo. Instead, alternative phrasing use karo.",
+      "never_say": [
+        "koi aur tareeka nahi hai",
+        "koi aur tarika available nahi",
+        "impossible",
+        "nahi ho sakta",
+        "yeh nahi ho sakta",
+        "there is no other way",
+        "no other option available",
+        "cannot be done"
+      ],
+      "instead_say": [
+        "Yeh main tareeke hain jo abhi available hain",
+        "In tareekon se aap yeh kar sakte hain",
+        "Filhaal yeh options available hain",
+        "These are the available options at this time"
+      ],
+      "rationale": "Negative absolute statements frustrate users and may be inaccurate. Positive framing of available options is more helpful."
+    },
+    "ESCALATION_TRIGGERS": {
+      "description": "SR number generate karo aur agent se connect karo jab escalation condition match ho",
+      "sr_format": "SR-YYYYMMDD-XXXXX",
+      "sr_example": "SR-20260314-54321",
+      "trigger_conditions": [
+        {
+          "id": "repeat_complaint",
+          "description": "User ne 2 baar same complaint ki ho",
+          "detection": "Current question is semantically similar to a previous question in conversation history"
+        },
+        {
+          "id": "frustration_signal",
+          "description": "User frustrated lag raha ho",
+          "keywords": [
+            "baar baar", "same answer", "wahi jawab", "kuch nahi hua",
+            "kab tak", "bahut time ho gaya", "frustrated", "fed up",
+            "useless", "bakwas", "kaam nahi kar raha"
+          ]
+        },
+        {
+          "id": "fraud_or_complaint",
+          "description": "User ne fraud ya formal complaint mention ki ho",
+          "keywords": [
+            "fraud", "complaint", "scam", "cheating", "unauthorized transaction",
+            "bina permission", "paise kat gaye", "RBI", "escalate", "legal"
+          ]
+        },
+        {
+          "id": "account_not_working",
+          "description": "User ka account ya service kaam nahi kar raha",
+          "keywords": [
+            "nahi chal raha", "band ho gaya", "kaam nahi kar", "not working",
+            "not opening", "blocked", "freeze", "suspend", "account issue",
+            "account problem", "nahi ho raha"
+          ]
+        }
+      ],
+      "escalation_response_template": "Aapki problem note kar li gayi hai. Aapka Service Request number hai: **{SR_NUMBER}**. Hamari team 24 ghante ke andar aapse contact karegi. Kya aap chahte hain ki main aapko abhi ek agent se connect karun?",
+      "agent_connect_action": "Create SR in service_requests table, set status=open, return ticketId in API response"
+    },
+    "RESPONSE_FORMAT": {
+      "description": "Response format ke liye yeh rules follow karo",
+      "rules": [
+        {
+          "id": "no_empty_bullets",
+          "rule": "Koi bhi empty bullet point mat rakho. Har bullet mein meaningful content hona chahiye."
+        },
+        {
+          "id": "next_step_required",
+          "rule": "Har response mein ek clear next step hona chahiye. User ko pata hona chahiye unhe aage kya karna hai.",
+          "example_next_steps": [
+            "Aap 400 par call kar sakte hain",
+            "Airtel Thanks App mein Help section mein jao",
+            "Nearest Banking Point visit karo"
+          ]
+        },
+        {
+          "id": "max_points",
+          "rule": "Maximum 5 bullet points per response. Agar zyada information hai toh sabse important 5 select karo."
+        },
+        {
+          "id": "conversational_tone",
+          "rule": "Bullet dump mat karo. Ek short intro sentence likho, phir points do, phir ek closing/next-step sentence. Conversational tone rakho.",
+          "wrong_format": "* Point 1\n* Point 2\n* Point 3\n* Point 4\n* Point 5\n* Point 6",
+          "correct_format": "Aapke liye yeh options available hain:\n* Point 1\n* Point 2\n* Point 3\nAap inme se jo bhi convenient lage woh try kar sakte hain."
+        }
+      ]
+    },
+    "TOPIC_BOUNDARY": {
+      "description": "Sirf banking domain ke topics ka answer do",
+      "in_scope_topics": [
+        "Savings Account", "Wallet", "FASTag", "Debit Card",
+        "Fund Transfer", "Insurance", "Fixed Deposit", "Bill Payments",
+        "Mobile Recharge", "KYC", "Account Opening", "Account Closure",
+        "Transaction Issues", "Balance Enquiry", "Customer Support"
+      ],
+      "out_of_scope_behavior": "Agar question banking se related nahi hai toh yeh bolna: 'Yeh mere scope mein nahi hai. Main sirf Airtel Payments Bank ke topics mein help kar sakta hoon. Agar banking se related koi sawal ho toh zaroor poochein, ya main aapko agent se connect kar sakta hoon.'",
+      "prohibited_behavior": "Answering general knowledge, travel, cooking, entertainment, or any non-banking topic"
+    }
+  },
+  "sample_test_case": {
+    "description": "Two-turn conversation: account complaint followed by follow-up question",
+    "session_id": "test-session-apb-001",
+    "turns": [
+      {
+        "turn": 1,
+        "user_input": "account nahi chal raha",
+        "language": "Hinglish",
+        "expected_guardrails_triggered": ["ESCALATION_TRIGGERS.account_not_working"],
+        "expected_sr_generated": true,
+        "expected_sr_format": "SR-YYYYMMDD-XXXXX",
+        "expected_response_contains": [
+          "SR number",
+          "contact or support steps",
+          "next step for user"
+        ],
+        "expected_response_does_not_contain": [
+          "FASTag",
+          "recharge",
+          "nahi ho sakta",
+          "impossible"
+        ],
+        "sample_correct_response": "Aapka account issue note kar liya gaya hai. Aap yeh steps try kar sakte hain:\n* 400 (Airtel se toll-free) par call karein\n* wecare@airtelbank.com par email karein\n* Airtel Thanks App ke Help & Support section mein jaaein\n* Nearest Airtel Payments Bank Banking Point visit karein\n\n**Aapka Service Request number hai: SR-20260314-54321.** Hamari team 24 ghante mein follow up karegi."
+      },
+      {
+        "turn": 2,
+        "user_input": "or koi tarika?",
+        "language": "Hinglish",
+        "previous_topic": "account not working",
+        "expected_guardrails_triggered": ["CONTEXT_MEMORY"],
+        "expected_behavior": "Link to previous topic (account issue), NOT a new topic",
+        "expected_rag_embedding": "account nahi chal raha - or koi tarika?",
+        "expected_response_contains": [
+          "account",
+          "additional support options related to account issue"
+        ],
+        "expected_response_does_not_contain": [
+          "FASTag recharge",
+          "UPI recharge",
+          "Internet Banking recharge",
+          "Auto-recharge"
+        ],
+        "sample_correct_response": "Haan, yeh kuch aur tarike bhi hain jisse aap apna account issue resolve kar sakte hain:\n* WhatsApp par Airtel Payments Bank ko message karein\n* Airtel Thanks App > My Account > Help & Support mein ticket raise karein\n* RBI Banking Ombudsman se bhi contact kar sakte hain agar issue resolve na ho\n\nKya koi specific problem hai jiske baare mein main aur detail de sakta hoon?"
+      }
+    ],
+    "validation_checklist": [
+      "Turn 1: SR number generated and included in response",
+      "Turn 1: ticketId present in API response JSON",
+      "Turn 1: Response has max 5 bullet points",
+      "Turn 1: Response has a clear next step",
+      "Turn 1: No empty bullets",
+      "Turn 2: Embedding augmented with previous question context",
+      "Turn 2: Answer is about account issue resolution, NOT FASTag/recharge",
+      "Turn 2: CONTEXT_MEMORY rule applied correctly",
+      "Both turns: Conversational tone maintained",
+      "Both turns: No blocked phrases used"
+    ]
+  }
+}
