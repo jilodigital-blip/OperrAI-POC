@@ -3,7 +3,7 @@
   "functions": {
     "api/*.js": {
       "maxDuration": 30,
-      "includeFiles": "{ingest/faqs-ather.json,ingest/faqs-apb.json}"
+      "includeFiles": "ingest/faqs-*.json"
     }
   },
   "headers": [
