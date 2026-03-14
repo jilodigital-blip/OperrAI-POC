@@ -113,7 +113,7 @@ module.exports = async (req, res) => {
 
   const clientKey = claims.client && claims.client !== 'admin' ? claims.client : 'ather';
   const tbl = (name) => clientKey === 'apb' ? `${name}_apb` : name;
-  const url = new URL(req.url, `http://${req.headers.host}`);
+  const url = new URL(req.url, `https://${req.headers.host}`);
 
   // ── GET: List or Get leads ──────────────────────────────────────────────
   if (req.method === 'GET') {
