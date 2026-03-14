@@ -3,7 +3,7 @@
   "functions": {
     "api/*.js": {
       "maxDuration": 30,
-      "includeFiles": "{ingest/faqs-ather.json,ingest/faqs-apb.json,ev-poc.html,admin.html,voice-pod.html}"
+      "includeFiles": "{ingest/faqs-ather.json,ingest/faqs-apb.json}"
     }
   },
   "headers": [
@@ -28,11 +28,11 @@
     { "src": "/manifest.json", "dest": "/manifest.json" },
     { "src": "/icons/(.*)",    "dest": "/icons/$1" },
     { "src": "/ingest/(.*)",   "dest": "/ingest/$1" },
-    { "src": "/ev-poc",        "dest": "/api/guard?page=ev-poc" },
-    { "src": "/voice-pod",     "dest": "/api/guard?page=voice-pod" },
+    { "src": "/ev-poc",        "dest": "/ev-poc.html" },
+    { "src": "/voice-pod",     "dest": "/voice-pod.html" },
     { "src": "/ingest",        "dest": "/ingest.html" },
     { "src": "/login",         "dest": "/login.html" },
-    { "src": "/admin",         "dest": "/api/guard?page=admin" },
+    { "src": "/admin",         "dest": "/admin.html" },
     { "src": "/(.*)",          "dest": "/index.html" }
   ]
 }
