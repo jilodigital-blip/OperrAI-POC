@@ -646,25 +646,34 @@ module.exports = async (req, res) => {
   }
 
   // Persist accuracy rating (already computed — no extra API call)
+  // NOTE: Must await to prevent Vercel from freezing the function before the insert completes
   if (savedMessage?.id) {
-    supabaseInsert('ratings', {
-      message_id:       savedMessage.id,
-      accuracy_score,
-      accuracy_label,
-      rating_rationale: accuracy_rationale,
-      rated_by_model:   OPENAI_API_KEY ? 'gpt-4.1' : 'default',
-    }, SUPABASE_URL, SUPABASE_ANON_KEY).catch(() => {});
+    try {
+      await supabaseInsert('ratings', {
+        message_id:       savedMessage.id,
+        accuracy_score,
+        accuracy_label,
+        rating_rationale: accuracy_rationale,
+        rated_by_model:   OPENAI_API_KEY ? 'gpt-4.1' : 'default',
+      }, SUPABASE_URL, SUPABASE_ANON_KEY);
+    } catch {
+      // DB rating failure does not block the response
+    }
   }
 
   // Persist service request for blocked responses
   if (blocked && ticket_id) {
-    supabaseInsert('service_requests', {
-      message_id: savedMessage?.id || null,
-      ticket_id,
-      question:   question.trim(),
-      channel,
-      status:     'open',
-    }, SUPABASE_URL, SUPABASE_ANON_KEY).catch(() => {});
+    try {
+      await supabaseInsert('service_requests', {
+        message_id: savedMessage?.id || null,
+        ticket_id,
+        question:   question.trim(),
+        channel,
+        status:     'open',
+      }, SUPABASE_URL, SUPABASE_ANON_KEY);
+    } catch {
+      // DB service request failure does not block the response
+    }
   }
 
   return res.status(200).json({
