@@ -1035,7 +1035,7 @@ async function startCall(leadId) {
   }
 
   // Connect WebSocket to relay
-  showLoading('Connecting to voice server...');
+  showLoading('Waking up voice server...');
   setVoiceStatus('processing', 'Connecting...');
 
   let connectionTimeout = null;
@@ -1043,9 +1043,25 @@ async function startCall(leadId) {
 
   try {
     const token = getAuthToken();
-    const protocol = location.protocol === 'https:' ? 'wss' : 'ws';
+    const httpProtocol = location.protocol === 'https:' ? 'https' : 'http';
+    const wsProtocol = location.protocol === 'https:' ? 'wss' : 'ws';
     const relayHost = RELAY_HOST || location.host;
-    const wsUrl = `${protocol}://${relayHost}/voice?token=${encodeURIComponent(token)}&lead_id=${encodeURIComponent(leadId)}`;
+
+    // Pre-flight: wake up relay server (Render free tier sleeps after inactivity)
+    try {
+      const healthUrl = `${httpProtocol}://${relayHost}/health`;
+      const healthResp = await fetch(healthUrl, { method: 'GET', signal: AbortSignal.timeout(30000) });
+      if (!healthResp.ok) {
+        console.warn('[Relay] Health check returned:', healthResp.status);
+      } else {
+        console.log('[Relay] Server is awake');
+      }
+    } catch (healthErr) {
+      console.warn('[Relay] Health check failed (server may still be starting):', healthErr.message);
+    }
+
+    showLoading('Connecting to voice server...');
+    const wsUrl = `${wsProtocol}://${relayHost}/voice?token=${encodeURIComponent(token)}&lead_id=${encodeURIComponent(leadId)}`;
 
     voiceWs = new WebSocket(wsUrl);
 
@@ -1084,7 +1100,7 @@ async function startCall(leadId) {
       }
     };
 
-    // Timeout if relay doesn't send 'ready' within 15 seconds
+    // Timeout if relay doesn't send 'ready' within 30 seconds
     connectionTimeout = setTimeout(() => {
       if (voiceWs && voiceWs.readyState !== WebSocket.CLOSED) {
         voiceWs.close();
@@ -1092,7 +1108,7 @@ async function startCall(leadId) {
       showToast('Connection timed out — voice server may be starting up. Please try again.', 'error');
       setVoiceStatus('', 'Disconnected');
       hideLoading();
-    }, 15000);
+    }, 30000);
   } catch (e) {
     showToast('Failed to connect: ' + e.message, 'error');
     hideLoading();
