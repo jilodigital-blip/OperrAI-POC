@@ -838,8 +838,18 @@
 })();
 
 // ── Config ─────────────────────────────────────────────────────────────────
-// Voice relay now runs on the same server — use current host
-const RELAY_HOST = location.host;
+// Fetch relay host from /api/config (production: separate Render service)
+// Falls back to same-origin for local dev
+let RELAY_HOST = location.host;
+(async () => {
+  try {
+    const resp = await fetch('/api/config');
+    if (resp.ok) {
+      const cfg = await resp.json();
+      if (cfg.relayHost) RELAY_HOST = cfg.relayHost;
+    }
+  } catch { /* local dev fallback — use location.host */ }
+})();
 
 // ── State ──────────────────────────────────────────────────────────────────
 let leads = [];
@@ -1044,8 +1054,9 @@ async function startCall(leadId) {
 
   try {
     const token = getAuthToken();
-    const wsProtocol = location.protocol === 'https:' ? 'wss' : 'ws';
     const relayHost = RELAY_HOST || location.host;
+    const isLocal = relayHost === location.host && location.hostname === 'localhost';
+    const wsProtocol = isLocal ? 'ws' : 'wss';
     const wsUrl = `${wsProtocol}://${relayHost}/voice?token=${encodeURIComponent(token)}&lead_id=${encodeURIComponent(leadId)}`;
 
     voiceWs = new WebSocket(wsUrl);

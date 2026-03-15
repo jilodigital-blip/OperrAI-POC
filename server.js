@@ -37,6 +37,7 @@ const API_HANDLERS = {
   '/api/feedback':  './api/feedback.js',
   '/api/ai-test':   './api/ai-test.js',
   '/api/voice':     './api/voice.js',
+  '/api/config':    './api/config.js',
 };
 
 const MIME = {
