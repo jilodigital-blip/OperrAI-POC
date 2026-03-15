@@ -1038,6 +1038,9 @@ async function startCall(leadId) {
   showLoading('Connecting to voice server...');
   setVoiceStatus('processing', 'Connecting...');
 
+  let connectionTimeout = null;
+  let wsReady = false;
+
   try {
     const token = getAuthToken();
     const protocol = location.protocol === 'https:' ? 'wss' : 'ws';
@@ -1053,6 +1056,8 @@ async function startCall(leadId) {
     voiceWs.onmessage = (event) => {
       try {
         const msg = JSON.parse(event.data);
+        if (msg.type === 'ready') wsReady = true;
+        if (connectionTimeout) { clearTimeout(connectionTimeout); connectionTimeout = null; }
         handleRelayMessage(msg);
       } catch (err) {
         console.error('[WS] Parse error:', err);
@@ -1063,6 +1068,8 @@ async function startCall(leadId) {
       console.error('[WS] Error:', err);
       showToast('Voice connection error', 'error');
       setVoiceStatus('', 'Disconnected');
+      hideLoading();
+      if (connectionTimeout) { clearTimeout(connectionTimeout); connectionTimeout = null; }
     };
 
     voiceWs.onclose = (event) => {
@@ -1070,10 +1077,24 @@ async function startCall(leadId) {
       stopMicStream();
       setVoiceStatus('', 'Disconnected');
       document.getElementById('micBtn').disabled = true;
+      hideLoading();
+      if (connectionTimeout) { clearTimeout(connectionTimeout); connectionTimeout = null; }
+      if (!wsReady && event.reason) {
+        showToast('Connection closed: ' + event.reason, 'error');
+      }
     };
+
+    // Timeout if relay doesn't send 'ready' within 15 seconds
+    connectionTimeout = setTimeout(() => {
+      if (voiceWs && voiceWs.readyState !== WebSocket.CLOSED) {
+        voiceWs.close();
+      }
+      showToast('Connection timed out — voice server may be starting up. Please try again.', 'error');
+      setVoiceStatus('', 'Disconnected');
+      hideLoading();
+    }, 15000);
   } catch (e) {
     showToast('Failed to connect: ' + e.message, 'error');
-  } finally {
     hideLoading();
   }
 
