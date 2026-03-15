@@ -861,13 +861,15 @@ async function api(method, body) {
     headers: { 'Content-Type': 'application/json' },
     credentials: 'include',
   };
-  if (body) opts.body = JSON.stringify(body);
 
-  const url = method === 'GET' && body
-    ? `/api/voice?${new URLSearchParams(body).toString()}`
-    : '/api/voice';
+  let url = '/api/voice';
+  if (method === 'GET' && body) {
+    url += '?' + new URLSearchParams(body).toString();
+  } else if (body) {
+    opts.body = JSON.stringify(body);
+  }
 
-  const resp = await fetch(method === 'GET' ? url : '/api/voice', opts);
+  const resp = await fetch(url, opts);
 
   if (resp.status === 401) {
     window.location.href = '/login';
