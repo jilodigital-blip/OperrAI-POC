@@ -1,6 +1,7 @@
 /**
  * Local development server for Raymidi POC.
- * Serves static HTML files and routes /api/* to the Vercel-style handlers.
+ * Serves static HTML files, routes /api/* to the Vercel-style handlers,
+ * and runs the Voice Relay WebSocket server on the same port.
  *
  * Usage:  node server.js
  * Then open: http://localhost:3000
@@ -12,6 +13,7 @@ require('dotenv').config();
 const http = require('http');
 const fs   = require('fs');
 const path = require('path');
+const { initVoiceRelay } = require('./voice-relay/relay');
 
 const PORT = process.env.PORT || 3000;
 
@@ -101,15 +103,19 @@ const server = http.createServer(async (req, res) => {
   });
 });
 
+// ── Attach Voice Relay WebSocket server to the same HTTP server ───────────────
+initVoiceRelay(server);
+
 server.listen(PORT, () => {
   console.log(`Raymidi POC running at http://localhost:${PORT}`);
   console.log('');
   console.log('  Login page :  http://localhost:' + PORT + '/login');
   console.log('  Demo page  :  http://localhost:' + PORT + '/ev-poc');
   console.log('  Ingest page:  http://localhost:' + PORT + '/ingest');
+  console.log('  Voice WS   :  ws://localhost:' + PORT + '/voice');
   console.log('');
   console.log('Credentials loaded from .env file (copy .env.example → .env if missing).');
   console.log('Required vars: DEMO_USER, DEMO_PASS, ADMIN_USER, ADMIN_PASS,');
   console.log('  APB_DEMO_USER, APB_DEMO_PASS, JWT_SECRET, CORS_ORIGIN,');
-  console.log('  OPENAI_API_KEY, SUPABASE_URL, SUPABASE_ANON_KEY');
+  console.log('  OPENAI_API_KEY, SUPABASE_URL, SUPABASE_ANON_KEY, SARVAM_API_KEY');
 });
