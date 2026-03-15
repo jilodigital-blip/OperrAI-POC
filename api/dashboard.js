@@ -61,7 +61,10 @@ module.exports = async (req, res) => {
 
   try {
     // Use client from JWT claims to scope dashboard data
-    const clientKey = claims.client && claims.client !== 'admin' ? claims.client : '';
+    const queryClient = (req.url || '').split('client=')[1]?.split('&')[0] || '';
+    const clientKey = claims.client && claims.client !== 'admin'
+      ? claims.client
+      : decodeURIComponent(queryClient);
     const tbl = (name) => clientKey === 'apb' ? `${name}_apb` : name;
     const clientClause = clientKey ? `&client=eq.${encodeURIComponent(clientKey)}` : '';
 
