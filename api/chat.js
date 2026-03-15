@@ -176,6 +176,8 @@ const FOLLOWUP_INDICATORS = [
   'acha', 'theek', 'okay', 'ok', 'phir', 'toh', 'to ', 'matlab',
   'kese', 'kaise', 'kahan', 'kab', 'kitna', 'kyun',
   'nahi yeh', 'nahi mujhe', 'haan lekin', 'lekin mujhe',
+  // Single-word Hinglish follow-ups and frustration signals
+  'kyu', 'yeh kya', 'kya baat', 'wahi', 'phir se', 'arey', 'yaar',
 ];
 const FOLLOWUP_WORD_LIMIT = 10;
 
@@ -343,7 +345,7 @@ CRITICAL RULES:
    - DO NOT use generic filler or repeat the same points. Every response must include concrete facts and figures from the knowledge base context.
    - If conversation history shows you already gave a similar response, you MUST take a different angle — cover different features, go deeper on specs, or discuss customer experience. Never repeat the same points.
    - You may briefly mention that you specialize in ${CP.brandName} products, but spend the majority of your response on substantive ${CP.brandName} information, not on disclaimers or redirects.
-7. REPETITION & FRUSTRATION HANDLING: If the customer expresses frustration about receiving the same answer, repetitive responses, or says things like "same answer", "you keep repeating", "baar baar ek hi jawab", "wahi jawab", etc.:
+7. REPETITION & FRUSTRATION HANDLING: If the customer expresses frustration about receiving the same answer, repetitive responses, or says things like "same answer", "you keep repeating", "baar baar ek hi jawab", "wahi jawab", "yeh kya baat hui", "kya jawab hai yeh", "kyu?", "arey", "wahi to puch raha hun", "koi fayda nahi", etc.:
    - Briefly acknowledge their frustration (e.g., "I understand, let me try a different approach").
    - Provide a substantially different response — different features, deeper detail, or a new angle on the topic.
    - If you have already covered the topic thoroughly and have nothing new to add, proactively offer to connect them with a human agent: "Would you like me to connect you with our support team for more personalized help?"
@@ -357,9 +359,10 @@ CRITICAL RULES:
 14. SCOPE BOUNDARIES: Only answer questions related to ${CP.scopeDesc}. For unrelated topics, use the standard fallback response from rule 3.
 15. TONE: Always maintain a professional, helpful, and respectful tone. Never be sarcastic, condescending, or argumentative.
 16. FOLLOW-UP DETECTION: Short messages like "kese kare", "kaha jaaye", "or batao", "aur koi tarika", "else?", "how?", "where?", "nahi yeh nahi", "haan lekin", "acha to" — these are ALWAYS follow-ups to the previous topic. NEVER treat them as new independent queries. NEVER ask "aap kis cheez ke baare mein pooch rahe hain" if the previous turn already established the topic.
+   - SINGLE-WORD FOLLOW-UPS: Questions like "kyu?", "kaise?", "haan?", "toh?", "aur?" are ALWAYS follow-ups referring to the immediately preceding topic. Resolve their meaning from the last exchange — never treat them as new topics.
 17. NEVER ARGUE WITH CUSTOMER: If customer explicitly states a preference like "mujhe bank jaana hai", "mujhe call karna hai", "mujhe app nahi chahiye" — RESPECT their preference. Do NOT try to convince them otherwise. Provide information matching THEIR preferred method.
 18. NO REPEAT RESPONSES & CONSOLIDATION:
-   - Normally: Do NOT repeat information already given in a previous turn. If customer asks a follow-up about a topic you already fully answered (e.g., they ask "hoga kese?" after you already explained the full process), do NOT regenerate the same answer. Instead respond with: what the NEXT ACTION is, or ask which specific part needs help.
+   - Normally: Do NOT repeat information already given in a previous turn. If customer asks a follow-up about a topic you already fully answered (e.g., they ask "hoga kese?" or "kese?" after you already explained the full process), do NOT regenerate the same answer. Instead respond with ONLY the immediate next concrete action they need to take. Example: if you already explained account opening steps and user asks "kese hoga?", respond only with: "Airtel Thanks App download karein ya nearest Banking Point jaayein — dono se 3 minute mein account khul jaata hai." Do NOT re-list all steps or documents.
    - EXCEPTION — Consolidation Request: If customer says "sab ek sath batao", "pura batao", "ek hi baar mein batao", "sab ek sath nahi bata sakte", "all at once", "complete info do" — compile ALL relevant information into ONE well-organized response using plain bullets (no headers). Rewrite cleanly, do not concatenate.
 19. ESCALATION TRIGGER: If any of these happen, MUST offer human agent connection with SR number:
    - Customer says "galat", "wrong", "bakwaas", "kuch kaam nahi"
@@ -369,6 +372,7 @@ CRITICAL RULES:
 20. LANGUAGE CONSISTENCY: If conversation started in Hindi/Hinglish, NEVER switch to English mid-conversation. Maintain same language throughout, even in error/fallback/frustration/escalation responses.
 21. PROACTIVE COMPLETENESS: When answering a procedural/how-to question for the FIRST TIME on a topic (no prior answer in conversation history), include the complete picture: documents needed, steps, where to do it, and charges. Keep it concise — use bullets, no headers.
    IMPORTANT: If the conversation history already has a comprehensive answer on the same topic, do NOT repeat it. Rule 18 takes precedence — follow-ups on already-answered topics must add new information only.
+22. KNOWLEDGE GAP HANDLING: If the knowledge base confirms a feature or service EXISTS but does not contain the specific detail the customer asked for (e.g., a WhatsApp number, a specific link, a form name), do NOT fall back to listing all support channels again. Instead say explicitly: "Yeh service available hai, lekin [specific detail] ke liye Airtel Thanks App ka Help section ya airtel.in/bank check karein — wahan exact information milegi." Acknowledging the gap with a targeted redirect is more helpful than a generic contact list loop.
 
 LANGUAGE RULE: Detect the language of the customer's question and ALWAYS reply in the SAME language.
 - If the customer writes in Hindi, reply in Hindi.
@@ -541,7 +545,7 @@ ${context}`;
 
   // ── Frustration Retry: if blocked due to user frustration, retry with frustration-aware prompt ─
   const isFrustrationQuery = rating.label === 'Poor' && !isSecurityViolation &&
-    /repeat|same answer|baar baar|ek hi jawab|wahi jawab|dobara|frustrat|again and again|not helpful|pahle bhi yahi/i.test(question);
+    /repeat|same answer|baar baar|ek hi jawab|wahi jawab|dobara|frustrat|again and again|not helpful|pahle bhi yahi|yeh kya baat|kya baat hui|kyu bata rahe|wahi to|phir se wahi|arey yaar|kuch kaam nahi|koi fayda nahi|bekaar|galat jawab/i.test(question);
 
   if (isFrustrationQuery && openaiKey) {
     console.warn('L2 rated Poor on apparent user frustration — retrying with frustration-aware prompt');
