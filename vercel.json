@@ -35,9 +35,9 @@
     { "src": "/manifest.json", "dest": "/manifest.json" },
     { "src": "/icons/(.*)",    "dest": "/icons/$1" },
     { "src": "/ingest/(.*)",   "dest": "/ingest/$1" },
-    { "src": "/ev-poc",        "dest": "/api/guard?page=ev-poc" },
-    { "src": "/voice-pod",     "dest": "/api/guard?page=voice-pod" },
-    { "src": "/admin",         "dest": "/api/guard?page=admin" },
+    { "src": "/ev-poc",        "dest": "/ev-poc.html" },
+    { "src": "/voice-pod",     "dest": "/voice-pod.html" },
+    { "src": "/admin",         "dest": "/admin.html" },
     { "src": "/ingest",        "dest": "/ingest.html" },
     { "src": "/login",         "dest": "/login.html" },
     { "src": "/(.*)",          "dest": "/index.html" }
