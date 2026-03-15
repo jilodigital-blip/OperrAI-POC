@@ -838,7 +838,18 @@
 })();
 
 // ── Config ─────────────────────────────────────────────────────────────────
-const RELAY_HOST = 'raymidi-voice-relay.onrender.com'; // Update after Render deploy
+// Fetch relay host from /api/config (production: separate Render service)
+// Falls back to same-origin for local dev
+let RELAY_HOST = location.host;
+(async () => {
+  try {
+    const resp = await fetch('/api/config');
+    if (resp.ok) {
+      const cfg = await resp.json();
+      if (cfg.relayHost) RELAY_HOST = cfg.relayHost;
+    }
+  } catch { /* local dev fallback — use location.host */ }
+})();
 
 // ── State ──────────────────────────────────────────────────────────────────
 let leads = [];
@@ -1034,8 +1045,8 @@ async function startCall(leadId) {
     });
   }
 
-  // Connect WebSocket to relay
-  showLoading('Waking up voice server...');
+  // Connect WebSocket to relay (runs on same server)
+  showLoading('Connecting to voice server...');
   setVoiceStatus('processing', 'Connecting...');
 
   let connectionTimeout = null;
@@ -1043,24 +1054,9 @@ async function startCall(leadId) {
 
   try {
     const token = getAuthToken();
-    const httpProtocol = location.protocol === 'https:' ? 'https' : 'http';
-    const wsProtocol = location.protocol === 'https:' ? 'wss' : 'ws';
     const relayHost = RELAY_HOST || location.host;
-
-    // Pre-flight: wake up relay server (Render free tier sleeps after inactivity)
-    try {
-      const healthUrl = `${httpProtocol}://${relayHost}/health`;
-      const healthResp = await fetch(healthUrl, { method: 'GET', signal: AbortSignal.timeout(30000) });
-      if (!healthResp.ok) {
-        console.warn('[Relay] Health check returned:', healthResp.status);
-      } else {
-        console.log('[Relay] Server is awake');
-      }
-    } catch (healthErr) {
-      console.warn('[Relay] Health check failed (server may still be starting):', healthErr.message);
-    }
-
-    showLoading('Connecting to voice server...');
+    const isLocal = relayHost === location.host && location.hostname === 'localhost';
+    const wsProtocol = isLocal ? 'ws' : 'wss';
     const wsUrl = `${wsProtocol}://${relayHost}/voice?token=${encodeURIComponent(token)}&lead_id=${encodeURIComponent(leadId)}`;
 
     voiceWs = new WebSocket(wsUrl);
