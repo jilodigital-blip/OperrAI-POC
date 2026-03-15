@@ -1,12 +1,19 @@
 {
   "version": 2,
+  "outputDirectory": ".",
   "functions": {
     "api/*.js": {
       "maxDuration": 30,
-      "includeFiles": "{ingest/faqs-ather.json,ingest/faqs-apb.json}"
+      "includeFiles": "ingest/faqs-*.json"
     }
   },
   "headers": [
+    {
+      "source": "/sw.js",
+      "headers": [
+        { "key": "Cache-Control", "value": "no-cache, no-store, must-revalidate" }
+      ]
+    },
     {
       "source": "/(.*)",
       "headers": [
@@ -17,7 +24,7 @@
         { "key": "Permissions-Policy", "value": "camera=(), microphone=(self), geolocation=()" },
         {
           "key": "Content-Security-Policy",
-          "value": "default-src 'self'; script-src 'self' 'unsafe-inline'; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; font-src https://fonts.gstatic.com; connect-src 'self' https://qjajoayybuvxvpgysoih.supabase.co wss://raymidi-voice-relay.onrender.com; img-src 'self' data:; frame-ancestors 'none'; media-src 'self' blob:"
+          "value": "upgrade-insecure-requests; default-src 'self'; script-src 'self' 'unsafe-inline'; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; font-src https://fonts.gstatic.com; connect-src 'self' https://qjajoayybuvxvpgysoih.supabase.co wss://raymidi-voice-relay.onrender.com; img-src 'self' data:; frame-ancestors 'none'; media-src 'self' blob:"
         }
       ]
     }

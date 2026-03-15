@@ -158,6 +158,9 @@ class VoiceSession {
     this.llmBuffer = '';        // accumulated LLM tokens for TTS flushing
     this.fullLLMResponse = '';  // complete LLM response for scoring extraction
     this.destroyed = false;
+    // Client-specific table name helper
+    const ck = claims.client && claims.client !== 'admin' ? claims.client : 'ather';
+    this.voiceLeadsTable = ck === 'apb' ? 'voice_leads_apb' : 'voice_leads';
   }
 
   // ── Initialize upstream connections ────────────────────────────────────
@@ -508,7 +511,7 @@ class VoiceSession {
     });
 
     // Persist
-    supabaseUpdate('voice_leads', this.lead.id, {
+    supabaseUpdate(this.voiceLeadsTable, this.lead.id, {
       conversation_history: this.conversationHistory,
       stage: 'probing',
       status: 'contacted',
@@ -563,7 +566,7 @@ class VoiceSession {
   async persistToDatabase() {
     const newStatus = this.currentScore >= 80 ? 'qualified' : this.lead.status;
 
-    await supabaseUpdate('voice_leads', this.lead.id, {
+    await supabaseUpdate(this.voiceLeadsTable, this.lead.id, {
       conversation_history: this.conversationHistory,
       turn_count: this.turnCount,
       lead_score: this.currentScore,
@@ -627,7 +630,7 @@ const server = http.createServer((req, res) => {
 const wss = new WebSocketServer({ server, path: '/voice' });
 
 wss.on('connection', async (ws, req) => {
-  const url = new URL(req.url, `http://${req.headers.host}`);
+  const url = new URL(req.url, `https://${req.headers.host}`);
   const token = url.searchParams.get('token');
   const leadId = url.searchParams.get('lead_id');
 
@@ -645,10 +648,11 @@ wss.on('connection', async (ws, req) => {
     return;
   }
 
-  // Fetch lead from Supabase
+  // Fetch lead from Supabase (client-specific table)
   const clientKey = claims.client && claims.client !== 'admin' ? claims.client : 'ather';
+  const leadsTable = clientKey === 'apb' ? 'voice_leads_apb' : 'voice_leads';
   const leads = await supabaseFetch(
-    `voice_leads?id=eq.${encodeURIComponent(leadId)}&client=eq.${encodeURIComponent(clientKey)}&limit=1`
+    `${leadsTable}?id=eq.${encodeURIComponent(leadId)}&client=eq.${encodeURIComponent(clientKey)}&limit=1`
   );
 
   if (!leads.length) {

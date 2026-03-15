@@ -430,9 +430,106 @@
       pointer-events: none;
     }
 
+    /* ─── Hero Stats Strip ─────────────────────────────────────────────── */
+    .hero-stats-strip {
+      display: flex;
+      gap: 2rem;
+      margin-top: 2.25rem;
+      padding-top: 1.75rem;
+      border-top: 1px solid var(--border-light);
+    }
+    .hero-stat {
+      display: flex;
+      flex-direction: column;
+      gap: 0.2rem;
+    }
+    .hero-stat-value {
+      font-family: var(--font-heading);
+      font-size: 1.5rem;
+      font-weight: 800;
+      color: var(--gold);
+      line-height: 1;
+    }
+    .hero-stat-label {
+      font-size: 0.78rem;
+      color: var(--muted-light);
+      font-weight: 500;
+      letter-spacing: 0.02em;
+    }
     @media (max-width: 420px) {
       .hero-ctas { flex-direction: column; align-items: stretch; }
       .hero-ctas .btn { text-align: center; }
+      .hero-stats-strip { gap: 1.25rem; }
+      .hero-stat-value { font-size: 1.25rem; }
+    }
+
+    /* ─── Industry Solutions ───────────────────────────────────────────── */
+    #industries {
+      background: var(--bg);
+      padding: 4.5rem 0;
+    }
+    .industries-grid {
+      display: grid;
+      grid-template-columns: repeat(4, 1fr);
+      gap: 1.5rem;
+    }
+    .industry-card {
+      background: var(--bg-off);
+      border: 1.5px solid var(--border);
+      border-radius: var(--radius-lg);
+      padding: 2rem 1.5rem;
+      text-align: center;
+      transition: transform var(--transition), box-shadow var(--transition), border-color var(--transition);
+    }
+    .industry-card:hover {
+      transform: translateY(-4px);
+      box-shadow: var(--shadow-md);
+      border-color: var(--gold);
+    }
+    .industry-icon {
+      width: 50px;
+      height: 50px;
+      background: var(--gold-bg);
+      border-radius: var(--radius);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      margin: 0 auto 1rem;
+      color: var(--gold);
+      transition: background var(--transition);
+    }
+    .industry-card:hover .industry-icon {
+      background: var(--gold-bg-hover);
+    }
+    .industry-card h3 {
+      font-family: var(--font-heading);
+      font-size: 1rem;
+      font-weight: 700;
+      color: var(--ink);
+      margin-bottom: 0.5rem;
+    }
+    .industry-card p {
+      font-size: 0.875rem;
+      color: var(--muted);
+      line-height: 1.6;
+      margin-bottom: 1rem;
+    }
+    .industry-card .btn-link {
+      font-size: 0.8rem;
+      font-weight: 600;
+      color: var(--gold);
+      text-decoration: none;
+      letter-spacing: 0.03em;
+      transition: color var(--transition);
+    }
+    .industry-card .btn-link:hover {
+      color: var(--gold-light);
+    }
+    @media (max-width: 900px) {
+      .industries-grid { grid-template-columns: repeat(2, 1fr); }
+    }
+    @media (max-width: 520px) {
+      .industries-grid { grid-template-columns: 1fr; }
     }
 
     /* ─── Services ───────────────────────────────────────────────────────── */
@@ -871,6 +968,7 @@
       <a href="#" class="logo">Ray<span>midi</span></a>
       <ul class="nav-links">
         <li><a href="#services">Services</a></li>
+        <li><a href="#industries">Industries</a></li>
         <li><a href="#about">About</a></li>
         <li><a href="#contact">Contact</a></li>
       </ul>
@@ -888,6 +986,7 @@
     <div class="mobile-menu" id="mobile-menu">
       <ul>
         <li><a href="#services">Services</a></li>
+        <li><a href="#industries">Industries</a></li>
         <li><a href="#about">About</a></li>
         <li><a href="#contact">Contact</a></li>
       </ul>
@@ -926,11 +1025,26 @@
         <p class="hero-sub reveal reveal-delay-2">
           Raymidi enables seamless execution, informed decision-making, and efficient
           process management by providing the right information at the right time —
-          helping drive measurable outcomes across every layer of your business.
+          helping drive measurable outcomes across every layer of your business.<br />
+          <strong style="color:var(--ink-soft)">Powering 50+ automations across finance, logistics, healthcare, and professional services.</strong>
         </p>
         <div class="hero-ctas reveal reveal-delay-3">
           <a href="/login" class="btn btn-primary btn-lg">Start Your Project</a>
           <a href="#services" class="btn btn-ghost btn-lg">Explore Services</a>
+        </div>
+        <div class="hero-stats-strip reveal reveal-delay-3">
+          <div class="hero-stat">
+            <span class="hero-stat-value">50+</span>
+            <span class="hero-stat-label">Automations Built</span>
+          </div>
+          <div class="hero-stat">
+            <span class="hero-stat-value">30+</span>
+            <span class="hero-stat-label">Clients Served</span>
+          </div>
+          <div class="hero-stat">
+            <span class="hero-stat-value">98%</span>
+            <span class="hero-stat-label">Client Satisfaction</span>
+          </div>
         </div>
       </div>
       <div class="hero-fade"></div>
@@ -1050,6 +1164,65 @@
       </div>
     </section>
 
+    <!-- ─── Industries ──────────────────────────────────────────────────── -->
+    <section id="industries">
+      <div class="container">
+        <div class="section-header reveal">
+          <span class="section-label">Industries We Serve</span>
+          <h2>Purpose-Built for<br /><span class="gold">Your Sector</span></h2>
+          <p class="section-sub">We deliver automation solutions tailored to the unique challenges and regulatory demands of each industry we serve.</p>
+        </div>
+
+        <div class="industries-grid">
+
+          <div class="industry-card reveal reveal-delay-1">
+            <div class="industry-icon">
+              <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round">
+                <line x1="12" y1="1" x2="12" y2="23"/><path d="M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"/>
+              </svg>
+            </div>
+            <h3>Finance</h3>
+            <p>Automate reconciliation, compliance reporting, and risk analysis with precision-engineered workflows.</p>
+            <a href="#contact" class="btn-link">Learn More &rarr;</a>
+          </div>
+
+          <div class="industry-card reveal reveal-delay-2">
+            <div class="industry-icon">
+              <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round">
+                <rect x="1" y="3" width="15" height="13"/><polygon points="16 8 20 12 16 16 16 8"/><circle cx="8.5" cy="9.5" r="1.5" fill="currentColor" stroke="none"/><polyline points="21 3 21 21 3 21"/>
+              </svg>
+            </div>
+            <h3>Logistics</h3>
+            <p>Streamline supply chain operations, route optimization, and real-time tracking at scale.</p>
+            <a href="#contact" class="btn-link">Learn More &rarr;</a>
+          </div>
+
+          <div class="industry-card reveal reveal-delay-3">
+            <div class="industry-icon">
+              <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round">
+                <path d="M22 12h-4l-3 9L9 3l-3 9H2"/>
+              </svg>
+            </div>
+            <h3>Healthcare</h3>
+            <p>Accelerate patient intake, claims processing, and clinical data management with compliant automation.</p>
+            <a href="#contact" class="btn-link">Learn More &rarr;</a>
+          </div>
+
+          <div class="industry-card reveal reveal-delay-4">
+            <div class="industry-icon">
+              <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round">
+                <path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/>
+              </svg>
+            </div>
+            <h3>Professional Services</h3>
+            <p>Optimize client engagement, project delivery, and knowledge management across your practice.</p>
+            <a href="#contact" class="btn-link">Learn More &rarr;</a>
+          </div>
+
+        </div>
+      </div>
+    </section>
+
     <!-- ─── About ────────────────────────────────────────────────────────── -->
     <section id="about">
       <div class="container">
@@ -1162,6 +1335,7 @@
       </div>
       <nav class="footer-nav">
         <a href="#services">Services</a>
+        <a href="#industries">Industries</a>
         <a href="#about">About</a>
         <a href="#contact">Contact</a>
       </nav>

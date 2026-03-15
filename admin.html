@@ -1520,6 +1520,7 @@
 
   let allMessages = [];
   let currentFilter = 'all';
+  let selectedCompany = 'all';
 
   // ── Check existing session (token in httpOnly cookie, metadata in sessionStorage) ─
   (function init() {
@@ -1602,10 +1603,10 @@
   });
 
   // ── Company selector ───────────────────────────────────────────────────────
-  let selectedCompany = 'all';
   function onCompanyChange() {
     selectedCompany = document.getElementById('companySelect').value;
     loadAdminData();
+    loadFeedbacks();
   }
 
   // ── Load admin data ────────────────────────────────────────────────────────
@@ -1772,7 +1773,8 @@
   // ── Tester Feedback ────────────────────────────────────────────────────────
   async function loadFeedbacks() {
     try {
-      const resp = await fetch('/api/feedback', {
+      const qs = selectedCompany !== 'all' ? `?client=${selectedCompany}` : '';
+      const resp = await fetch('/api/feedback' + qs, {
         credentials: 'same-origin',
       });
       if (!resp.ok) return;
