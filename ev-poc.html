@@ -2614,7 +2614,7 @@
   // ── Dashboard ─────────────────────────────────────────────────────────────
   async function loadDashboard() {
     try {
-      const resp = await fetch('/api/dashboard', {
+      const resp = await fetch(`/api/dashboard?client=${encodeURIComponent(clientKey)}`, {
         credentials: 'same-origin',
       });
 
