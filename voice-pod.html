@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
-  <meta name="theme-color" content="#0A0A0A" />
+  <meta name="theme-color" content="#F4F4F2" />
   <meta name="mobile-web-app-capable" content="yes" />
   <meta name="apple-mobile-web-app-capable" content="yes" />
   <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
@@ -19,13 +19,13 @@
       --gold: #D4AF37;
       --gold-dim: rgba(212,175,55,0.1);
       --gold-border: rgba(212,175,55,0.2);
-      --ink: #0A0A0A;
-      --surface: #111111;
-      --surface2: #161616;
-      --border: rgba(255,255,255,0.06);
-      --border2: rgba(255,255,255,0.1);
-      --muted: #6B7280;
-      --text: rgba(255,255,255,0.88);
+      --ink: #F7F7F7;
+      --surface: #FFFFFF;
+      --surface2: #F0F0F0;
+      --border: rgba(0,0,0,0.07);
+      --border2: rgba(0,0,0,0.12);
+      --muted: #555555;
+      --text: rgba(0,0,0,0.88);
       --font-heading: 'Syne', sans-serif;
       --font-body: 'DM Sans', sans-serif;
       --green: #22c55e;
@@ -37,7 +37,7 @@
     html { scroll-behavior: smooth; }
 
     body {
-      background: var(--ink);
+      background: #F4F4F2;
       color: var(--text);
       font-family: var(--font-body);
       min-height: 100vh;
@@ -49,8 +49,8 @@
       position: fixed;
       inset: 0;
       background-image:
-        linear-gradient(rgba(212,175,55,0.025) 1px, transparent 1px),
-        linear-gradient(90deg, rgba(212,175,55,0.025) 1px, transparent 1px);
+        linear-gradient(rgba(212,175,55,0.06) 1px, transparent 1px),
+        linear-gradient(90deg, rgba(212,175,55,0.06) 1px, transparent 1px);
       background-size: 60px 60px;
       pointer-events: none;
       z-index: 0;
@@ -65,8 +65,8 @@
       justify-content: space-between;
       padding: 1rem 2rem;
       padding-top: max(1rem, env(safe-area-inset-top));
-      border-bottom: 1px solid var(--border);
-      background: rgba(10,10,10,0.9);
+      border-bottom: 1px solid rgba(0,0,0,0.08);
+      background: rgba(255,255,255,0.97);
       backdrop-filter: blur(12px);
       position: sticky;
       top: 0;
@@ -77,7 +77,7 @@
       font-family: var(--font-heading);
       font-size: 1.35rem;
       font-weight: 800;
-      color: #fff;
+      color: #111;
       text-decoration: none;
       letter-spacing: -0.02em;
     }
@@ -118,7 +118,7 @@
       font-size: 1.5rem;
       font-weight: 700;
       margin-bottom: 1.5rem;
-      color: #fff;
+      color: #111;
     }
     .section-title .gold { color: var(--gold); }
 
@@ -149,7 +149,7 @@
       font-family: var(--font-heading);
       font-size: 1.8rem;
       font-weight: 700;
-      color: #fff;
+      color: #111;
     }
 
     .stat-value.gold { color: var(--gold); }
@@ -264,7 +264,7 @@
     }
 
     .lead-table tr:last-child td { border-bottom: none; }
-    .lead-table tr:hover td { background: rgba(255,255,255,0.02); }
+    .lead-table tr:hover td { background: rgba(0,0,0,0.02); }
 
     /* Status badges */
     .badge {
@@ -471,7 +471,7 @@
       font-family: var(--font-heading);
       font-size: 2rem;
       font-weight: 800;
-      color: #fff;
+      color: #111;
     }
 
     .score-circle-label {
@@ -647,9 +647,34 @@
       .lead-table-wrap { overflow-x: auto; }
       .lead-table { min-width: 700px; }
     }
+
+    /* ── Dark theme ───────────────────────────────────────────── */
+    body.dark-theme {
+      --ink: #0A0A0A;
+      --surface: #111111;
+      --surface2: #161616;
+      --border: rgba(255,255,255,0.06);
+      --border2: rgba(255,255,255,0.1);
+      --muted: #6B7280;
+      --text: rgba(255,255,255,0.88);
+      background: #0A0A0A;
+    }
+    body.dark-theme::before {
+      background-image:
+        linear-gradient(rgba(212,175,55,0.025) 1px, transparent 1px),
+        linear-gradient(90deg, rgba(212,175,55,0.025) 1px, transparent 1px);
+    }
+    body.dark-theme .topbar { background: rgba(10,10,10,0.9); border-bottom-color: rgba(255,255,255,0.06); }
+    body.dark-theme .logo { color: #fff; }
+    body.dark-theme .section-title { color: #fff; }
+    body.dark-theme .stat-value { color: #fff; }
+    body.dark-theme .score-circle-num { color: #fff; }
+    body.dark-theme .lead-table tr:hover td { background: rgba(255,255,255,0.02); }
+    body.dark-theme .back-link:hover { color: var(--gold); }
   </style>
 </head>
 <body>
+<script>(function(){var t=localStorage.getItem('raymidi_theme');if(t==='dark')document.body.classList.add('dark-theme')})()</script>
 <div class="page">
 
   <!-- ── Topbar ──────────────────────────────────────────────── -->
@@ -801,6 +826,17 @@
 </div>
 
 <script>
+// ── Auth check ────────────────────────────────────────────────────────────
+(function checkAuth() {
+  const exp = parseInt(sessionStorage.getItem('raymidi_exp') || '0', 10);
+  if (!exp || exp < Math.floor(Date.now() / 1000)) {
+    sessionStorage.removeItem('raymidi_exp');
+    sessionStorage.removeItem('raymidi_role');
+    window.location.href = '/login';
+    return;
+  }
+})();
+
 // ── Config ─────────────────────────────────────────────────────────────────
 const RELAY_HOST = 'raymidi-voice-relay.onrender.com'; // Update after Render deploy
 

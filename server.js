@@ -6,6 +6,9 @@
  * Then open: http://localhost:3000
  */
 
+// Load .env file so process.env picks up credentials locally
+require('dotenv').config();
+
 const http = require('http');
 const fs   = require('fs');
 const path = require('path');
@@ -105,6 +108,8 @@ server.listen(PORT, () => {
   console.log('  Demo page  :  http://localhost:' + PORT + '/ev-poc');
   console.log('  Ingest page:  http://localhost:' + PORT + '/ingest');
   console.log('');
-  console.log('Make sure your .env or environment variables are set:');
-  console.log('  OPENAI_API_KEY, SUPABASE_URL, SUPABASE_ANON_KEY, INGEST_SECRET');
+  console.log('Credentials loaded from .env file (copy .env.example → .env if missing).');
+  console.log('Required vars: DEMO_USER, DEMO_PASS, ADMIN_USER, ADMIN_PASS,');
+  console.log('  APB_DEMO_USER, APB_DEMO_PASS, JWT_SECRET, CORS_ORIGIN,');
+  console.log('  OPENAI_API_KEY, SUPABASE_URL, SUPABASE_ANON_KEY');
 });

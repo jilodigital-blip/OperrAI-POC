@@ -62,20 +62,22 @@ module.exports = async (req, res) => {
 
   try {
     // ── Optional client filter (query param ?client=ather or ?client=apb) ────
-    const url = new URL(req.url, `http://${req.headers.host || 'localhost'}`);
+    const url = new URL(req.url, `https://${req.headers.host || 'localhost'}`);
     const clientFilter = url.searchParams.get('client') || '';
+    const tbl = (name) => clientFilter === 'apb' ? `${name}_apb` : name;
     const clientClause = clientFilter ? `&client=eq.${encodeURIComponent(clientFilter)}` : '';
+    const ratingsTable = tbl('ratings');
 
     // Fetch messages with ratings, including channel, session_id, and client
     const messages = await supabaseFetch(
-      `messages?select=id,session_id,question,channel,client,response,response_time_ms,sources,created_at,ratings(accuracy_score,accuracy_label,rating_rationale)&order=created_at.desc&limit=500${clientClause}`,
+      `${tbl('messages')}?select=id,session_id,question,channel,client,response,response_time_ms,sources,created_at,${ratingsTable}(accuracy_score,accuracy_label,rating_rationale)&order=created_at.desc&limit=500${clientClause}`,
       SUPABASE_URL,
       SUPABASE_ANON_KEY
     );
 
     // Fetch service requests (escalated tickets)
     const serviceRequests = await supabaseFetch(
-      'service_requests?select=*&order=created_at.desc&limit=100',
+      `${tbl('service_requests')}?select=*&order=created_at.desc&limit=100${clientClause}`,
       SUPABASE_URL,
       SUPABASE_ANON_KEY
     );
@@ -107,10 +109,12 @@ module.exports = async (req, res) => {
       messages.reduce((sum, m) => sum + (m.response_time_ms || 0), 0) / totalMessages
     );
 
-    const ratedMessages = messages.filter(m => m.ratings?.length > 0);
+    // PostgREST returns ratings under the table name key (ratings or ratings_apb)
+    const getRatings = (m) => m.ratings || m.ratings_apb || [];
+    const ratedMessages = messages.filter(m => getRatings(m).length > 0);
     const avgAccuracyScore = ratedMessages.length > 0
       ? Math.round(
-          ratedMessages.reduce((sum, m) => sum + (m.ratings[0]?.accuracy_score || 0), 0) /
+          ratedMessages.reduce((sum, m) => sum + (getRatings(m)[0]?.accuracy_score || 0), 0) /
           ratedMessages.length * 100
         ) / 100
       : null;
@@ -118,7 +122,7 @@ module.exports = async (req, res) => {
     // Accuracy label distribution
     const distribution = { Excellent: 0, Good: 0, Acceptable: 0, Poor: 0 };
     ratedMessages.forEach(m => {
-      const label = m.ratings[0]?.accuracy_label;
+      const label = getRatings(m)[0]?.accuracy_label;
       if (label && distribution[label] !== undefined) distribution[label]++;
     });
 
@@ -139,9 +143,9 @@ module.exports = async (req, res) => {
       response:       m.response,
       channel:        m.channel || 'chat',
       responseTimeMs: m.response_time_ms,
-      accuracyScore:     m.ratings?.[0]?.accuracy_score     ?? null,
-      accuracyLabel:     m.ratings?.[0]?.accuracy_label     ?? null,
-      ratingRationale:   m.ratings?.[0]?.rating_rationale   ?? null,
+      accuracyScore:     getRatings(m)[0]?.accuracy_score     ?? null,
+      accuracyLabel:     getRatings(m)[0]?.accuracy_label     ?? null,
+      ratingRationale:   getRatings(m)[0]?.rating_rationale   ?? null,
       createdAt:         m.created_at,
     }));
 
