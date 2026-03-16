@@ -166,7 +166,7 @@ class VoiceSession {
       const sarvamKey = process.env.SARVAM_API_KEY;
       if (!sarvamKey) return reject(new Error('SARVAM_API_KEY not configured'));
 
-      const sttUrl = `wss://api.sarvam.ai/speech-to-text/ws?language_code=hi-IN&model=saaras:v3&sample_rate=16000`;
+      const sttUrl = `wss://api.sarvam.ai/speech-to-text/ws?language-code=hi-IN&model=saaras:v3&sample_rate=16000`;
       this.sttWs = new WebSocket(sttUrl, {
         headers: { 'Api-Subscription-Key': sarvamKey },
       });
