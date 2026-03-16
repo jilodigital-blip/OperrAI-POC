@@ -190,7 +190,7 @@ class VoiceSession {
 
       const sttUrl = `wss://api.sarvam.ai/speech-to-text/ws?language-code=hi-IN&model=saaras:v3&sample_rate=16000`;
       this.sttWs = new WebSocket(sttUrl, {
-        headers: { 'Api-Subscription-Key': sarvamKey },
+        headers: { 'api-subscription-key': sarvamKey },
       });
 
       this.sttWs.on('open', () => {
@@ -273,7 +273,7 @@ class VoiceSession {
 
       const ttsUrl = `wss://api.sarvam.ai/text-to-speech/ws?model=bulbul:v2&send_completion_event=true`;
       this.ttsWs = new WebSocket(ttsUrl, {
-        headers: { 'Api-Subscription-Key': sarvamKey },
+        headers: { 'api-subscription-key': sarvamKey },
       });
 
       this.ttsWs.on('open', () => {
