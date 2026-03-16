@@ -188,8 +188,16 @@ class VoiceSession {
         this.send({ type: 'error', message: 'STT connection error' });
       });
 
-      this.sttWs.on('close', () => {
-        console.log('[STT] Closed');
+      this.sttWs.on('unexpected-response', (req, res) => {
+        console.error(`[STT] Rejected: HTTP ${res.statusCode}`);
+        let body = '';
+        res.on('data', (chunk) => { body += chunk; });
+        res.on('end', () => { console.error(`[STT] Response: ${body}`); });
+        reject(new Error(`STT rejected with HTTP ${res.statusCode}`));
+      });
+
+      this.sttWs.on('close', (code, reason) => {
+        console.log(`[STT] Closed code=${code} reason=${reason || 'none'}`);
         if (!this.destroyed) {
           setTimeout(() => this.connectSTT().catch(() => {}), 1000);
         }
