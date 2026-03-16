@@ -621,6 +621,7 @@ const server = http.createServer((req, res) => {
     return res.end(JSON.stringify({ ok: true, timestamp: Date.now() }));
   }
 
+
   res.writeHead(404);
   res.end('Not found');
 });

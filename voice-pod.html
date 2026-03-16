@@ -1011,10 +1011,17 @@ async function createLead(e) {
   }
 }
 
-// ── Get auth token from cookie ─────────────────────────────────────────────
-function getAuthToken() {
-  const match = document.cookie.match(/(?:^|;\s*)raymidi_auth=([^\s;]+)/);
-  return match ? match[1] : '';
+// ── Get auth token for WebSocket ───────────────────────────────────────────
+// The JWT lives in an httpOnly cookie (invisible to JS). Fetch it via API.
+async function getAuthToken() {
+  try {
+    const resp = await fetch('/api/ws-token', { credentials: 'include' });
+    if (!resp.ok) return '';
+    const data = await resp.json();
+    return data.token || '';
+  } catch {
+    return '';
+  }
 }
 
 // ══════════════════════════════════════════════════════════════════════════
@@ -1053,7 +1060,12 @@ async function startCall(leadId) {
   let wsReady = false;
 
   try {
-    const token = getAuthToken();
+    const token = await getAuthToken();
+    if (!token) {
+      showToast('Auth token missing — please log in again.', 'error');
+      hideLoading();
+      return;
+    }
     const relayHost = RELAY_HOST || location.host;
     const isLocal = relayHost === location.host && location.hostname === 'localhost';
     const wsProtocol = isLocal ? 'ws' : 'wss';
