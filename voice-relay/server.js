@@ -214,7 +214,12 @@ class VoiceSession {
         console.error(`[STT] Rejected: HTTP ${res.statusCode}`);
         let body = '';
         res.on('data', (chunk) => { body += chunk; });
-        res.on('end', () => { console.error(`[STT] Response: ${body}`); });
+        res.on('end', () => {
+          console.error(`[STT] Response body: ${body}`);
+          console.error(`[STT] Response headers: ${JSON.stringify(res.headers)}`);
+          // Send detailed error to browser for debugging
+          this.send({ type: 'error', message: `STT HTTP ${res.statusCode}: ${body.slice(0, 200)}` });
+        });
         reject(new Error(`STT rejected with HTTP ${res.statusCode}`));
       });
 
@@ -629,6 +634,49 @@ const server = http.createServer((req, res) => {
     return res.end(JSON.stringify({ ok: true, timestamp: Date.now() }));
   }
 
+  // Diagnostic: test Sarvam API key with a simple REST call
+  if (req.url === '/debug/sarvam') {
+    const sarvamKey = process.env.SARVAM_API_KEY;
+    const keyPreview = sarvamKey
+      ? `${sarvamKey.slice(0, 4)}...${sarvamKey.slice(-4)} (len=${sarvamKey.length})`
+      : 'NOT SET';
+    const results = { keyPreview, tests: {} };
+
+    // Test REST endpoint with a tiny silent WAV (44-byte header only)
+    try {
+      const wavHeader = Buffer.alloc(44);
+      wavHeader.write('RIFF', 0); wavHeader.writeUInt32LE(36, 4);
+      wavHeader.write('WAVE', 8); wavHeader.write('fmt ', 12);
+      wavHeader.writeUInt32LE(16, 16); wavHeader.writeUInt16LE(1, 20);
+      wavHeader.writeUInt16LE(1, 22); wavHeader.writeUInt32LE(16000, 24);
+      wavHeader.writeUInt32LE(32000, 28); wavHeader.writeUInt16LE(2, 32);
+      wavHeader.writeUInt16LE(16, 34); wavHeader.write('data', 36);
+      wavHeader.writeUInt32LE(0, 40);
+
+      const boundary = '----SarvamTest';
+      const body = Buffer.concat([
+        Buffer.from(`--${boundary}\r\nContent-Disposition: form-data; name="file"; filename="test.wav"\r\nContent-Type: audio/wav\r\n\r\n`),
+        wavHeader,
+        Buffer.from(`\r\n--${boundary}\r\nContent-Disposition: form-data; name="model"\r\n\r\nsaaras:v3\r\n--${boundary}--\r\n`),
+      ]);
+
+      const testResp = await fetch('https://api.sarvam.ai/speech-to-text', {
+        method: 'POST',
+        headers: {
+          'api-subscription-key': sarvamKey || '',
+          'Content-Type': `multipart/form-data; boundary=${boundary}`,
+        },
+        body,
+      });
+      const respText = await testResp.text();
+      results.tests.rest = { status: testResp.status, body: respText.slice(0, 500) };
+    } catch (err) {
+      results.tests.rest = { error: err.message };
+    }
+
+    res.writeHead(200, { 'Content-Type': 'application/json' });
+    return res.end(JSON.stringify(results, null, 2));
+  }
 
   res.writeHead(404);
   res.end('Not found');
