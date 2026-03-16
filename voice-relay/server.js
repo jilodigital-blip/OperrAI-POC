@@ -621,6 +621,22 @@ const server = http.createServer((req, res) => {
     return res.end(JSON.stringify({ ok: true, timestamp: Date.now() }));
   }
 
+  // Temporary debug — remove after fixing auth
+  if (req.url === '/debug-env') {
+    const jwtSecret = process.env.JWT_SECRET || '';
+    res.writeHead(200, { 'Content-Type': 'application/json' });
+    return res.end(JSON.stringify({
+      hasJwtSecret: !!jwtSecret,
+      jwtSecretLength: jwtSecret.length,
+      jwtSecretFirst3: jwtSecret.substring(0, 3),
+      hasOpenAI: !!process.env.OPENAI_API_KEY,
+      hasSarvam: !!process.env.SARVAM_API_KEY,
+      hasSupabaseUrl: !!process.env.SUPABASE_URL,
+      hasSupabaseKey: !!process.env.SUPABASE_ANON_KEY,
+      corsOrigin: CORS_ORIGIN,
+    }));
+  }
+
   res.writeHead(404);
   res.end('Not found');
 });
