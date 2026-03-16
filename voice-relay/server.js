@@ -188,7 +188,7 @@ class VoiceSession {
       const sarvamKey = process.env.SARVAM_API_KEY;
       if (!sarvamKey) return reject(new Error('SARVAM_API_KEY not configured'));
 
-      const sttUrl = `wss://api.sarvam.ai/speech-to-text/ws?language_code=hi-IN&model=saaras:v3&sample_rate=16000`;
+      const sttUrl = `wss://api.sarvam.ai/speech-to-text/ws?language-code=hi-IN&model=saaras:v3&sample_rate=16000`;
       this.sttWs = new WebSocket(sttUrl, {
         headers: { 'Api-Subscription-Key': sarvamKey },
       });
@@ -210,8 +210,16 @@ class VoiceSession {
         this.send({ type: 'error', message: 'STT connection error' });
       });
 
-      this.sttWs.on('close', () => {
-        console.log('[STT] Closed');
+      this.sttWs.on('unexpected-response', (req, res) => {
+        console.error(`[STT] Rejected: HTTP ${res.statusCode}`);
+        let body = '';
+        res.on('data', (chunk) => { body += chunk; });
+        res.on('end', () => { console.error(`[STT] Response: ${body}`); });
+        reject(new Error(`STT rejected with HTTP ${res.statusCode}`));
+      });
+
+      this.sttWs.on('close', (code, reason) => {
+        console.log(`[STT] Closed code=${code} reason=${reason || 'none'}`);
         // Reconnect if session is still active
         if (!this.destroyed) {
           setTimeout(() => this.connectSTT().catch(() => {}), 1000);
