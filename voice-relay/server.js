@@ -19,7 +19,7 @@ const http = require('http');
 const crypto = require('crypto');
 const { WebSocketServer, WebSocket } = require('ws');
 
-const PORT = process.env.PORT || 10000;
+const PORT = process.env.PORT || 8080;
 const CORS_ORIGIN = process.env.CORS_ORIGIN || '*';
 
 // ── JWT verification (same as api/guard.js) ─────────────────────────────────
