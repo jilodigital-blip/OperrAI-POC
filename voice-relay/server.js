@@ -617,7 +617,7 @@ class VoiceSession {
 
 // ── HTTP server (health check + WebSocket upgrade) ──────────────────────────
 
-const server = http.createServer((req, res) => {
+const server = http.createServer(async (req, res) => {
   // CORS
   res.setHeader('Access-Control-Allow-Origin', CORS_ORIGIN);
   res.setHeader('Access-Control-Allow-Methods', 'GET, OPTIONS');
