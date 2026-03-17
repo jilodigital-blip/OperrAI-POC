@@ -1189,7 +1189,12 @@ function handleRelayMessage(msg) {
       handleScoreUpdate(msg);
       break;
 
+    case 'server_debug':
+      debugLog('[SERVER] ' + msg.message);
+      break;
+
     case 'error':
+      debugLog('ERROR: ' + (msg.message || 'unknown'));
       showToast(msg.message || 'Voice error', 'error');
       break;
   }
