@@ -38,6 +38,7 @@ const API_HANDLERS = {
   '/api/ai-test':   './api/ai-test.js',
   '/api/voice':     './api/voice.js',
   '/api/config':    './api/config.js',
+  '/api/ws-token':  './api/ws-token.js',
 };
 
 const MIME = {
