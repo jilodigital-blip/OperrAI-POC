@@ -150,17 +150,22 @@ class VoiceSession {
     try {
       // Only connect TTS eagerly (needed for welcome greeting).
       // STT connects lazily on first audio chunk to avoid idle-timeout loop.
+      console.log(`[INIT] Connecting TTS for lead ${this.lead.id}...`);
       await this.connectTTS();
+      console.log(`[INIT] TTS connected, sending ready to client`);
       this.send({ type: 'ready' });
 
       if (this.conversationHistory.length === 0) {
+        console.log(`[INIT] New lead — sending welcome greeting`);
         await this.sendWelcome();
       } else {
+        console.log(`[INIT] Returning lead (${this.conversationHistory.length} msgs) — sending re-greeting`);
         // Returning lead — send a short re-greeting so the AI starts talking
         const reGreet = `Namaste ${this.lead.name}! Main phir se Ather Energy se bol rahi hoon. Batayein, aapke koi sawaal hain?`;
         this.send({ type: 'ai_text', text: reGreet, done: true });
         this.sendToTTS(reGreet);
       }
+      console.log(`[INIT] Init complete for lead ${this.lead.id}`);
     } catch (err) {
       this.send({ type: 'error', message: 'Failed to initialize: ' + err.message });
       this.destroy();
@@ -275,10 +280,14 @@ class VoiceSession {
       this.ttsWs.on('message', (data) => {
         try {
           const msg = JSON.parse(data.toString());
+          console.log('[TTS] JSON msg:', msg.type || msg.event || Object.keys(msg).join(','));
           this.handleTTSMessage(msg);
         } catch {
           if (Buffer.isBuffer(data)) {
+            console.log(`[TTS] Binary audio chunk: ${data.length} bytes`);
             this.send({ type: 'ai_audio', data: data.toString('base64') });
+          } else {
+            console.warn('[TTS] Unknown message type:', typeof data);
           }
         }
       });
@@ -330,7 +339,11 @@ class VoiceSession {
   }
 
   sendToTTS(text) {
-    if (!this.ttsWs || this.ttsWs.readyState !== WebSocket.OPEN) return;
+    if (!this.ttsWs || this.ttsWs.readyState !== WebSocket.OPEN) {
+      console.error('[TTS] Cannot send — TTS WebSocket not open (state:', this.ttsWs?.readyState, ')');
+      return;
+    }
+    console.log(`[TTS] Sending text (${text.length} chars) to Sarvam`);
     this.isAISpeaking = true;
     this.send({ type: 'ai_speaking', speaking: true });
 
