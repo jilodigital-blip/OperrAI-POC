@@ -155,6 +155,11 @@ class VoiceSession {
 
       if (this.conversationHistory.length === 0) {
         await this.sendWelcome();
+      } else {
+        // Returning lead — send a short re-greeting so the AI starts talking
+        const reGreet = `Namaste ${this.lead.name}! Main phir se Ather Energy se bol rahi hoon. Batayein, aapke koi sawaal hain?`;
+        this.send({ type: 'ai_text', text: reGreet, done: true });
+        this.sendToTTS(reGreet);
       }
     } catch (err) {
       this.send({ type: 'error', message: 'Failed to initialize: ' + err.message });
