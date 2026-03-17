@@ -163,20 +163,28 @@ class VoiceSession {
     this.voiceLeadsTable = ck === 'apb' ? 'voice_leads_apb' : 'voice_leads';
   }
 
+  // Send debug info to client's debug panel
+  debugSend(msg) {
+    console.log(`[DEBUG] ${msg}`);
+    this.send({ type: 'server_debug', message: msg });
+  }
+
   // ── Initialize upstream connections ────────────────────────────────────
 
   async init() {
     try {
-      // Only connect TTS eagerly (needed for welcome greeting).
-      // STT connects lazily on first audio chunk to avoid idle-timeout loop.
+      this.debugSend('Connecting TTS...');
       await this.connectTTS();
+      this.debugSend('TTS connected, sending ready');
       this.send({ type: 'ready' });
 
-      // If no conversation history, send welcome
       if (this.conversationHistory.length === 0) {
+        this.debugSend('New lead — sending welcome greeting');
         await this.sendWelcome();
       }
+      this.debugSend('Init complete');
     } catch (err) {
+      this.debugSend('INIT FAILED: ' + err.message);
       this.send({ type: 'error', message: 'Failed to initialize: ' + err.message });
       this.destroy();
     }
@@ -195,19 +203,20 @@ class VoiceSession {
       });
 
       this.sttWs.on('open', () => {
-        console.log(`[STT] Connected for lead ${this.lead.id}`);
+        this.debugSend('STT WebSocket connected to Sarvam');
         resolve();
       });
 
       this.sttWs.on('message', (data) => {
         try {
           const msg = JSON.parse(data.toString());
+          this.debugSend('STT msg: ' + JSON.stringify(msg).slice(0, 200));
           this.handleSTTMessage(msg);
         } catch { /* ignore non-JSON */ }
       });
 
       this.sttWs.on('error', (err) => {
-        console.error('[STT] Error:', err.message);
+        this.debugSend('STT ERROR: ' + err.message);
         this.send({ type: 'error', message: 'STT connection error' });
       });
 
@@ -223,18 +232,15 @@ class VoiceSession {
           } else {
             diagnosis = 'Sarvam rejected connection';
           }
-          console.error(`[STT] ${diagnosis} (HTTP ${res.statusCode}): ${body.slice(0, 300)}`);
-          console.error(`[STT] Response headers: ${JSON.stringify(res.headers)}`);
+          this.debugSend('STT REJECTED: ' + diagnosis + ' (HTTP ' + res.statusCode + '): ' + body.slice(0, 200));
           this.send({ type: 'error', message: `STT error: ${diagnosis}`, code: res.statusCode });
           reject(new Error(`${diagnosis} (HTTP ${res.statusCode})`));
         });
       });
 
       this.sttWs.on('close', (code, reason) => {
-        console.log(`[STT] Closed code=${code} reason=${reason || 'none'}`);
+        this.debugSend('STT CLOSED: code=' + code + ' reason=' + (reason || 'none'));
         this.sttWs = null;
-        // Don't auto-reconnect — STT will reconnect lazily on next audio chunk.
-        // This prevents the idle-timeout reconnect loop.
       });
 
       // Timeout on connection
@@ -283,37 +289,41 @@ class VoiceSession {
       });
 
       this.ttsWs.on('open', () => {
-        console.log(`[TTS] Connected for lead ${this.lead.id}`);
-        // Send TTS config
+        this.debugSend('TTS WebSocket connected to Sarvam');
         this.ttsWs.send(JSON.stringify({
           type: 'config',
           data: {
             target_language_code: 'hi-IN',
-            speaker: 'meera',
+            speaker: 'anushka',
             model: 'bulbul:v2',
             pace: 1.0,
             loudness: 1.0,
             enable_preprocessing: true,
-            audio_codec: 'wav',
+            output_audio_codec: 'wav',
+            speech_sample_rate: '22050',
           },
         }));
+        this.debugSend('TTS config sent (speaker=anushka, codec=wav)');
         resolve();
       });
 
       this.ttsWs.on('message', (data) => {
         try {
           const msg = JSON.parse(data.toString());
+          this.debugSend('TTS JSON msg: ' + (msg.type || msg.event || JSON.stringify(msg).slice(0, 200)));
           this.handleTTSMessage(msg);
         } catch {
-          // Binary audio data — send to browser as base64
           if (Buffer.isBuffer(data)) {
+            this.debugSend('TTS binary audio: ' + data.length + ' bytes');
             this.send({ type: 'ai_audio', data: data.toString('base64') });
+          } else {
+            this.debugSend('TTS unknown msg type: ' + typeof data);
           }
         }
       });
 
       this.ttsWs.on('error', (err) => {
-        console.error('[TTS] Error:', err.message);
+        this.debugSend('TTS ERROR: ' + err.message);
       });
 
       this.ttsWs.on('unexpected-response', (req, res) => {
@@ -328,14 +338,14 @@ class VoiceSession {
           } else {
             diagnosis = 'Sarvam rejected connection';
           }
-          console.error(`[TTS] ${diagnosis} (HTTP ${res.statusCode}): ${body.slice(0, 300)}`);
+          this.debugSend('TTS REJECTED: ' + diagnosis + ' (HTTP ' + res.statusCode + '): ' + body.slice(0, 200));
           this.send({ type: 'error', message: `TTS error: ${diagnosis}`, code: res.statusCode });
           reject(new Error(`${diagnosis} (HTTP ${res.statusCode})`));
         });
       });
 
-      this.ttsWs.on('close', () => {
-        console.log('[TTS] Closed');
+      this.ttsWs.on('close', (code, reason) => {
+        this.debugSend('TTS CLOSED: code=' + code + ' reason=' + (reason || 'none'));
         if (!this.destroyed) {
           setTimeout(() => this.connectTTS().catch(() => {}), 1000);
         }
@@ -346,24 +356,33 @@ class VoiceSession {
   }
 
   handleTTSMessage(msg) {
-    // Audio chunk
     if (msg.data?.audio || msg.audio) {
       const audioBase64 = msg.data?.audio || msg.audio;
+      this.debugSend('TTS audio chunk: ' + audioBase64.length + ' b64 chars');
       this.send({ type: 'ai_audio', data: audioBase64 });
       return;
     }
 
-    // Completion event
-    if (msg.type === 'completion' || msg.event === 'completion') {
+    if (msg.type === 'completion' || msg.event === 'completion' ||
+        (msg.type === 'event' && msg.data?.event_type === 'final')) {
+      this.debugSend('TTS synthesis complete');
       this.isAISpeaking = false;
       this.send({ type: 'ai_speaking', speaking: false });
+    }
+
+    if (msg.type === 'error') {
+      this.debugSend('TTS ERROR response: ' + JSON.stringify(msg.data || msg).slice(0, 300));
     }
   }
 
   // ── Send text to TTS ──────────────────────────────────────────────────
 
   sendToTTS(text) {
-    if (!this.ttsWs || this.ttsWs.readyState !== WebSocket.OPEN) return;
+    if (!this.ttsWs || this.ttsWs.readyState !== WebSocket.OPEN) {
+      this.debugSend('TTS Cannot send — WS not open (state=' + (this.ttsWs?.readyState ?? 'null') + ')');
+      return;
+    }
+    this.debugSend('TTS sending text (' + text.length + ' chars): ' + text.slice(0, 80) + '...');
     this.isAISpeaking = true;
     this.send({ type: 'ai_speaking', speaking: true });
 
@@ -372,8 +391,8 @@ class VoiceSession {
       data: { text },
     }));
 
-    // Flush to process immediately
     this.ttsWs.send(JSON.stringify({ type: 'flush' }));
+    this.debugSend('TTS text+flush sent, waiting for audio...');
   }
 
   // ── OpenAI GPT-4o streaming ───────────────────────────────────────────
@@ -575,15 +594,16 @@ class VoiceSession {
   async handleAudio(base64Audio) {
     // Lazy-connect STT on first audio chunk
     if (!this.sttWs || this.sttWs.readyState !== WebSocket.OPEN) {
-      if (this._sttConnecting) return; // already connecting
+      if (this._sttConnecting) return;
       this._sttConnecting = true;
       try {
-        console.log(`[STT] Lazy-connecting on first audio for lead ${this.lead.id}`);
+        this.debugSend('STT lazy-connecting on first audio chunk...');
         await this.connectSTT();
         this._sttConnecting = false;
+        this.debugSend('STT lazy-connect succeeded');
       } catch (err) {
         this._sttConnecting = false;
-        console.error(`[STT] Lazy-connect failed: ${err.message}`);
+        this.debugSend('STT lazy-connect FAILED: ' + err.message);
         return;
       }
     }
@@ -591,7 +611,7 @@ class VoiceSession {
     if (!this._audioChunkCount) this._audioChunkCount = 0;
     this._audioChunkCount++;
     if (this._audioChunkCount <= 3 || this._audioChunkCount % 50 === 0) {
-      console.log(`[Audio] Chunk #${this._audioChunkCount} forwarded to STT (${base64Audio.length} chars)`);
+      this.debugSend('Audio chunk #' + this._audioChunkCount + ' forwarded to STT (' + base64Audio.length + ' chars)');
     }
 
     // Forward audio to Sarvam STT
