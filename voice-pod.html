@@ -1233,6 +1233,9 @@ function handleAIText(msg) {
     if (liveAITextEl) {
       liveAITextEl.classList.remove('msg-live');
       liveAITextEl = null;
+    } else if (msg.text) {
+      // Welcome or single-shot message (no prior streaming tokens)
+      appendMessage('assistant', msg.text);
     }
   }
 }
@@ -1296,6 +1299,7 @@ async function playNextChunk() {
     source.start();
   } catch (e) {
     console.error('[Audio] Decode error:', e);
+    console.warn('[Audio] Chunk size:', buffer.byteLength, 'AudioContext state:', audioContext.state);
     currentSource = null;
     playNextChunk(); // skip bad chunk
   }
