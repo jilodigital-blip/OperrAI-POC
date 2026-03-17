@@ -1038,6 +1038,7 @@ async function startCall(leadId) {
   // IMPORTANT: Init AudioContext NOW while we're in user-gesture context.
   // Browsers block AudioContext.resume() outside of click/tap handlers.
   initAudioContext();
+  debugLog('startCall: AudioContext state=' + (audioContext ? audioContext.state : 'null'));
 
   const panel = document.getElementById('voicePanel');
   panel.classList.add('active');
@@ -1080,16 +1081,23 @@ async function startCall(leadId) {
 
     voiceWs.onopen = () => {
       console.log('[WS] Connected to relay');
+      debugLog('WebSocket connected to relay server');
     };
 
     voiceWs.onmessage = (event) => {
       try {
         const msg = JSON.parse(event.data);
-        if (msg.type === 'ready') wsReady = true;
+        console.log('[WS] Received:', msg.type, msg.type === 'ai_audio' ? `(${msg.data?.length || 0} chars)` : '');
+        if (msg.type === 'ready') { wsReady = true; debugLog('Server ready — starting mic...'); }
+        if (msg.type === 'ai_text') debugLog('AI text received: ' + (msg.text || '').slice(0, 50) + '...');
+        if (msg.type === 'ai_audio') debugLog('Audio chunk received (' + (msg.data?.length || 0) + ' chars)');
+        if (msg.type === 'ai_speaking') debugLog('AI speaking: ' + msg.speaking);
+        if (msg.type === 'error') debugLog('ERROR from server: ' + msg.message);
         if (connectionTimeout) { clearTimeout(connectionTimeout); connectionTimeout = null; }
         handleRelayMessage(msg);
       } catch (err) {
         console.error('[WS] Parse error:', err);
+        debugLog('WS parse error: ' + err.message);
       }
     };
 
@@ -1258,9 +1266,22 @@ function handleScoreUpdate(msg) {
 }
 
 // ── Audio playback (chunked streaming via AudioContext) ────────────────────
+// ── Debug logging (visible in transcript) ────────────────────────────────
+function debugLog(text) {
+  console.log('[DEBUG]', text);
+  const ta = document.getElementById('transcriptArea');
+  if (!ta) return;
+  const div = document.createElement('div');
+  div.style.cssText = 'font-size:11px;color:#888;padding:2px 8px;font-family:monospace;';
+  div.textContent = '[' + new Date().toLocaleTimeString() + '] ' + text;
+  ta.appendChild(div);
+  ta.scrollTop = ta.scrollHeight;
+}
+
 function initAudioContext() {
   if (!audioContext) {
     audioContext = new (window.AudioContext || window.webkitAudioContext)({ sampleRate: 22050 });
+    debugLog('AudioContext created, state: ' + audioContext.state);
   }
   if (audioContext.state === 'suspended') {
     audioContext.resume();
@@ -1269,6 +1290,7 @@ function initAudioContext() {
 
 function queueAudioChunk(base64Audio) {
   initAudioContext();
+  debugLog('Decoding audio chunk (' + base64Audio.length + ' b64 chars), ctx state: ' + audioContext.state);
 
   // Decode base64 to ArrayBuffer
   const raw = atob(base64Audio);
@@ -1287,7 +1309,9 @@ async function playNextChunk() {
 
   try {
     const buffer = audioQueue.shift();
+    debugLog('Playing chunk: ' + buffer.byteLength + ' bytes, queue left: ' + audioQueue.length);
     const audioBuffer = await audioContext.decodeAudioData(buffer.slice(0)); // slice to avoid detached buffer
+    debugLog('Decoded OK: ' + audioBuffer.duration.toFixed(2) + 's @ ' + audioBuffer.sampleRate + 'Hz');
     const source = audioContext.createBufferSource();
     source.buffer = audioBuffer;
     source.connect(audioContext.destination);
@@ -1299,7 +1323,7 @@ async function playNextChunk() {
     source.start();
   } catch (e) {
     console.error('[Audio] Decode error:', e);
-    console.warn('[Audio] Chunk size:', buffer.byteLength, 'AudioContext state:', audioContext.state);
+    debugLog('AUDIO DECODE FAILED: ' + e.message + ' (chunk: ' + (buffer?.byteLength || '?') + ' bytes)');
     currentSource = null;
     playNextChunk(); // skip bad chunk
   }
@@ -1337,6 +1361,7 @@ async function toggleRecording() {
 async function startMicStream() {
   try {
     initAudioContext();
+    debugLog('Requesting mic permission...');
 
     micStream = await navigator.mediaDevices.getUserMedia({
       audio: {
@@ -1346,6 +1371,7 @@ async function startMicStream() {
         noiseSuppression: true,
       }
     });
+    debugLog('Mic permission granted, stream active');
 
     // Create a separate AudioContext at 16kHz for mic capture
     const micCtx = new (window.AudioContext || window.webkitAudioContext)({ sampleRate: 16000 });
