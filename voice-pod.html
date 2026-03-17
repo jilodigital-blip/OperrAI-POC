@@ -771,7 +771,7 @@
       </div>
       <div class="voice-panel-body">
         <div class="transcript-area" id="transcriptArea">
-          <div class="empty-state" id="transcriptEmpty">Click the mic button to start the conversation.</div>
+          <div class="empty-state" id="transcriptEmpty">Connecting... AI agent will greet the lead.</div>
         </div>
         <div class="voice-sidebar">
           <div class="score-circle" id="scoreCircle">
@@ -1130,9 +1130,16 @@ function handleRelayMessage(msg) {
   switch (msg.type) {
     case 'ready':
       hideLoading();
-      setVoiceStatus('listening', 'Ready');
+      setVoiceStatus('listening', 'Connecting...');
       document.getElementById('micBtn').disabled = false;
-      document.getElementById('micHint').textContent = 'Click to start talking';
+      document.getElementById('micHint').textContent = 'Starting...';
+      // Auto-start mic so conversation flows immediately
+      startMicStream().then(() => {
+        setVoiceStatus('listening', 'Call Active');
+        document.getElementById('micHint').textContent = 'Listening...';
+      }).catch(() => {
+        document.getElementById('micHint').textContent = 'Click mic to talk';
+      });
       break;
 
     case 'transcript':
@@ -1152,7 +1159,7 @@ function handleRelayMessage(msg) {
       if (msg.speaking) {
         setVoiceStatus('speaking', 'AI Speaking');
       } else {
-        setVoiceStatus('listening', 'Listening');
+        setVoiceStatus('listening', 'Call Active');
       }
       break;
 
@@ -1160,7 +1167,7 @@ function handleRelayMessage(msg) {
       // AI was interrupted — clear audio queue
       clearAudioQueue();
       isAISpeaking = false;
-      setVoiceStatus('listening', 'Listening');
+      setVoiceStatus('listening', 'Call Active');
       break;
 
     case 'score':
@@ -1364,8 +1371,8 @@ async function startMicStream() {
 
     isRecording = true;
     document.getElementById('micBtn').classList.add('recording');
-    document.getElementById('micHint').textContent = 'Recording... Click to stop';
-    setVoiceStatus('listening', 'Listening');
+    document.getElementById('micHint').textContent = 'Listening... Click to mute';
+    setVoiceStatus('listening', 'Call Active');
   } catch (e) {
     if (e.name === 'NotAllowedError') {
       showToast('Microphone permission denied. Please allow microphone access.', 'error');
@@ -1378,7 +1385,7 @@ async function startMicStream() {
 function stopMicStream() {
   isRecording = false;
   document.getElementById('micBtn').classList.remove('recording');
-  document.getElementById('micHint').textContent = 'Click to start talking';
+  document.getElementById('micHint').textContent = 'Muted — Click to unmute';
 
   if (micProcessor) {
     micProcessor.disconnect();
