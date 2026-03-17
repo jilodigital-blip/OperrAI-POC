@@ -249,18 +249,22 @@ class VoiceSession {
   }
 
   handleSTTMessage(msg) {
-    // Sarvam sends: { type: "transcript", data: { transcript: "..." } }
-    // or { type: "speech_start" }, { type: "speech_end" }
-    if (msg.type === 'speech_start') {
-      // User started speaking — interrupt AI if speaking
+    // Sarvam STT response format:
+    // { type: "data", vad_response_type: "speech_start"|"speech_end"|..., data: { transcript: "..." } }
+    const vadType = msg.vad_response_type || '';
+
+    // VAD: speech_start — interrupt AI if speaking
+    if (vadType === 'speech_start' || msg.type === 'speech_start') {
+      this.debugSend('VAD: speech_start');
       if (this.isAISpeaking) {
         this.handleInterrupt();
       }
       return;
     }
 
-    if (msg.type === 'speech_end') {
-      // User stopped speaking — trigger LLM with accumulated transcript
+    // VAD: speech_end — trigger LLM with accumulated transcript
+    if (vadType === 'speech_end' || msg.type === 'speech_end') {
+      this.debugSend('VAD: speech_end, transcript so far: "' + this.sttTranscript.slice(0, 100) + '"');
       if (this.sttTranscript.trim()) {
         this.triggerLLM(this.sttTranscript.trim());
         this.sttTranscript = '';
@@ -268,10 +272,11 @@ class VoiceSession {
       return;
     }
 
-    // Transcript data
+    // Transcript data (type: "data")
     const transcript = msg.data?.transcript || msg.transcript || '';
     if (!transcript) return;
 
+    this.debugSend('STT transcript: "' + transcript.slice(0, 100) + '"');
     this.sttTranscript = transcript;
     this.send({ type: 'transcript', text: transcript, final: false });
   }
@@ -618,8 +623,8 @@ class VoiceSession {
     this.sttWs.send(JSON.stringify({
       audio: {
         data: base64Audio,
-        sample_rate: '16000',
-        encoding: 'pcm_s16le',
+        encoding: 'audio/wav',
+        sample_rate: 16000,
       },
     }));
   }
