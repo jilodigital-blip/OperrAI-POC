@@ -148,7 +148,8 @@ class VoiceSession {
 
   async init() {
     try {
-      await this.connectSTT();
+      // Only connect TTS eagerly (needed for welcome greeting).
+      // STT connects lazily on first audio chunk to avoid idle-timeout loop.
       await this.connectTTS();
       this.send({ type: 'ready' });
 
@@ -208,9 +209,8 @@ class VoiceSession {
 
       this.sttWs.on('close', (code, reason) => {
         console.log(`[STT] Closed code=${code} reason=${reason || 'none'}`);
-        if (!this.destroyed) {
-          setTimeout(() => this.connectSTT().catch(() => {}), 1000);
-        }
+        this.sttWs = null;
+        // Don't auto-reconnect — STT will reconnect lazily on next audio chunk.
       });
 
       setTimeout(() => reject(new Error('STT connection timeout')), 10000);
@@ -504,8 +504,27 @@ class VoiceSession {
     this.send({ type: 'ai_speaking', speaking: false });
   }
 
-  handleAudio(base64Audio) {
-    if (!this.sttWs || this.sttWs.readyState !== WebSocket.OPEN) return;
+  async handleAudio(base64Audio) {
+    // Lazy-connect STT on first audio chunk
+    if (!this.sttWs || this.sttWs.readyState !== WebSocket.OPEN) {
+      if (this._sttConnecting) return;
+      this._sttConnecting = true;
+      try {
+        console.log(`[STT] Lazy-connecting on first audio for lead ${this.lead.id}`);
+        await this.connectSTT();
+        this._sttConnecting = false;
+      } catch (err) {
+        this._sttConnecting = false;
+        console.error(`[STT] Lazy-connect failed: ${err.message}`);
+        return;
+      }
+    }
+
+    if (!this._audioChunkCount) this._audioChunkCount = 0;
+    this._audioChunkCount++;
+    if (this._audioChunkCount <= 3 || this._audioChunkCount % 50 === 0) {
+      console.log(`[Audio] Chunk #${this._audioChunkCount} forwarded to STT (${base64Audio.length} chars)`);
+    }
 
     this.sttWs.send(JSON.stringify({
       audio: {
