@@ -188,7 +188,7 @@ class VoiceSession {
       const sarvamKey = process.env.SARVAM_API_KEY;
       if (!sarvamKey) return reject(new Error('SARVAM_API_KEY not configured'));
 
-      const sttUrl = `wss://api.sarvam.ai/speech-to-text/ws?language-code=hi-IN&model=saaras:v3&sample_rate=16000`;
+      const sttUrl = `wss://api.sarvam.ai/speech-to-text/ws?language-code=hi-IN&model=saaras:v3&sample_rate=16000&input_audio_codec=pcm_s16le&api-subscription-key=${encodeURIComponent(sarvamKey)}`;
       this.sttWs = new WebSocket(sttUrl, {
         headers: { 'api-subscription-key': sarvamKey },
       });
@@ -211,16 +211,22 @@ class VoiceSession {
       });
 
       this.sttWs.on('unexpected-response', (req, res) => {
-        console.error(`[STT] Rejected: HTTP ${res.statusCode}`);
         let body = '';
         res.on('data', (chunk) => { body += chunk; });
         res.on('end', () => {
-          console.error(`[STT] Response body: ${body}`);
+          let diagnosis;
+          if (res.statusCode === 403 || res.statusCode === 401) {
+            diagnosis = 'Sarvam API key is missing or invalid';
+          } else if (res.statusCode === 429) {
+            diagnosis = 'Sarvam rate limit exceeded';
+          } else {
+            diagnosis = 'Sarvam rejected connection';
+          }
+          console.error(`[STT] ${diagnosis} (HTTP ${res.statusCode}): ${body.slice(0, 300)}`);
           console.error(`[STT] Response headers: ${JSON.stringify(res.headers)}`);
-          // Send detailed error to browser for debugging
-          this.send({ type: 'error', message: `STT HTTP ${res.statusCode}: ${body.slice(0, 200)}` });
+          this.send({ type: 'error', message: `STT error: ${diagnosis}`, code: res.statusCode });
+          reject(new Error(`${diagnosis} (HTTP ${res.statusCode})`));
         });
-        reject(new Error(`STT rejected with HTTP ${res.statusCode}`));
       });
 
       this.sttWs.on('close', (code, reason) => {
@@ -271,7 +277,7 @@ class VoiceSession {
       const sarvamKey = process.env.SARVAM_API_KEY;
       if (!sarvamKey) return reject(new Error('SARVAM_API_KEY not configured'));
 
-      const ttsUrl = `wss://api.sarvam.ai/text-to-speech/ws?model=bulbul:v2&send_completion_event=true`;
+      const ttsUrl = `wss://api.sarvam.ai/text-to-speech/ws?model=bulbul:v2&send_completion_event=true&api-subscription-key=${encodeURIComponent(sarvamKey)}`;
       this.ttsWs = new WebSocket(ttsUrl, {
         headers: { 'api-subscription-key': sarvamKey },
       });
@@ -308,6 +314,24 @@ class VoiceSession {
 
       this.ttsWs.on('error', (err) => {
         console.error('[TTS] Error:', err.message);
+      });
+
+      this.ttsWs.on('unexpected-response', (req, res) => {
+        let body = '';
+        res.on('data', (chunk) => { body += chunk; });
+        res.on('end', () => {
+          let diagnosis;
+          if (res.statusCode === 403 || res.statusCode === 401) {
+            diagnosis = 'Sarvam API key is missing or invalid';
+          } else if (res.statusCode === 429) {
+            diagnosis = 'Sarvam rate limit exceeded';
+          } else {
+            diagnosis = 'Sarvam rejected connection';
+          }
+          console.error(`[TTS] ${diagnosis} (HTTP ${res.statusCode}): ${body.slice(0, 300)}`);
+          this.send({ type: 'error', message: `TTS error: ${diagnosis}`, code: res.statusCode });
+          reject(new Error(`${diagnosis} (HTTP ${res.statusCode})`));
+        });
       });
 
       this.ttsWs.on('close', () => {
@@ -556,7 +580,7 @@ class VoiceSession {
       audio: {
         data: base64Audio,
         sample_rate: '16000',
-        encoding: 'audio/wav',
+        encoding: 'pcm_s16le',
       },
     }));
   }
@@ -765,8 +789,48 @@ wss.on('connection', async (ws, req) => {
 
 // ── Start server ────────────────────────────────────────────────────────────
 
+async function validateSarvamKey() {
+  const sarvamKey = process.env.SARVAM_API_KEY;
+  if (!sarvamKey) {
+    console.error('[STARTUP] SARVAM_API_KEY is not set — STT/TTS will fail');
+    return;
+  }
+
+  const keyPreview = `${sarvamKey.slice(0, 4)}...${sarvamKey.slice(-4)} (len=${sarvamKey.length})`;
+  console.log(`[STARTUP] SARVAM_API_KEY: ${keyPreview}`);
+
+  try {
+    const resp = await fetch('https://api.sarvam.ai/translate', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'api-subscription-key': sarvamKey,
+      },
+      body: JSON.stringify({
+        input: 'test',
+        source_language_code: 'en-IN',
+        target_language_code: 'hi-IN',
+        model: 'mayura:v1',
+      }),
+    });
+
+    if (resp.status === 403 || resp.status === 401) {
+      console.error(`[STARTUP] Sarvam API key is INVALID (HTTP ${resp.status}). STT/TTS will fail.`);
+      const body = await resp.text();
+      console.error(`[STARTUP] Response: ${body.slice(0, 300)}`);
+    } else if (resp.ok) {
+      console.log('[STARTUP] Sarvam API key validated successfully');
+    } else {
+      console.warn(`[STARTUP] Sarvam key check returned HTTP ${resp.status} (may still work for WS)`);
+    }
+  } catch (err) {
+    console.warn(`[STARTUP] Could not validate Sarvam API key: ${err.message}`);
+  }
+}
+
 server.listen(PORT, () => {
   console.log(`Raymidi Voice Relay running on port ${PORT}`);
   console.log(`  Health check: http://localhost:${PORT}/health`);
   console.log(`  WebSocket:    ws://localhost:${PORT}/voice`);
+  validateSarvamKey();
 });
