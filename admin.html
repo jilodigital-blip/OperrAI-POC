@@ -12,15 +12,15 @@
 
     :root {
       --gold: #D4AF37;
-      --gold-dim: rgba(212,175,55,0.1);
+      --gold-dim: rgba(212,175,55,0.12);
       --gold-border: rgba(212,175,55,0.2);
-      --ink: #0A0A0A;
-      --surface: #111111;
-      --surface2: #161616;
-      --border: rgba(255,255,255,0.06);
-      --border2: rgba(255,255,255,0.1);
-      --muted: #6B7280;
-      --text: rgba(255,255,255,0.88);
+      --ink: #F7F7F7;
+      --surface: #FFFFFF;
+      --surface2: #F0F0F0;
+      --border: rgba(0,0,0,0.07);
+      --border2: rgba(0,0,0,0.12);
+      --muted: #555555;
+      --text: rgba(0,0,0,0.88);
       --font-heading: 'Syne', sans-serif;
       --font-body: 'DM Sans', sans-serif;
     }
@@ -28,7 +28,7 @@
     html { scroll-behavior: smooth; }
 
     body {
-      background: var(--ink);
+      background: #F4F4F2;
       color: var(--text);
       font-family: var(--font-body);
       min-height: 100vh;
@@ -40,8 +40,8 @@
       position: fixed;
       inset: 0;
       background-image:
-        linear-gradient(rgba(212,175,55,0.02) 1px, transparent 1px),
-        linear-gradient(90deg, rgba(212,175,55,0.02) 1px, transparent 1px);
+        linear-gradient(rgba(212,175,55,0.06) 1px, transparent 1px),
+        linear-gradient(90deg, rgba(212,175,55,0.06) 1px, transparent 1px);
       background-size: 60px 60px;
       pointer-events: none;
       z-index: 0;
@@ -72,7 +72,7 @@
       font-family: var(--font-heading);
       font-size: 1.5rem;
       font-weight: 800;
-      color: #fff;
+      color: #111;
       text-align: center;
       margin-bottom: 0.5rem;
     }
@@ -116,25 +116,25 @@
       display: block;
       font-size: 0.78rem;
       font-weight: 600;
-      color: rgba(255,255,255,0.6);
+      color: rgba(0,0,0,0.55);
       margin-bottom: 0.4rem;
       letter-spacing: 0.04em;
     }
 
     .field input {
       width: 100%;
-      background: rgba(255,255,255,0.04);
+      background: #F0F0F0;
       border: 1px solid var(--border2);
       border-radius: 10px;
       padding: 0.7rem 1rem;
       font-family: var(--font-body);
       font-size: 0.9rem;
-      color: #fff;
+      color: #111;
       outline: none;
       transition: border-color 0.2s;
     }
     .field input:focus { border-color: rgba(212,175,55,0.5); }
-    .field input::placeholder { color: rgba(255,255,255,0.2); }
+    .field input::placeholder { color: rgba(0,0,0,0.3); }
 
     .login-btn {
       width: 100%;
@@ -175,8 +175,8 @@
       justify-content: space-between;
       padding: 1rem 2rem;
       padding-top: max(1rem, env(safe-area-inset-top));
-      border-bottom: 1px solid var(--border);
-      background: rgba(10,10,10,0.9);
+      border-bottom: 1px solid rgba(0,0,0,0.08);
+      background: rgba(255,255,255,0.97);
       backdrop-filter: blur(12px);
       position: sticky;
       top: 0;
@@ -187,7 +187,7 @@
       font-family: var(--font-heading);
       font-size: 1.25rem;
       font-weight: 800;
-      color: #fff;
+      color: #111;
       text-decoration: none;
       letter-spacing: -0.02em;
     }
@@ -222,7 +222,28 @@
       cursor: pointer;
       transition: color 0.2s;
     }
-    .logout-btn:hover { color: #fff; }
+    .logout-btn:hover { color: #111; }
+
+    .company-select {
+      font-family: var(--font-body);
+      font-size: 0.78rem;
+      font-weight: 600;
+      color: #111;
+      background: var(--surface);
+      border: 1px solid var(--gold-border);
+      border-radius: 8px;
+      padding: 0.35rem 0.65rem;
+      cursor: pointer;
+      outline: none;
+      appearance: auto;
+      transition: border-color 0.2s;
+    }
+    .company-select:hover,
+    .company-select:focus { border-color: var(--gold); }
+    .company-select option {
+      background: var(--surface);
+      color: #111;
+    }
 
     .refresh-btn {
       font-family: var(--font-body);
@@ -323,7 +344,7 @@
       font-family: var(--font-heading);
       font-size: 1.75rem;
       font-weight: 800;
-      color: #fff;
+      color: #111;
       line-height: 1;
     }
     .stat-value small {
@@ -384,7 +405,7 @@
     .acc-label {
       font-size: 0.78rem;
       width: 80px;
-      color: rgba(255,255,255,0.65);
+      color: rgba(0,0,0,0.6);
       flex-shrink: 0;
     }
 
@@ -409,7 +430,7 @@
     .acc-count {
       font-size: 0.78rem;
       font-weight: 600;
-      color: rgba(255,255,255,0.75);
+      color: rgba(0,0,0,0.65);
       width: 28px;
       text-align: right;
       flex-shrink: 0;
@@ -443,7 +464,7 @@
       font-family: var(--font-heading);
       font-size: 1.5rem;
       font-weight: 800;
-      color: #fff;
+      color: #111;
     }
     .channel-block .ch-pct {
       font-size: 0.72rem;
@@ -481,11 +502,11 @@
     .data-table td {
       padding: 0.75rem 1rem;
       border-bottom: 1px solid var(--border);
-      color: rgba(255,255,255,0.75);
+      color: rgba(0,0,0,0.75);
       vertical-align: top;
     }
 
-    .data-table tbody tr:hover { background: rgba(255,255,255,0.02); }
+    .data-table tbody tr:hover { background: rgba(0,0,0,0.02); }
     .data-table tbody tr:last-child td { border-bottom: none; }
 
     .badge {
@@ -585,7 +606,7 @@
       background: var(--surface2);
       border: 1px solid var(--border2);
       border-radius: 8px;
-      color: #fff;
+      color: #111;
       font-family: var(--font-body);
       font-size: 0.82rem;
       padding: 0.4rem 0.6rem;
@@ -1001,9 +1022,44 @@
     }
     .fb-stat-label { font-size: 0.7rem; color: var(--muted); font-weight: 600; text-transform: uppercase; letter-spacing: 0.06em; }
     .fb-stat-value { font-family: var(--font-heading); font-size: 1.4rem; font-weight: 800; color: var(--gold); line-height: 1.2; margin-top: 0.2rem; }
+
+    /* ── Dark theme ───────────────────────────────────────────── */
+    body.dark-theme {
+      --ink: #0A0A0A;
+      --surface: #111111;
+      --surface2: #161616;
+      --border: rgba(255,255,255,0.06);
+      --border2: rgba(255,255,255,0.1);
+      --muted: #6B7280;
+      --text: rgba(255,255,255,0.88);
+      background: #0A0A0A;
+    }
+    body.dark-theme::before {
+      background-image:
+        linear-gradient(rgba(212,175,55,0.02) 1px, transparent 1px),
+        linear-gradient(90deg, rgba(212,175,55,0.02) 1px, transparent 1px);
+    }
+    body.dark-theme .topbar { background: rgba(10,10,10,0.9); border-bottom-color: rgba(255,255,255,0.06); }
+    body.dark-theme .logo { color: #fff; }
+    body.dark-theme .login-logo { color: #fff; }
+    body.dark-theme .stat-value { color: #fff; }
+    body.dark-theme .ch-count { color: #fff; }
+    body.dark-theme .acc-label { color: rgba(255,255,255,0.65); }
+    body.dark-theme .acc-count { color: rgba(255,255,255,0.75); }
+    body.dark-theme .data-table td { color: rgba(255,255,255,0.75); }
+    body.dark-theme .data-table tbody tr:hover { background: rgba(255,255,255,0.02); }
+    body.dark-theme .field label { color: rgba(255,255,255,0.6); }
+    body.dark-theme .field input { background: rgba(255,255,255,0.04); color: #fff; }
+    body.dark-theme .field input::placeholder { color: rgba(255,255,255,0.2); }
+    body.dark-theme .company-select { color: #fff; }
+    body.dark-theme .company-select option { color: #fff; }
+    body.dark-theme .logout-btn:hover { color: #fff; }
+    body.dark-theme .ai-test-config select,
+    body.dark-theme .ai-test-config input[type="number"] { color: #fff; }
   </style>
 </head>
 <body>
+<script>(function(){var t=localStorage.getItem('raymidi_theme');if(t==='dark')document.body.classList.add('dark-theme')})()</script>
 <!-- Console warning: deters social engineering / self-XSS attacks -->
 <script>
 (function(){
@@ -1060,6 +1116,11 @@
       <a href="/" class="logo" style="text-decoration:none;">Ray<span>midi</span></a>
       <div style="display:flex;align-items:center;gap:0.5rem;">
         <span class="admin-role-badge">Admin</span>
+        <select id="companySelect" class="company-select" onchange="onCompanyChange()">
+          <option value="all">All Companies</option>
+          <option value="ather">Ather Energy</option>
+          <option value="apb">Airtel Payments Bank</option>
+        </select>
         <span id="topbarStatus" class="status-bar"></span>
       </div>
       <div class="topbar-right">
@@ -1459,6 +1520,7 @@
 
   let allMessages = [];
   let currentFilter = 'all';
+  let selectedCompany = 'all';
 
   // ── Check existing session (token in httpOnly cookie, metadata in sessionStorage) ─
   (function init() {
@@ -1540,13 +1602,21 @@
     showLogin();
   });
 
+  // ── Company selector ───────────────────────────────────────────────────────
+  function onCompanyChange() {
+    selectedCompany = document.getElementById('companySelect').value;
+    loadAdminData();
+    loadFeedbacks();
+  }
+
   // ── Load admin data ────────────────────────────────────────────────────────
   async function loadAdminData() {
     const statusEl = document.getElementById('topbarStatus');
     statusEl.textContent = 'Refreshing…';
 
     try {
-      const resp = await fetch('/api/admin', {
+      const qs = selectedCompany !== 'all' ? `?client=${selectedCompany}` : '';
+      const resp = await fetch('/api/admin' + qs, {
         credentials: 'same-origin',
       });
 
@@ -1703,7 +1773,8 @@
   // ── Tester Feedback ────────────────────────────────────────────────────────
   async function loadFeedbacks() {
     try {
-      const resp = await fetch('/api/feedback', {
+      const qs = selectedCompany !== 'all' ? `?client=${selectedCompany}` : '';
+      const resp = await fetch('/api/feedback' + qs, {
         credentials: 'same-origin',
       });
       if (!resp.ok) return;
@@ -1833,11 +1904,11 @@
   async function loadFaqQuestions() {
     if (aiFaqQuestions.length > 0) return aiFaqQuestions;
     try {
-      const resp = await fetch('/ingest/faqs.json');
+      const resp = await fetch('/ingest/faqs-ather.json');
       if (resp.ok) {
         const contentType = resp.headers.get('content-type') || '';
         if (!contentType.includes('json')) {
-          _dbg('loadFaqQuestions: /ingest/faqs.json returned non-JSON content-type:', contentType);
+          _dbg('loadFaqQuestions: /ingest/faqs-ather.json returned non-JSON content-type:', contentType);
           return aiFaqQuestions;
         }
         const faqs = await resp.json();

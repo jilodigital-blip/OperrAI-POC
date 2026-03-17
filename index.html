@@ -430,9 +430,106 @@
       pointer-events: none;
     }
 
+    /* ─── Hero Stats Strip ─────────────────────────────────────────────── */
+    .hero-stats-strip {
+      display: flex;
+      gap: 2rem;
+      margin-top: 2.25rem;
+      padding-top: 1.75rem;
+      border-top: 1px solid var(--border-light);
+    }
+    .hero-stat {
+      display: flex;
+      flex-direction: column;
+      gap: 0.2rem;
+    }
+    .hero-stat-value {
+      font-family: var(--font-heading);
+      font-size: 1.5rem;
+      font-weight: 800;
+      color: var(--gold);
+      line-height: 1;
+    }
+    .hero-stat-label {
+      font-size: 0.78rem;
+      color: var(--muted-light);
+      font-weight: 500;
+      letter-spacing: 0.02em;
+    }
     @media (max-width: 420px) {
       .hero-ctas { flex-direction: column; align-items: stretch; }
       .hero-ctas .btn { text-align: center; }
+      .hero-stats-strip { gap: 1.25rem; }
+      .hero-stat-value { font-size: 1.25rem; }
+    }
+
+    /* ─── Industry Solutions ───────────────────────────────────────────── */
+    #industries {
+      background: var(--bg);
+      padding: 4.5rem 0;
+    }
+    .industries-grid {
+      display: grid;
+      grid-template-columns: repeat(4, 1fr);
+      gap: 1.5rem;
+    }
+    .industry-card {
+      background: var(--bg-off);
+      border: 1.5px solid var(--border);
+      border-radius: var(--radius-lg);
+      padding: 2rem 1.5rem;
+      text-align: center;
+      transition: transform var(--transition), box-shadow var(--transition), border-color var(--transition);
+    }
+    .industry-card:hover {
+      transform: translateY(-4px);
+      box-shadow: var(--shadow-md);
+      border-color: var(--gold);
+    }
+    .industry-icon {
+      width: 50px;
+      height: 50px;
+      background: var(--gold-bg);
+      border-radius: var(--radius);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      margin: 0 auto 1rem;
+      color: var(--gold);
+      transition: background var(--transition);
+    }
+    .industry-card:hover .industry-icon {
+      background: var(--gold-bg-hover);
+    }
+    .industry-card h3 {
+      font-family: var(--font-heading);
+      font-size: 1rem;
+      font-weight: 700;
+      color: var(--ink);
+      margin-bottom: 0.5rem;
+    }
+    .industry-card p {
+      font-size: 0.875rem;
+      color: var(--muted);
+      line-height: 1.6;
+      margin-bottom: 1rem;
+    }
+    .industry-card .btn-link {
+      font-size: 0.8rem;
+      font-weight: 600;
+      color: var(--gold);
+      text-decoration: none;
+      letter-spacing: 0.03em;
+      transition: color var(--transition);
+    }
+    .industry-card .btn-link:hover {
+      color: var(--gold-light);
+    }
+    @media (max-width: 900px) {
+      .industries-grid { grid-template-columns: repeat(2, 1fr); }
+    }
+    @media (max-width: 520px) {
+      .industries-grid { grid-template-columns: 1fr; }
     }
 
     /* ─── Services ───────────────────────────────────────────────────────── */
@@ -764,9 +861,96 @@
       .footer-inner { flex-direction: column; align-items: flex-start; }
       .footer-nav { flex-wrap: wrap; gap: 1rem 1.5rem; }
     }
+
+    /* ─── Theme Toggle ──────────────────────────────────────────────────── */
+    .theme-toggle {
+      display: flex;
+      align-items: center;
+      gap: 0.5rem;
+      margin-left: 1rem;
+    }
+    .theme-toggle-btn {
+      position: relative;
+      width: 48px;
+      height: 26px;
+      background: var(--border);
+      border: 1.5px solid var(--border);
+      border-radius: 100px;
+      cursor: pointer;
+      transition: background 0.3s, border-color 0.3s;
+      flex-shrink: 0;
+    }
+    .theme-toggle-btn::after {
+      content: '';
+      position: absolute;
+      top: 2px;
+      left: 2px;
+      width: 18px;
+      height: 18px;
+      background: var(--gold);
+      border-radius: 50%;
+      transition: transform 0.3s;
+    }
+    .theme-toggle-btn.active {
+      background: var(--gold-bg);
+      border-color: var(--gold);
+    }
+    .theme-toggle-btn.active::after {
+      transform: translateX(22px);
+    }
+    .theme-toggle-label {
+      font-size: 0.78rem;
+      font-weight: 500;
+      color: var(--muted);
+      white-space: nowrap;
+    }
+
+    /* ─── Dark Theme ────────────────────────────────────────────────────── */
+    body.dark-theme {
+      --ink:           #f0ede6;
+      --ink-soft:      #d4d1c9;
+      --muted:         #9b9890;
+      --muted-light:   #6b6960;
+      --bg:            #0f0e0c;
+      --bg-off:        #161412;
+      --bg-subtle:     #1c1a17;
+      --border:        rgba(255, 255, 255, 0.09);
+      --border-light:  rgba(255, 255, 255, 0.06);
+      --shadow-sm:     0 2px 8px rgba(0, 0, 0, 0.25);
+      --shadow-md:     0 6px 20px rgba(0, 0, 0, 0.35);
+      --shadow-lg:     0 16px 48px rgba(0, 0, 0, 0.45);
+      color: var(--ink-soft);
+      background: var(--bg);
+    }
+    body.dark-theme #navbar.scrolled {
+      background: rgba(15, 14, 12, 0.96);
+      box-shadow: 0 1px 0 rgba(255,255,255,0.06), var(--shadow-sm);
+    }
+    body.dark-theme .mobile-menu {
+      background: rgba(15, 14, 12, 0.97);
+    }
+    body.dark-theme .hamburger span { background: var(--ink); }
+    body.dark-theme .btn-ghost {
+      color: var(--ink);
+      border-color: var(--border);
+    }
+    body.dark-theme .btn-ghost:hover { color: var(--gold); border-color: var(--gold); }
+    body.dark-theme .form-group input,
+    body.dark-theme .form-group textarea {
+      background: var(--bg-off);
+      color: var(--ink);
+    }
+    body.dark-theme .footer-brand .logo { color: #fff; }
   </style>
 </head>
 <body>
+  <!-- Apply saved theme immediately to prevent flash -->
+  <script>
+    (function() {
+      var theme = localStorage.getItem('raymidi_theme');
+      if (theme === 'dark') document.body.classList.add('dark-theme');
+    })();
+  </script>
   <!-- Console warning: deters social engineering / self-XSS attacks -->
   <script>
   (function(){
@@ -784,10 +968,15 @@
       <a href="#" class="logo">Ray<span>midi</span></a>
       <ul class="nav-links">
         <li><a href="#services">Services</a></li>
+        <li><a href="#industries">Industries</a></li>
         <li><a href="#about">About</a></li>
         <li><a href="#contact">Contact</a></li>
       </ul>
-      <a href="/ev-poc" class="btn btn-primary nav-cta">Get Started</a>
+      <div class="theme-toggle">
+        <span class="theme-toggle-label" id="theme-label">Dark</span>
+        <button class="theme-toggle-btn" id="theme-toggle-btn" aria-label="Toggle dark mode" title="Toggle dark mode"></button>
+      </div>
+      <a href="/login" class="btn btn-primary nav-cta">Get Started</a>
       <button class="hamburger" aria-label="Toggle navigation menu">
         <span></span>
         <span></span>
@@ -797,10 +986,11 @@
     <div class="mobile-menu" id="mobile-menu">
       <ul>
         <li><a href="#services">Services</a></li>
+        <li><a href="#industries">Industries</a></li>
         <li><a href="#about">About</a></li>
         <li><a href="#contact">Contact</a></li>
       </ul>
-      <a href="/ev-poc" class="btn btn-primary">Get Started</a>
+      <a href="/login" class="btn btn-primary">Get Started</a>
     </div>
   </header>
 
@@ -825,21 +1015,36 @@
           <text x="96" y="114" font-family="'Syne',sans-serif" font-size="72" font-weight="800" fill="url(#heroGrad)" text-anchor="middle">R</text>
         </svg>
         <div class="hero-badge reveal">
-          <span class="hero-badge-text">Custom AI Solutions</span>
+          <span class="hero-badge-text">Your Key Enabler</span>
         </div>
         <h1 class="reveal reveal-delay-1">
-          Beyond Bots.<br />
-          This is Business<br />
-          <span class="gold">Automation.</span>
+          Where Intelligence Meets<br />
+          Execution at<br />
+          <span class="gold">Enterprise Scale.</span>
         </h1>
         <p class="hero-sub reveal reveal-delay-2">
-          Raymidi builds intelligent systems that don't just answer questions —
-          they execute decisions, process information, and drive outcomes across
-          every layer of your business.
+          Raymidi enables seamless execution, informed decision-making, and efficient
+          process management by providing the right information at the right time —
+          helping drive measurable outcomes across every layer of your business.<br />
+          <strong style="color:var(--ink-soft)">Powering 50+ automations across finance, logistics, healthcare, and professional services.</strong>
         </p>
         <div class="hero-ctas reveal reveal-delay-3">
           <a href="/login" class="btn btn-primary btn-lg">Start Your Project</a>
           <a href="#services" class="btn btn-ghost btn-lg">Explore Services</a>
+        </div>
+        <div class="hero-stats-strip reveal reveal-delay-3">
+          <div class="hero-stat">
+            <span class="hero-stat-value">50+</span>
+            <span class="hero-stat-label">Automations Built</span>
+          </div>
+          <div class="hero-stat">
+            <span class="hero-stat-value">30+</span>
+            <span class="hero-stat-label">Clients Served</span>
+          </div>
+          <div class="hero-stat">
+            <span class="hero-stat-value">98%</span>
+            <span class="hero-stat-label">Client Satisfaction</span>
+          </div>
         </div>
       </div>
       <div class="hero-fade"></div>
@@ -849,9 +1054,9 @@
     <section id="services">
       <div class="container">
         <div class="section-header reveal">
-          <span class="section-label">What We Build</span>
-          <h2>AI Solutions Engineered<br /><span class="gold">For Your Business</span></h2>
-          <p class="section-sub">From automating repetitive workflows to deploying intelligent agents, we engineer AI that integrates directly into how you operate.</p>
+          <span class="section-label">What We Deliver</span>
+          <h2>Capabilities That Power<br /><span class="gold">Your Competitive Edge</span></h2>
+          <p class="section-sub">From orchestrating mission-critical workflows to deploying intelligent agents, we engineer solutions that integrate directly into how your business operates and scales.</p>
         </div>
 
         <div class="services-grid">
@@ -867,8 +1072,8 @@
                 <circle cx="21" cy="12" r="1.5" fill="currentColor" stroke="none"/>
               </svg>
             </div>
-            <h3>AI Workflow Automation</h3>
-            <p>Eliminate manual processes with intelligent pipelines that trigger, route, and complete tasks across your existing tools — without human intervention.</p>
+            <h3>Workflow Automation</h3>
+            <p>Experience a new world of scale — intelligent pipelines that trigger, route, and orchestrate tasks across your existing tools, eliminating bottlenecks and accelerating execution.</p>
           </div>
 
           <!-- Card 2: Custom AI Agents -->
@@ -885,7 +1090,7 @@
               </svg>
             </div>
             <h3>Custom AI Agents</h3>
-            <p>Deploy purpose-built AI agents that reason, plan, and act on your behalf — handling complex, multi-step tasks end-to-end with precision.</p>
+            <p>Deploy purpose-built agents that reason, plan, and act on your behalf — navigating complex, multi-step journeys end-to-end with precision and autonomy.</p>
           </div>
 
           <!-- Card 3: Intelligent Document Processing -->
@@ -904,7 +1109,7 @@
               </svg>
             </div>
             <h3>Intelligent Document Processing</h3>
-            <p>Extract, classify, and act on information from invoices, contracts, reports, and forms with AI that reads documents the way your team does.</p>
+            <p>Extract, classify, and act on critical information from invoices, contracts, and reports — transforming unstructured data into actionable intelligence at speed.</p>
           </div>
 
           <!-- Card 4: AI Customer Engagement -->
@@ -917,8 +1122,8 @@
                 <path d="M9 10h.01M12 10h.01M15 10h.01" stroke-width="2.5"/>
               </svg>
             </div>
-            <h3>AI Customer Engagement</h3>
-            <p>Deploy always-on AI across chat, email, and voice channels that resolves queries, qualifies leads, and escalates intelligently — at any scale.</p>
+            <h3>Customer Engagement</h3>
+            <p>Deliver always-on, omni-channel engagement across chat, email, and voice — resolving queries, qualifying prospects, and driving conversions with intelligent escalation.</p>
           </div>
 
           <!-- Card 5: Data Intelligence & Analytics -->
@@ -936,7 +1141,7 @@
               </svg>
             </div>
             <h3>Data Intelligence &amp; Analytics</h3>
-            <p>Transform raw data into decisions. Our AI systems surface patterns, generate reports, and predict outcomes so your team can act faster.</p>
+            <p>Turn raw data into strategic advantage. Surface hidden patterns, generate real-time insights, and forecast outcomes — empowering faster, informed decision-making.</p>
           </div>
 
           <!-- Card 6: AI Systems Integration -->
@@ -951,8 +1156,67 @@
                 <path d="M13 9.5l2.5 2.5-2.5 2.5"/>
               </svg>
             </div>
-            <h3>AI Systems Integration</h3>
-            <p>Connect AI capabilities directly into your CRM, ERP, internal tools, and APIs — no rip-and-replace, just intelligent augmentation.</p>
+            <h3>Systems Integration</h3>
+            <p>Seamlessly embed intelligence into your CRM, ERP, and operational tools — no disruption, just powerful augmentation that amplifies what already works.</p>
+          </div>
+
+        </div>
+      </div>
+    </section>
+
+    <!-- ─── Industries ──────────────────────────────────────────────────── -->
+    <section id="industries">
+      <div class="container">
+        <div class="section-header reveal">
+          <span class="section-label">Industries We Serve</span>
+          <h2>Purpose-Built for<br /><span class="gold">Your Sector</span></h2>
+          <p class="section-sub">We deliver automation solutions tailored to the unique challenges and regulatory demands of each industry we serve.</p>
+        </div>
+
+        <div class="industries-grid">
+
+          <div class="industry-card reveal reveal-delay-1">
+            <div class="industry-icon">
+              <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round">
+                <line x1="12" y1="1" x2="12" y2="23"/><path d="M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"/>
+              </svg>
+            </div>
+            <h3>Finance</h3>
+            <p>Automate reconciliation, compliance reporting, and risk analysis with precision-engineered workflows.</p>
+            <a href="#contact" class="btn-link">Learn More &rarr;</a>
+          </div>
+
+          <div class="industry-card reveal reveal-delay-2">
+            <div class="industry-icon">
+              <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round">
+                <rect x="1" y="3" width="15" height="13"/><polygon points="16 8 20 12 16 16 16 8"/><circle cx="8.5" cy="9.5" r="1.5" fill="currentColor" stroke="none"/><polyline points="21 3 21 21 3 21"/>
+              </svg>
+            </div>
+            <h3>Logistics</h3>
+            <p>Streamline supply chain operations, route optimization, and real-time tracking at scale.</p>
+            <a href="#contact" class="btn-link">Learn More &rarr;</a>
+          </div>
+
+          <div class="industry-card reveal reveal-delay-3">
+            <div class="industry-icon">
+              <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round">
+                <path d="M22 12h-4l-3 9L9 3l-3 9H2"/>
+              </svg>
+            </div>
+            <h3>Healthcare</h3>
+            <p>Accelerate patient intake, claims processing, and clinical data management with compliant automation.</p>
+            <a href="#contact" class="btn-link">Learn More &rarr;</a>
+          </div>
+
+          <div class="industry-card reveal reveal-delay-4">
+            <div class="industry-icon">
+              <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round">
+                <path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/>
+              </svg>
+            </div>
+            <h3>Professional Services</h3>
+            <p>Optimize client engagement, project delivery, and knowledge management across your practice.</p>
+            <a href="#contact" class="btn-link">Learn More &rarr;</a>
           </div>
 
         </div>
@@ -966,10 +1230,10 @@
 
           <div class="about-text reveal">
             <span class="section-label">Our Mission</span>
-            <h2>We Build AI That Works<br /><span class="gold">While You Sleep</span></h2>
-            <p>Raymidi was founded on a simple belief: the gap between a business's potential and its performance is filled by automation. We're not an agency that wraps a chatbot around a language model and calls it done. We engineer end-to-end AI systems — custom-designed, deeply integrated, and built to run your operations with precision.</p>
-            <p>Every engagement begins by understanding your workflows, your data, and your goals. Then we build. Our solutions are deployed in production environments across finance, logistics, healthcare administration, and professional services — not as experiments, but as operating infrastructure.</p>
-            <p>We work at the intersection of AI engineering and business strategy, because the most powerful AI system is worthless if it doesn't fit how your business actually moves.</p>
+            <h2>Engineering Outcomes<br /><span class="gold">Not Experiments</span></h2>
+            <p>Raymidi exists to close the gap between a business's potential and its performance. We don't wrap chatbots around language models and call it innovation. We engineer end-to-end intelligent systems — custom-designed, deeply integrated, and built to deliver measurable results from day one.</p>
+            <p>Every engagement starts with understanding your workflows, your data, and your strategic goals. Our solutions operate in production environments across finance, logistics, healthcare, and professional services — functioning as critical business infrastructure, not prototypes.</p>
+            <p>We operate at the intersection of intelligent engineering and business strategy — because transformative technology only delivers value when it aligns with how your business actually moves.</p>
             <a href="#contact" class="btn btn-primary">Let's Build Together</a>
           </div>
 
@@ -1013,8 +1277,8 @@
       <div class="container">
         <div class="section-header reveal">
           <span class="section-label">Get In Touch</span>
-          <h2>Ready to Automate<br /><span class="gold">Your Business?</span></h2>
-          <p class="section-sub">Tell us about your workflow challenges and we'll design a solution around your goals.</p>
+          <h2>Ready to Transform<br /><span class="gold">How You Operate?</span></h2>
+          <p class="section-sub">Share your operational challenges and strategic goals — we'll architect a solution that delivers measurable impact.</p>
         </div>
 
         <div class="contact-wrapper reveal">
@@ -1071,6 +1335,7 @@
       </div>
       <nav class="footer-nav">
         <a href="#services">Services</a>
+        <a href="#industries">Industries</a>
         <a href="#about">About</a>
         <a href="#contact">Contact</a>
       </nav>
@@ -1086,19 +1351,41 @@
       initReveal();
       initCounters();
       initTaglineRotator();
+      initThemeToggle();
     });
+
+    /* ── Theme toggle ──────────────────────────────────────────────────── */
+    function initThemeToggle() {
+      const btn = document.getElementById('theme-toggle-btn');
+      const label = document.getElementById('theme-label');
+      if (!btn) return;
+
+      function applyToggleState() {
+        var isDark = document.body.classList.contains('dark-theme');
+        btn.classList.toggle('active', isDark);
+        label.textContent = isDark ? 'Light' : 'Dark';
+      }
+
+      applyToggleState();
+
+      btn.addEventListener('click', function() {
+        var isDark = document.body.classList.toggle('dark-theme');
+        localStorage.setItem('raymidi_theme', isDark ? 'dark' : 'light');
+        applyToggleState();
+      });
+    }
 
     /* ── 0. Hero badge tagline rotator ────────────────────────────────────── */
     function initTaglineRotator() {
       const taglines = [
-        'Custom AI Solutions',
-        'Hours to Seconds',
-        'Many to None',
-        'Complexity Made Simple',
-        'Ideas to Reality',
-        'Manual to Automated',
-        'Data to Decisions',
-        'Chaos to Clarity',
+        'Your Key Enabler',
+        'Navigating Complex Journeys',
+        'Scale Through Automation',
+        'Precision at Every Layer',
+        'Vision to Measurable Outcomes',
+        'Decisions Powered by Intelligence',
+        'Seamless Execution, Real Impact',
+        'Transforming How Business Moves',
       ];
 
       const badgeText = document.querySelector('.hero-badge-text');

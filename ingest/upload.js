@@ -1,6 +1,6 @@
 /**
  * Raymidi — FAQ Ingestion Script
- * Reads faqs.json, generates OpenAI embeddings, and upserts into Supabase documents table.
+ * Reads faqs-ather.json, generates OpenAI embeddings, and upserts into Supabase documents table.
  * Safe to re-run: uses doc_id for deduplication (existing rows are updated, not duplicated).
  *
  * FAQ JSON format (each entry):
@@ -76,7 +76,7 @@ async function upsertDocument(doc) {
 
 async function main() {
   const faqs = JSON.parse(
-    fs.readFileSync(path.join(__dirname, 'faqs.json'), 'utf8')
+    fs.readFileSync(path.join(__dirname, 'faqs-ather.json'), 'utf8')
   );
 
   console.log(`Ingesting ${faqs.length} FAQ documents into Supabase…\n`);

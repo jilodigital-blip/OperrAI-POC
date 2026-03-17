@@ -1,0 +1,656 @@
+[
+  {
+    "id": 1,
+    "section": "Savings Account",
+    "question": "Where can a customer open an Airtel Payments Bank Account?",
+    "answer": "Customer can visit any Airtel Payments Bank Banking Point to open an account. You can also open an account online through the Airtel Thanks App."
+  },
+  {
+    "id": 2,
+    "section": "Savings Account",
+    "question": "What are the requirements for opening an account?",
+    "answer": "Aadhaar card and active mobile number is required to open an account through Aadhaar biometric authentication. PAN card number is also asked. If PAN is not available, Form 60 is required."
+  },
+  {
+    "id": 3,
+    "section": "Savings Account",
+    "question": "What can a customer do with the Savings Account?",
+    "answer": "Customer can deposit and withdraw cash, transfer funds to other Airtel Payments Bank accounts and other bank accounts, recharge mobile and DTH, pay bills, book tickets, pay shops, make online payments and much more."
+  },
+  {
+    "id": 4,
+    "section": "Savings Account",
+    "question": "What are the benefits of Airtel Payments Bank Account?",
+    "answer": "Earn interest of 2% PA up to Rs. 1 lakh end of day balance and 7% above Rs. 1 lakh and up to Rs. 2 lakhs. Get free Personal Accidental Insurance of Rs. 2 Lac for all users."
+  },
+  {
+    "id": 5,
+    "section": "Savings Account",
+    "question": "What is the maximum balance I can hold?",
+    "answer": "As per RBI guidelines, you can hold a maximum of Rs. 2 lakh in your Airtel Payments Bank savings account at end of day. This limit is on the sum of wallet balance, savings account balance and current account balance. Excess balance is swept out to Suryoday Small Finance Bank."
+  },
+  {
+    "id": 6,
+    "section": "Savings Account",
+    "question": "What is the transaction/balance cap?",
+    "answer": "You will not be able to transact or keep a balance beyond INR 1,95,000 in your Airtel Payments Bank Savings Account."
+  },
+  {
+    "id": 7,
+    "section": "Savings Account",
+    "question": "What is the available balance?",
+    "answer": "The total balance of the account is the available balance. It is the amount that is accessible to the customer for transactions."
+  },
+  {
+    "id": 8,
+    "section": "Savings Account",
+    "question": "How much time does it take to open an account?",
+    "answer": "Less than 3 minutes."
+  },
+  {
+    "id": 9,
+    "section": "Savings Account",
+    "question": "Can an account be opened without a Smartphone?",
+    "answer": "Yes, you can open an account by visiting any Airtel Payments Bank Banking Point."
+  },
+  {
+    "id": 10,
+    "section": "Savings Account",
+    "question": "Will customer be charged to open an account?",
+    "answer": "Account Facilitation Charge of Rs. 50 (incl. GST) is applicable. Not applicable for salary accounts and some other categories."
+  },
+  {
+    "id": 11,
+    "section": "Savings Account",
+    "question": "What documents are required?",
+    "answer": "PAN and Aadhaar are required as Proof of Identity (POI) and Proof of Address (POA). The Bank will verify KYC details via CKYC and complete the account opening process."
+  },
+  {
+    "id": 12,
+    "section": "Savings Account",
+    "question": "Can an account be opened using a non-Airtel number?",
+    "answer": "Yes."
+  },
+  {
+    "id": 13,
+    "section": "Savings Account",
+    "question": "Can one Aadhaar card be used for multiple accounts?",
+    "answer": "Only one account can be opened against each Aadhaar number."
+  },
+  {
+    "id": 14,
+    "section": "Savings Account",
+    "question": "How can I check my account balance?",
+    "answer": "Call the missed call alert number 9971199711 from your registered mobile number. The call disconnects automatically and an SMS with the balance is sent. You can also check via My Airtel App, Internet Banking, or Customer Care."
+  },
+  {
+    "id": 15,
+    "section": "Savings Account",
+    "question": "Will Airtel auto-deduct payments from my account?",
+    "answer": "No. Airtel Payments Bank will not auto-deduct payments from your account."
+  },
+  {
+    "id": 16,
+    "section": "Savings Account",
+    "question": "What is the frequency of interest payment?",
+    "answer": "Monthly."
+  },
+  {
+    "id": 17,
+    "section": "Savings Account",
+    "question": "Is Scan and Pay option available?",
+    "answer": "Yes, QR code facility is available in My Airtel App's Airtel Payments Bank section."
+  },
+  {
+    "id": 18,
+    "section": "Savings Account",
+    "question": "If registered number is permanently deleted, what happens to the account?",
+    "answer": "Once a bank account number is assigned to a user, it remains the same even if the mobile number is changed later."
+  },
+  {
+    "id": 19,
+    "section": "Cash Deposit and Withdrawal",
+    "question": "How can a customer deposit cash?",
+    "answer": "Customer can deposit cash at any Airtel Payments Bank Banking Point with just a Secure KEY (OTP sent to customer's mobile)."
+  },
+  {
+    "id": 20,
+    "section": "Cash Deposit and Withdrawal",
+    "question": "How much will be charged to make a cash deposit?",
+    "answer": "There are no charges to make a cash deposit."
+  },
+  {
+    "id": 21,
+    "section": "Cash Deposit and Withdrawal",
+    "question": "How much time does it take for cash deposit?",
+    "answer": "Cash deposit is instant."
+  },
+  {
+    "id": 22,
+    "section": "Cash Deposit and Withdrawal",
+    "question": "Where can a customer make a cash deposit?",
+    "answer": "Cash deposit can be done by visiting any Airtel Payments Bank Banking Point."
+  },
+  {
+    "id": 23,
+    "section": "Cash Deposit and Withdrawal",
+    "question": "Can a customer deposit cash without Aadhaar card?",
+    "answer": "Yes."
+  },
+  {
+    "id": 24,
+    "section": "Cash Deposit and Withdrawal",
+    "question": "Can a customer deposit money in other's account?",
+    "answer": "Yes, by visiting nearest Banking Point. The depositor doesn't even need to have an Airtel Payments Bank account."
+  },
+  {
+    "id": 25,
+    "section": "Cash Deposit and Withdrawal",
+    "question": "What are the cash deposit limits?",
+    "answer": "Minimum: Rs. 10. Maximum per day: Rs. 49,990 (without PAN) / Rs. 49,999 per transaction (with PAN)."
+  },
+  {
+    "id": 26,
+    "section": "Cash Deposit and Withdrawal",
+    "question": "How can a customer withdraw cash?",
+    "answer": "Customer can withdraw cash at any Banking Point through the Aadhaar biometric authentication process (finger scan)."
+  },
+  {
+    "id": 27,
+    "section": "Cash Deposit and Withdrawal",
+    "question": "Can cash withdrawal happen anytime?",
+    "answer": "Yes, cash withdrawal can happen anytime of the day."
+  },
+  {
+    "id": 28,
+    "section": "Cash Deposit and Withdrawal",
+    "question": "Can a customer withdraw cash without Aadhaar card?",
+    "answer": "Yes, through biometric finger scan without the physical Aadhaar card."
+  },
+  {
+    "id": 29,
+    "section": "Cash Deposit and Withdrawal",
+    "question": "Can a customer withdraw money without biometric finger scan?",
+    "answer": "No."
+  },
+  {
+    "id": 30,
+    "section": "Cash Deposit and Withdrawal",
+    "question": "What are the cash withdrawal charges?",
+    "answer": "Customer will be charged 0.65% of the withdrawal amount."
+  },
+  {
+    "id": 31,
+    "section": "Cash Deposit and Withdrawal",
+    "question": "What are the cash withdrawal limits?",
+    "answer": "Minimum: Rs. 10. Maximum per transaction: Rs. 25,000."
+  },
+  {
+    "id": 32,
+    "section": "Fund Transfer and Transactions",
+    "question": "How can a customer send/transfer money?",
+    "answer": "Through My Airtel App (Payments Bank section), IVR (Dial 400 or 8800688006), USSD (Dial *400#), Internet Banking, or via Banking Point."
+  },
+  {
+    "id": 33,
+    "section": "Fund Transfer and Transactions",
+    "question": "What is the minimum and maximum transfer amount per transaction?",
+    "answer": "Through Banking Point: Min Rs. 100, Max Rs. 1 Lac. Through App/Internet Banking: Min Rs. 10, Max Rs. 1 Lac. Through USSD: Min Rs. 10, Max Rs. 5,000."
+  },
+  {
+    "id": 34,
+    "section": "Fund Transfer and Transactions",
+    "question": "What are the charges for bank transfers?",
+    "answer": "Within Airtel Payments Bank (App/USSD): FREE. Within Airtel (Banking Point): 0.5%. To other bank (App/USSD): 0.5%. To other bank (Banking Point): Rs. 10 for up to Rs. 1,000; 1% for above Rs. 1,000."
+  },
+  {
+    "id": 35,
+    "section": "Fund Transfer and Transactions",
+    "question": "Can customer transfer funds through IMPS or NEFT?",
+    "answer": "Yes. Use IFSC code AIRP0000001."
+  },
+  {
+    "id": 36,
+    "section": "Fund Transfer and Transactions",
+    "question": "Can funds be added from Credit Card?",
+    "answer": "No. Money cannot be transferred from Credit Card to Airtel Payments Bank account."
+  },
+  {
+    "id": 37,
+    "section": "Fund Transfer and Transactions",
+    "question": "Is there a cool-off period for transfers?",
+    "answer": "No. Funds added to account can be transferred immediately."
+  },
+  {
+    "id": 38,
+    "section": "Fund Transfer and Transactions",
+    "question": "How many transactions are allowed?",
+    "answer": "No daily limit. Maximum 10,000 transactions per account per month."
+  },
+  {
+    "id": 39,
+    "section": "Fund Transfer and Transactions",
+    "question": "What are UPI transaction charges?",
+    "answer": "Zero charges for UPI transactions done via Airtel Payments Bank Savings account or Airtel Payments Bank UPI Id."
+  },
+  {
+    "id": 40,
+    "section": "Fund Transfer and Transactions",
+    "question": "What is UPI PIN?",
+    "answer": "UPI PIN is a 4-6 digit secret code you create during first-time UPI registration. It is required to authorize all bank transactions. Never share your UPI PIN with anyone."
+  },
+  {
+    "id": 41,
+    "section": "Fund Transfer and Transactions",
+    "question": "What happens if a UPI transaction fails?",
+    "answer": "For failed transactions, the money (if debited) will be credited to your account instantly. For timed out transactions, amount will be settled within 5 working days."
+  },
+  {
+    "id": 42,
+    "section": "Debit Card",
+    "question": "What types of debit cards are available?",
+    "answer": "Platinum Debit Card (Personalized), Classic Debit Card (Personalized), Insta Classic (Non-Personalized), Business Debit Card (for Current Account), Wearable Smartwatch, Transit Debit Card, and Virtual Debit Card."
+  },
+  {
+    "id": 43,
+    "section": "Debit Card",
+    "question": "What are the charges for Physical Debit Card?",
+    "answer": "Personalized Card (Savings): Rs. 349 incl. GST. Personalized Card (Current Account): Rs. 199 incl. GST. Non-Personalized/Insta Card: Rs. 299 incl. GST. Virtual Card: Free."
+  },
+  {
+    "id": 44,
+    "section": "Debit Card",
+    "question": "What is the Annual Membership Fee (AMC)?",
+    "answer": "Savings Account: Rs. 299 w.e.f. 1st Jan 2025. Current Account (Personalized): Rs. 199. Virtual Debit and Prepaid Card: Rs. 50 + GST effective 1st Apr 2025."
+  },
+  {
+    "id": 45,
+    "section": "Debit Card",
+    "question": "What are the daily transaction limits for debit card?",
+    "answer": "Personalized/Non-Personalized (Savings): Rs. 25,000/day across ATM, online, and POS. Business Debit Card (Current Account): Rs. 50,000/day across ATM, POS, and online."
+  },
+  {
+    "id": 46,
+    "section": "Debit Card",
+    "question": "What are the features of virtual debit card?",
+    "answer": "Online debit card issued to account customers. Maximum limit of Rs. 50,000 per transaction. Works at all online merchants accepting MasterCard. Available on My Airtel App."
+  },
+  {
+    "id": 47,
+    "section": "Debit Card",
+    "question": "What are virtual debit card transaction limits?",
+    "answer": "Per transaction: Rs. 50,000. Daily: Rs. 50,000. Monthly: Rs. 5,00,000."
+  },
+  {
+    "id": 48,
+    "section": "Debit Card",
+    "question": "How to track Debit Card delivery?",
+    "answer": "Check delivery status in the Airtel Thanks App. It shows order placed, packed, dispatched, and delivery dates."
+  },
+  {
+    "id": 49,
+    "section": "Debit Card",
+    "question": "How to raise a dispute on a card transaction?",
+    "answer": "Disputes must be raised within 30 days of transaction date via Airtel Payments Bank grievance channels. Refunds are processed if the dispute is resolved in favour of customer."
+  },
+  {
+    "id": 50,
+    "section": "FASTag",
+    "question": "What documents are needed to apply for FASTag?",
+    "answer": "You need an active Airtel Payments Bank Savings Account or Wallet, Vehicle Registration Certificate (RC), and Vehicle Registration Number."
+  },
+  {
+    "id": 51,
+    "section": "FASTag",
+    "question": "What is the cost of FASTag?",
+    "answer": "FASTag has a one-time fee of Rs. 100 including GST plus a refundable security deposit depending on vehicle type."
+  },
+  {
+    "id": 52,
+    "section": "FASTag",
+    "question": "What is the validity of FASTag?",
+    "answer": "FASTag validity is 5 years. After purchasing, you only need to recharge/top up as needed."
+  },
+  {
+    "id": 53,
+    "section": "FASTag",
+    "question": "Can I use one FASTag for two vehicles?",
+    "answer": "No. You need a separate FASTag for each vehicle."
+  },
+  {
+    "id": 54,
+    "section": "FASTag",
+    "question": "How to recharge FASTag?",
+    "answer": "Through Airtel Thanks App (FASTag section), Internet Banking, Credit/Debit Card, UPI, or at Banking Points. Auto-recharge feature is also available."
+  },
+  {
+    "id": 55,
+    "section": "FASTag",
+    "question": "Where does FASTag balance come from?",
+    "answer": "FASTag balance is part of your linked account/wallet balance. Minimum FASTag balance is blocked in your linked account."
+  },
+  {
+    "id": 56,
+    "section": "FASTag",
+    "question": "What if FASTag balance is insufficient?",
+    "answer": "If your balance is less than FASTag minimum balance amount, your tag will be blacklisted at NPCI end."
+  },
+  {
+    "id": 57,
+    "section": "FASTag",
+    "question": "What if I lost/damaged my FASTag?",
+    "answer": "Call Customer Care at 400 or 8800688006. New tag will be linked to your old account and balance transferred."
+  },
+  {
+    "id": 58,
+    "section": "FASTag",
+    "question": "How to check FASTag status?",
+    "answer": "Check your FASTag status on the Airtel Thanks App or call customer care at 400."
+  },
+  {
+    "id": 59,
+    "section": "Insurance",
+    "question": "What does the Insurance Policy cover?",
+    "answer": "The customer is provided Rs. 2 Lac insurance for death due to accident."
+  },
+  {
+    "id": 60,
+    "section": "Insurance",
+    "question": "Are non-Airtel customers eligible?",
+    "answer": "Yes. All customers having an Airtel Payments Bank Account are eligible for Personal Accidental Insurance."
+  },
+  {
+    "id": 61,
+    "section": "Insurance",
+    "question": "Is the customer's family covered?",
+    "answer": "No, only the individual who opened the account and fulfils conditions is covered."
+  },
+  {
+    "id": 62,
+    "section": "Insurance",
+    "question": "How to renew insurance?",
+    "answer": "Ensure at least 1 debit transaction every 30 days to renew the insurance."
+  },
+  {
+    "id": 63,
+    "section": "Insurance",
+    "question": "How long does the policy last?",
+    "answer": "1 year. However, it renews every 30 days based on 1 debit transaction."
+  },
+  {
+    "id": 64,
+    "section": "Insurance",
+    "question": "What is the premium?",
+    "answer": "The policy is offered free of cost. No premium required."
+  },
+  {
+    "id": 65,
+    "section": "Insurance",
+    "question": "How can a nominee claim the insurance?",
+    "answer": "Contact call centre at 400 or 8800688006, visit the website, or visit any Banking Point."
+  },
+  {
+    "id": 66,
+    "section": "Airtel Money Wallet",
+    "question": "What is Airtel Money Wallet?",
+    "answer": "A secure digital wallet that lets you manage money - recharge, pay bills, shop at offline merchants, send money to friends, and pay at various online platforms."
+  },
+  {
+    "id": 67,
+    "section": "Airtel Money Wallet",
+    "question": "How to open a wallet?",
+    "answer": "Download My Airtel App, register on Payments Bank tab, and click on 'Get Wallet' icon."
+  },
+  {
+    "id": 68,
+    "section": "Airtel Money Wallet",
+    "question": "Can I open a wallet without an Airtel number?",
+    "answer": "Yes, you can open a wallet using any network mobile number."
+  },
+  {
+    "id": 69,
+    "section": "Airtel Money Wallet",
+    "question": "What can I do with the wallet?",
+    "answer": "Recharge prepaid mobile and DTH, send money to persons/merchants/bank accounts, pay bills (postpaid, landline, data card, broadband), pay utilities (electricity, gas, water, insurance), shop at retail outlets."
+  },
+  {
+    "id": 70,
+    "section": "Airtel Money Wallet",
+    "question": "How to add money to wallet?",
+    "answer": "Click Add Money in Payments tab. Use net banking, credit card, debit card, or UPI. Money is added instantly."
+  },
+  {
+    "id": 71,
+    "section": "Airtel Money Wallet",
+    "question": "What is the monthly spend limit?",
+    "answer": "Minimum KYC wallet: Rs. 9,000/month. Full KYC wallet: Rs. 1,00,000/month."
+  },
+  {
+    "id": 72,
+    "section": "Airtel Money Wallet",
+    "question": "What are wallet charges?",
+    "answer": "No charges for adding money (via credit/debit card, net banking, IMPS), making purchases, or wallet-to-wallet transfer. Wallet to bank transfer: 3% of transaction amount."
+  },
+  {
+    "id": 73,
+    "section": "Airtel Money Wallet",
+    "question": "I lost my mobile. How to block my account?",
+    "answer": "Write to wecare@airtelbank.com to block the wallet. To unblock, write again from your registered email."
+  },
+  {
+    "id": 74,
+    "section": "Airtel Money Wallet",
+    "question": "What if fraud happened on my wallet?",
+    "answer": "Contact wecare@airtelbank.com with your email and mobile number, or call 400 (Airtel) / 8800688006. Wallet will be blocked and balance refunded."
+  },
+  {
+    "id": 75,
+    "section": "Airtel Money Wallet",
+    "question": "Does Full KYC wallet exist currently?",
+    "answer": "Currently the bank does not offer Full KYC Wallets. Existing Full KYC customers can upgrade to Savings Bank Account at nearest banking point."
+  },
+  {
+    "id": 76,
+    "section": "Airtel Money Wallet",
+    "question": "How to reset mPIN for wallet?",
+    "answer": "Through My Airtel App's Payments Bank tab, USSD (*400#), or IVR (400/8800688006)."
+  },
+  {
+    "id": 77,
+    "section": "Airtel Money Wallet",
+    "question": "How to send money to a bank account from wallet?",
+    "answer": "Tap 'Send Money' in the App, choose Bank Account option, enter bank name, receiver's account number, mobile number and confirm with mPIN. Instant for IMPS banks, 4 working hours for NEFT banks."
+  },
+  {
+    "id": 78,
+    "section": "Airtel Money Wallet",
+    "question": "How to recharge using wallet?",
+    "answer": "Tap Recharge tab, choose Mobile/DTH/Datacard, enter the number, select operator and amount, confirm with mPIN."
+  },
+  {
+    "id": 79,
+    "section": "Airtel Money Wallet",
+    "question": "How to pay bills using wallet?",
+    "answer": "Tap 'Pay Bill' in Payments Bank section, select bill type (Mobile/Landline/Electricity/Gas/Insurance), enter details and confirm with mPIN."
+  },
+  {
+    "id": 80,
+    "section": "Airtel Money Wallet",
+    "question": "Can I see nearby merchants accepting wallet payment?",
+    "answer": "Yes. Activate GPS, tap Pay Merchant on home screen, then View Merchants Near You."
+  },
+  {
+    "id": 81,
+    "section": "Airtel Money Wallet",
+    "question": "Why is my wallet blocked?",
+    "answer": "Could be due to system detecting fraudulent transactions or multiple wallets operated from single IP address. Contact wecare@airtelbank.com or call 400/8800688006 to unblock."
+  },
+  {
+    "id": 82,
+    "section": "Airtel Money Wallet",
+    "question": "Can I control daily/monthly/yearly transaction limits?",
+    "answer": "Yes. You can set daily limits of 5/10/15 transactions. Contact call center 400/8800688006 for assistance."
+  },
+  {
+    "id": 83,
+    "section": "Fixed Deposit",
+    "question": "What is the minimum amount for FD?",
+    "answer": "You can open a Fixed Deposit with as little as Rs. 500."
+  },
+  {
+    "id": 84,
+    "section": "Fixed Deposit",
+    "question": "What is the maximum FD amount?",
+    "answer": "Maximum of Rs. 1,90,000."
+  },
+  {
+    "id": 85,
+    "section": "Fixed Deposit",
+    "question": "What interest rate is offered on FD?",
+    "answer": "Up to 7% per annum."
+  },
+  {
+    "id": 86,
+    "section": "Fixed Deposit",
+    "question": "What are the tenure options?",
+    "answer": "Flexible tenure starting from 1 year to a maximum of 5 years."
+  },
+  {
+    "id": 87,
+    "section": "Fixed Deposit",
+    "question": "Can I withdraw FD early?",
+    "answer": "Yes, premature withdrawal is allowed. A penal interest rate charge of 1% (on interest earned) is applicable."
+  },
+  {
+    "id": 88,
+    "section": "Fixed Deposit",
+    "question": "Is Tax Saver FD available?",
+    "answer": "Yes. Tax Saver FD allows savings under Section 80C. Booked for 5 years with minimum Rs. 10,000 up to Rs. 1,50,000 per financial year. Part closure and pre-closure are not allowed."
+  },
+  {
+    "id": 89,
+    "section": "Fixed Deposit",
+    "question": "How to open an FD?",
+    "answer": "Download/open Airtel Thanks App, login to Savings Account, go to 'Bank' section, tap 'Fixed Deposits', choose amount and tenure, authorize and complete payment."
+  },
+  {
+    "id": 90,
+    "section": "Fixed Deposit",
+    "question": "Who is eligible for FD?",
+    "answer": "Indian resident above 18 years with a KYC-verified Airtel Payments Bank Savings Account. No income proof or credit checks needed."
+  },
+  {
+    "id": 91,
+    "section": "Current Account",
+    "question": "What are Current Account charges?",
+    "answer": "Annual Facilitation Charge (AFC): Rs. 599 incl. GST. Quarterly Account Maintenance Charge (AMC): Rs. 149.75 incl. GST per quarter (effective Feb 2026). Regular Current Account: Rs. 1,099 incl. GST per year."
+  },
+  {
+    "id": 92,
+    "section": "Current Account",
+    "question": "What are the cash withdrawal limits for Current Account?",
+    "answer": "2 transactions/day (max), 10 transactions/month or Rs. 50,000 cash withdrawal per month (whichever is minimum), Rs. 10,000 per transaction (max)."
+  },
+  {
+    "id": 93,
+    "section": "Current Account",
+    "question": "What about cash deposit in Current Account?",
+    "answer": "Cash deposit at Banking Points is free."
+  },
+  {
+    "id": 94,
+    "section": "Current Account",
+    "question": "What about cash withdrawal charges?",
+    "answer": "Up to Rs. 75,000/month: Free. Above Rs. 75,000: 0.75% of transaction amount."
+  },
+  {
+    "id": 95,
+    "section": "mPIN, Security and Account Management",
+    "question": "How to reset mPIN?",
+    "answer": "Self: Through My Airtel App, USSD (*400#), or IVR (400/8800688006). Assisted: Banking Point can reset via Airtel Mitra App using biometric authentication."
+  },
+  {
+    "id": 96,
+    "section": "mPIN, Security and Account Management",
+    "question": "What to do when I forget mPIN?",
+    "answer": "Use the App (Forgot mPIN option - enter name and DOB as on Aadhaar), USSD (*400# -> My Account -> Forgot mPIN), or visit a Banking Point."
+  },
+  {
+    "id": 97,
+    "section": "mPIN, Security and Account Management",
+    "question": "Where to raise an issue?",
+    "answer": "You can contact Airtel Payments Bank support through these channels:\n- Call: 400 (Airtel users) or 8800688006 or 1800-23400 (toll-free)\n- WhatsApp: Send a message to 8800688006\n- Email: wecare@airtelbank.com\n- App: Airtel Thanks App → Help and Support section\n- In-person: Visit nearest Banking Point"
+  },
+  {
+    "id": 98,
+    "section": "mPIN, Security and Account Management",
+    "question": "What facilities are available at Banking Points?",
+    "answer": "Open an account, make cash deposits, do cash withdrawals, reset mPIN, and get help for any query."
+  },
+  {
+    "id": 99,
+    "section": "mPIN, Security and Account Management",
+    "question": "What about account security?",
+    "answer": "Password-protect your phone. Choose strong passwords. Change mobile PIN regularly (every 60 days). Report lost/stolen phone immediately to Airtel Payments Bank and law enforcement."
+  },
+  {
+    "id": 100,
+    "section": "mPIN, Security and Account Management",
+    "question": "What is Airtel Safe Pay?",
+    "answer": "An additional layer of payment validation beyond the industry norm of two-factor authentication. It ensures no money leaves your account without your approval."
+  },
+  {
+    "id": 101,
+    "section": "Charges and Fees Summary (Latest 2025-2026)",
+    "question": "What is the Account Maintenance Charge (AMC) for Savings Account?",
+    "answer": "Rs. 50 + 18% GST per quarter effective July 2025. Rs. 25 + 18% GST per quarter for accounts with DBT credits in past 6 months (effective Oct 2025). First year FREE for Minor Accounts."
+  },
+  {
+    "id": 102,
+    "section": "Charges and Fees Summary (Latest 2025-2026)",
+    "question": "What are SMS charges?",
+    "answer": "Rs. 0.35 + 18% GST per SMS (effective Oct 2025). First 5 SMSs per month are free. SMS charges capped at Rs. 75 (excl. GST). First year FREE for Minor Accounts."
+  },
+  {
+    "id": 103,
+    "section": "Charges and Fees Summary (Latest 2025-2026)",
+    "question": "What is the Salary Account Convenience Charge?",
+    "answer": "Rs. 45 including GST per quarter effective January 2026."
+  },
+  {
+    "id": 104,
+    "section": "Charges and Fees Summary (Latest 2025-2026)",
+    "question": "What is the Account Facilitation Charge?",
+    "answer": "Rs. 50 including GST for Savings Account opening."
+  },
+  {
+    "id": 105,
+    "section": "Charges and Fees Summary (Latest 2025-2026)",
+    "question": "What is the annual credit/debit limit?",
+    "answer": "Annual credit/debit limit for all Savings Account holders is capped at INR 2 Cr."
+  },
+  {
+    "id": 106,
+    "section": "Aadhaar and KYC",
+    "question": "Can I open an account without Aadhaar?",
+    "answer": "Yes. You can open a savings bank account using other POI/POA of your choice."
+  },
+  {
+    "id": 107,
+    "section": "Aadhaar and KYC",
+    "question": "Can I de-link my Aadhaar?",
+    "answer": "Airtel Payments Bank facilitates the process to delink Aadhaar and update your account with another valid POI/POA."
+  },
+  {
+    "id": 108,
+    "section": "Aadhaar and KYC",
+    "question": "I received an SMS asking for Aadhaar details for removal of freeze?",
+    "answer": "If KYC information is incomplete and account was opened with Aadhaar, a request is raised to share Aadhaar details for removal of freeze. Other KYC options are also being provided."
+  },
+  {
+    "id": 109,
+    "section": "Aadhaar and KYC",
+    "question": "How does CKYC work for account opening?",
+    "answer": "CKYC (Central KYC) is a central repository of KYC records. You provide PAN and Aadhaar, give consent for CKYC download, confirm details, do a liveliness check, and complete a mandatory money load via UPI."
+  }
+]

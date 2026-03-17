@@ -12,30 +12,43 @@
 <link rel="apple-touch-icon" href="/icons/icon-192.svg"/>
 <title>Raymidi — FAQ Ingest</title>
 <style>
-  :root { --gold:#c9a84c; --bg:#0f0f0f; --card:#1a1a1a; --border:#2a2a2a; --text:#e5e5e5; }
+  :root { --gold:#c9a84c; --bg:#F4F4F2; --card:#FFFFFF; --border:rgba(0,0,0,0.09); --text:#111; }
   * { box-sizing:border-box; margin:0; padding:0; }
   body { background:var(--bg); color:var(--text); font-family:'Segoe UI',system-ui,sans-serif; min-height:100vh; display:flex; align-items:flex-start; justify-content:center; padding:2rem 1rem; }
   .wrap { width:100%; max-width:700px; }
   h1 { color:var(--gold); font-size:1.4rem; margin-bottom:0.25rem; }
-  p.sub { color:rgba(255,255,255,0.5); font-size:0.85rem; margin-bottom:2rem; }
+  p.sub { color:rgba(0,0,0,0.5); font-size:0.85rem; margin-bottom:2rem; }
   .card { background:var(--card); border:1px solid var(--border); border-radius:12px; padding:1.5rem; margin-bottom:1.5rem; }
-  label { display:block; font-size:0.8rem; color:rgba(255,255,255,0.6); margin-bottom:0.4rem; letter-spacing:.05em; text-transform:uppercase; }
-  input, textarea { width:100%; background:#111; border:1px solid var(--border); border-radius:8px; color:var(--text); font-size:0.9rem; padding:0.65rem 0.9rem; outline:none; transition:border-color .2s; font-family:inherit; }
+  label { display:block; font-size:0.8rem; color:rgba(0,0,0,0.55); margin-bottom:0.4rem; letter-spacing:.05em; text-transform:uppercase; }
+  input, textarea { width:100%; background:#F0F0F0; border:1px solid var(--border); border-radius:8px; color:var(--text); font-size:0.9rem; padding:0.65rem 0.9rem; outline:none; transition:border-color .2s; font-family:inherit; }
   input:focus, textarea:focus { border-color:var(--gold); }
   textarea { resize:vertical; min-height:180px; line-height:1.5; }
   .row { display:grid; gap:1rem; margin-bottom:1rem; }
   .btn { width:100%; padding:0.8rem; background:var(--gold); color:#000; border:none; border-radius:8px; font-size:0.95rem; font-weight:600; cursor:pointer; transition:opacity .2s; margin-top:0.5rem; }
   .btn:hover { opacity:.85; }
   .btn:disabled { opacity:.4; cursor:not-allowed; }
-  .log { background:#111; border:1px solid var(--border); border-radius:8px; padding:1rem; min-height:80px; font-size:0.82rem; line-height:1.6; font-family:'Courier New',monospace; max-height:300px; overflow-y:auto; }
-  .ok  { color:#4ade80; }
-  .err { color:#f87171; }
-  .inf { color:rgba(255,255,255,0.45); }
-  .bulk-hint { font-size:0.78rem; color:rgba(255,255,255,0.4); margin-top:0.5rem; }
+  .log { background:#F0F0F0; border:1px solid var(--border); border-radius:8px; padding:1rem; min-height:80px; font-size:0.82rem; line-height:1.6; font-family:'Courier New',monospace; max-height:300px; overflow-y:auto; }
+  .ok  { color:#16a34a; }
+  .err { color:#dc2626; }
+  .inf { color:rgba(0,0,0,0.45); }
+  .bulk-hint { font-size:0.78rem; color:rgba(0,0,0,0.4); margin-top:0.5rem; }
   hr { border:none; border-top:1px solid var(--border); margin:1.5rem 0; }
+
+  /* ── Dark theme ───────────────────────────────────────────── */
+  body.dark-theme { --bg:#0f0f0f; --card:#1a1a1a; --border:#2a2a2a; --text:#e5e5e5; }
+  body.dark-theme p.sub { color:rgba(255,255,255,0.5); }
+  body.dark-theme label { color:rgba(255,255,255,0.6); }
+  body.dark-theme input, body.dark-theme textarea { background:#111; }
+  body.dark-theme .log { background:#111; }
+  body.dark-theme .ok { color:#4ade80; }
+  body.dark-theme .err { color:#f87171; }
+  body.dark-theme .inf { color:rgba(255,255,255,0.45); }
+  body.dark-theme .bulk-hint { color:rgba(255,255,255,0.4); }
+  body.dark-theme select { background:#111; color:#e5e5e5; }
 </style>
 </head>
 <body>
+<script>(function(){var t=localStorage.getItem('raymidi_theme');if(t==='dark')document.body.classList.add('dark-theme')})()</script>
 <div class="wrap">
   <h1>Raymidi — FAQ Knowledge Base Ingest</h1>
   <p class="sub">Upload FAQ documents into the Supabase vector store. Each entry becomes a searchable chunk.</p>
@@ -50,6 +63,13 @@
       <div>
         <label>API Base URL (your Vercel deployment URL)</label>
         <input type="text" id="baseUrl" placeholder="https://your-app.vercel.app"/>
+      </div>
+      <div>
+        <label>Client (tenant)</label>
+        <select id="client" style="width:100%;background:#F0F0F0;border:1px solid var(--border);border-radius:8px;color:var(--text);font-size:0.9rem;padding:0.65rem 0.9rem;outline:none;">
+          <option value="ather">Ather Energy</option>
+          <option value="apb">Airtel Payments Bank</option>
+        </select>
       </div>
     </div>
   </div>
@@ -75,9 +95,9 @@
   <!-- Bulk upload -->
   <div class="card">
     <label style="font-size:1rem;text-transform:none;color:var(--text);margin-bottom:0.5rem;">Bulk Upload (JSON)</label>
-    <p class="bulk-hint" style="margin-bottom:1rem;">Paste a JSON array of <code>{"doc_id":"unique-slug","doc_name":"…","content":"Question: …\n\nAnswer: …"}</code> objects. <strong>doc_id</strong> is optional but recommended — it prevents duplicates on re-upload. Content should use <em>Question: …\n\nAnswer: …</em> format for best search quality.</p>
+    <p class="bulk-hint" style="margin-bottom:1rem;">Paste a JSON array. Supports two formats: <code>{"doc_name":"…","content":"…"}</code> or <code>{"section":"…","question":"…","answer":"…"}</code>. Optional <strong>doc_id</strong> (or <strong>id</strong>) prevents duplicates on re-upload.</p>
     <textarea id="bulkJson" placeholder='[{"doc_id":"faq-slug","doc_name":"Category - Topic","content":"Question: …\n\nAnswer: …"},{"doc_id":"faq-slug-2","doc_name":"Category - Topic 2","content":"Question: …\n\nAnswer: …"}]' style="min-height:120px;"></textarea>
-    <button class="btn" id="bulkBtn" onclick="uploadBulk()" style="background:#444;color:var(--text);">Bulk Upload</button>
+    <button class="btn" id="bulkBtn" onclick="uploadBulk()" style="background:#888;color:#fff;">Bulk Upload</button>
   </div>
 
   <!-- Log -->
@@ -105,11 +125,11 @@
     return { secret, baseUrl };
   }
 
-  async function ingestOne(baseUrl, secret, doc_id, doc_name, content) {
+  async function ingestOne(baseUrl, secret, doc_id, doc_name, content, client) {
     const resp = await fetch(`${baseUrl}/api/ingest`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ secret, doc_id, doc_name, content }),
+      body: JSON.stringify({ secret, doc_id, doc_name, content, client }),
     });
     const data = await resp.json();
     if (!resp.ok) throw new Error(data.error || `HTTP ${resp.status}`);
@@ -129,7 +149,8 @@
     btn.textContent = 'Uploading…';
     log(`Uploading: "${doc_name}"…`);
     try {
-      const res = await ingestOne(cfg.baseUrl, cfg.secret, '', doc_name, content);
+      const client = document.getElementById('client').value;
+      const res = await ingestOne(cfg.baseUrl, cfg.secret, '', doc_name, content, client);
       log(`Saved: "${res.doc_name}" (id: ${res.id})`, 'ok');
       document.getElementById('docName').value = '';
       document.getElementById('content').value = '';
@@ -159,19 +180,34 @@
 
     let ok = 0, fail = 0;
     for (let i = 0; i < docs.length; i++) {
-      const { doc_id, doc_name, content } = docs[i];
+      // Support both formats: {doc_name, content} and {section, question, answer}
+      const doc_id  = docs[i].doc_id || docs[i].id || '';
+      const doc_name = docs[i].doc_name || docs[i].section || '';
+      const content  = docs[i].content ||
+        (docs[i].question && docs[i].answer
+          ? `Question: ${docs[i].question}\n\nAnswer: ${docs[i].answer}`
+          : '');
       if (!doc_name || !content) { log(`[${i+1}] Skipped — missing doc_name or content`, 'err'); fail++; continue; }
       log(`[${i+1}/${docs.length}] Uploading: "${doc_id || doc_name}"…`);
-      try {
-        const res = await ingestOne(cfg.baseUrl, cfg.secret, doc_id || '', doc_name, content);
-        log(`[${i+1}/${docs.length}] Saved: "${res.doc_name}"`, 'ok');
-        ok++;
-      } catch (e) {
-        log(`[${i+1}/${docs.length}] Failed "${doc_name}": ${e.message}`, 'err');
-        fail++;
+      const client = document.getElementById('client').value;
+      let success = false;
+      for (let attempt = 0; attempt < 2; attempt++) {
+        try {
+          const res = await ingestOne(cfg.baseUrl, cfg.secret, String(doc_id || ''), doc_name, content, client);
+          log(`[${i+1}/${docs.length}] Saved: "${res.doc_name}"`, 'ok');
+          ok++; success = true; break;
+        } catch (e) {
+          if (attempt === 0) {
+            log(`[${i+1}] Retrying after error…`, 'inf');
+            await new Promise(r => setTimeout(r, 3000));
+          } else {
+            log(`[${i+1}/${docs.length}] Failed "${doc_name}": ${e.message}`, 'err');
+            fail++;
+          }
+        }
       }
-      // small delay between requests
-      if (i < docs.length - 1) await new Promise(r => setTimeout(r, 400));
+      // delay between requests to avoid OpenAI rate limits
+      if (i < docs.length - 1) await new Promise(r => setTimeout(r, 1500));
     }
 
     log(`Bulk upload complete: ${ok} succeeded, ${fail} failed.`, ok > 0 ? 'ok' : 'err');

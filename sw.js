@@ -1,36 +1,14 @@
-const CACHE = 'raymidi-v1';
-const SHELL = ['/', '/login', '/ev-poc', '/ingest', '/manifest.json', '/icons/icon-192.svg', '/icons/icon-512.svg'];
+// Self-destructing service worker — clears old caches and unregisters.
+// Pages now use server-side auth guards which return redirects;
+// a caching SW conflicts with that flow.
 
-self.addEventListener('install', e => {
-  e.waitUntil(
-    caches.open(CACHE).then(c => c.addAll(SHELL))
-  );
-  self.skipWaiting();
-});
+self.addEventListener('install', () => self.skipWaiting());
 
 self.addEventListener('activate', e => {
   e.waitUntil(
-    caches.keys().then(keys =>
-      Promise.all(keys.filter(k => k !== CACHE).map(k => caches.delete(k)))
-    )
+    caches.keys()
+      .then(keys => Promise.all(keys.map(k => caches.delete(k))))
+      .then(() => self.registration.unregister())
   );
   self.clients.claim();
-});
-
-self.addEventListener('fetch', e => {
-  // Never cache API calls — always go to network
-  if (e.request.url.includes('/api/')) return;
-
-  // Cache-first for everything else
-  e.respondWith(
-    caches.match(e.request).then(cached => {
-      if (cached) return cached;
-      return fetch(e.request).then(response => {
-        if (!response || response.status !== 200 || response.type !== 'basic') return response;
-        const clone = response.clone();
-        caches.open(CACHE).then(c => c.put(e.request, clone));
-        return response;
-      });
-    })
-  );
 });

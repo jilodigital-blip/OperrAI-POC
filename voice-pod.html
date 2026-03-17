@@ -1,0 +1,1506 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
+  <meta name="theme-color" content="#F4F4F2" />
+  <meta name="mobile-web-app-capable" content="yes" />
+  <meta name="apple-mobile-web-app-capable" content="yes" />
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
+  <meta name="apple-mobile-web-app-title" content="Raymidi" />
+  <title>Voice Pod — Lead Management — Raymidi</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Syne:wght@400;600;700;800&family=DM+Sans:ital,opsz,wght@0,9..40,300;0,9..40,400;0,9..40,500;1,9..40,300&display=swap" rel="stylesheet" />
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    :root {
+      --gold: #D4AF37;
+      --gold-dim: rgba(212,175,55,0.1);
+      --gold-border: rgba(212,175,55,0.2);
+      --ink: #F7F7F7;
+      --surface: #FFFFFF;
+      --surface2: #F0F0F0;
+      --border: rgba(0,0,0,0.07);
+      --border2: rgba(0,0,0,0.12);
+      --muted: #555555;
+      --text: rgba(0,0,0,0.88);
+      --font-heading: 'Syne', sans-serif;
+      --font-body: 'DM Sans', sans-serif;
+      --green: #22c55e;
+      --red: #ef4444;
+      --yellow: #eab308;
+      --blue: #3b82f6;
+    }
+
+    html { scroll-behavior: smooth; }
+
+    body {
+      background: #F4F4F2;
+      color: var(--text);
+      font-family: var(--font-body);
+      min-height: 100vh;
+      line-height: 1.6;
+    }
+
+    body::before {
+      content: '';
+      position: fixed;
+      inset: 0;
+      background-image:
+        linear-gradient(rgba(212,175,55,0.06) 1px, transparent 1px),
+        linear-gradient(90deg, rgba(212,175,55,0.06) 1px, transparent 1px);
+      background-size: 60px 60px;
+      pointer-events: none;
+      z-index: 0;
+    }
+
+    .page { position: relative; z-index: 1; }
+
+    /* ── Topbar ──────────────────────────────────────────────── */
+    .topbar {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 1rem 2rem;
+      padding-top: max(1rem, env(safe-area-inset-top));
+      border-bottom: 1px solid rgba(0,0,0,0.08);
+      background: rgba(255,255,255,0.97);
+      backdrop-filter: blur(12px);
+      position: sticky;
+      top: 0;
+      z-index: 100;
+    }
+
+    .logo {
+      font-family: var(--font-heading);
+      font-size: 1.35rem;
+      font-weight: 800;
+      color: #111;
+      text-decoration: none;
+      letter-spacing: -0.02em;
+    }
+    .logo span { color: var(--gold); }
+
+    .topbar-right {
+      display: flex;
+      align-items: center;
+      gap: 1rem;
+    }
+
+    .back-link {
+      color: var(--muted);
+      text-decoration: none;
+      font-size: 0.85rem;
+      transition: color 0.2s;
+    }
+    .back-link:hover { color: var(--gold); }
+
+    .btn-logout {
+      background: transparent;
+      border: 1px solid var(--border2);
+      color: var(--muted);
+      padding: 0.4rem 1rem;
+      border-radius: 8px;
+      cursor: pointer;
+      font-family: var(--font-body);
+      font-size: 0.82rem;
+      transition: all 0.2s;
+    }
+    .btn-logout:hover { border-color: var(--gold-border); color: var(--gold); }
+
+    /* ── Section layout ──────────────────────────────────────── */
+    .container { max-width: 1200px; margin: 0 auto; padding: 2rem; }
+
+    .section-title {
+      font-family: var(--font-heading);
+      font-size: 1.5rem;
+      font-weight: 700;
+      margin-bottom: 1.5rem;
+      color: #111;
+    }
+    .section-title .gold { color: var(--gold); }
+
+    /* ── Stats cards ─────────────────────────────────────────── */
+    .stats-row {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+      gap: 1rem;
+      margin-bottom: 2rem;
+    }
+
+    .stat-card {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: 14px;
+      padding: 1.2rem 1.4rem;
+    }
+
+    .stat-label {
+      font-size: 0.78rem;
+      color: var(--muted);
+      text-transform: uppercase;
+      letter-spacing: 0.06em;
+      margin-bottom: 0.3rem;
+    }
+
+    .stat-value {
+      font-family: var(--font-heading);
+      font-size: 1.8rem;
+      font-weight: 700;
+      color: #111;
+    }
+
+    .stat-value.gold { color: var(--gold); }
+    .stat-value.green { color: var(--green); }
+    .stat-value.red { color: var(--red); }
+
+    /* ── Lead form ───────────────────────────────────────────── */
+    .lead-form-card {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: 14px;
+      padding: 1.5rem;
+      margin-bottom: 2rem;
+    }
+
+    .form-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+      gap: 1rem;
+      margin-bottom: 1rem;
+    }
+
+    .form-group label {
+      display: block;
+      font-size: 0.78rem;
+      color: var(--muted);
+      margin-bottom: 0.3rem;
+      text-transform: uppercase;
+      letter-spacing: 0.04em;
+    }
+
+    .form-group input,
+    .form-group select {
+      width: 100%;
+      padding: 0.6rem 0.8rem;
+      background: var(--ink);
+      border: 1px solid var(--border2);
+      border-radius: 8px;
+      color: var(--text);
+      font-family: var(--font-body);
+      font-size: 0.9rem;
+      outline: none;
+      transition: border-color 0.2s;
+    }
+
+    .form-group input:focus,
+    .form-group select:focus {
+      border-color: var(--gold-border);
+    }
+
+    .form-group input::placeholder { color: var(--muted); }
+
+    .btn-primary {
+      background: var(--gold);
+      color: var(--ink);
+      border: none;
+      padding: 0.6rem 1.6rem;
+      border-radius: 8px;
+      font-family: var(--font-body);
+      font-size: 0.9rem;
+      font-weight: 600;
+      cursor: pointer;
+      transition: opacity 0.2s;
+    }
+    .btn-primary:hover { opacity: 0.9; }
+    .btn-primary:disabled { opacity: 0.5; cursor: not-allowed; }
+
+    .btn-secondary {
+      background: transparent;
+      color: var(--gold);
+      border: 1px solid var(--gold-border);
+      padding: 0.5rem 1.2rem;
+      border-radius: 8px;
+      font-family: var(--font-body);
+      font-size: 0.82rem;
+      font-weight: 500;
+      cursor: pointer;
+      transition: all 0.2s;
+    }
+    .btn-secondary:hover { background: var(--gold-dim); }
+
+    /* ── Lead table ──────────────────────────────────────────── */
+    .lead-table-wrap {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: 14px;
+      overflow: hidden;
+      margin-bottom: 2rem;
+    }
+
+    .lead-table {
+      width: 100%;
+      border-collapse: collapse;
+    }
+
+    .lead-table th {
+      text-align: left;
+      padding: 0.8rem 1rem;
+      font-size: 0.75rem;
+      color: var(--muted);
+      text-transform: uppercase;
+      letter-spacing: 0.06em;
+      border-bottom: 1px solid var(--border);
+      background: var(--surface2);
+    }
+
+    .lead-table td {
+      padding: 0.8rem 1rem;
+      font-size: 0.88rem;
+      border-bottom: 1px solid var(--border);
+      vertical-align: middle;
+    }
+
+    .lead-table tr:last-child td { border-bottom: none; }
+    .lead-table tr:hover td { background: rgba(0,0,0,0.02); }
+
+    /* Status badges */
+    .badge {
+      display: inline-block;
+      padding: 2px 10px;
+      border-radius: 99px;
+      font-size: 0.72rem;
+      font-weight: 600;
+      letter-spacing: 0.03em;
+      text-transform: uppercase;
+    }
+    .badge-new { background: rgba(59,130,246,0.15); color: var(--blue); }
+    .badge-contacted { background: rgba(234,179,8,0.15); color: var(--yellow); }
+    .badge-qualified { background: rgba(34,197,94,0.15); color: var(--green); }
+    .badge-converted { background: rgba(212,175,55,0.15); color: var(--gold); }
+    .badge-lost { background: rgba(239,68,68,0.15); color: var(--red); }
+    .badge-transferred { background: rgba(168,85,247,0.15); color: #a855f7; }
+
+    /* Priority badges */
+    .priority-high { color: var(--red); }
+    .priority-medium { color: var(--yellow); }
+    .priority-low { color: var(--green); }
+
+    /* Score meter */
+    .score-meter {
+      display: flex;
+      align-items: center;
+      gap: 0.5rem;
+    }
+    .score-bar {
+      width: 60px;
+      height: 6px;
+      background: var(--border2);
+      border-radius: 3px;
+      overflow: hidden;
+    }
+    .score-fill {
+      height: 100%;
+      border-radius: 3px;
+      transition: width 0.4s ease;
+    }
+    .score-num {
+      font-size: 0.82rem;
+      font-weight: 600;
+      min-width: 28px;
+    }
+
+    /* Action buttons in table */
+    .btn-action {
+      background: var(--gold-dim);
+      color: var(--gold);
+      border: 1px solid var(--gold-border);
+      padding: 4px 12px;
+      border-radius: 6px;
+      font-size: 0.75rem;
+      font-weight: 600;
+      cursor: pointer;
+      transition: all 0.2s;
+    }
+    .btn-action:hover { background: var(--gold); color: var(--ink); }
+
+    .btn-action-danger {
+      background: rgba(239,68,68,0.1);
+      color: var(--red);
+      border: 1px solid rgba(239,68,68,0.2);
+    }
+    .btn-action-danger:hover { background: var(--red); color: #fff; }
+
+    /* ── Voice conversation panel ────────────────────────────── */
+    .voice-panel {
+      display: none;
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: 14px;
+      margin-bottom: 2rem;
+      overflow: hidden;
+    }
+
+    .voice-panel.active { display: block; }
+
+    .voice-panel-header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 1rem 1.5rem;
+      border-bottom: 1px solid var(--border);
+      background: var(--surface2);
+    }
+
+    .voice-lead-info {
+      display: flex;
+      align-items: center;
+      gap: 1rem;
+    }
+
+    .voice-lead-name {
+      font-family: var(--font-heading);
+      font-weight: 700;
+      font-size: 1.1rem;
+    }
+
+    .stage-badge {
+      display: inline-block;
+      padding: 2px 10px;
+      border-radius: 99px;
+      font-size: 0.72rem;
+      font-weight: 600;
+      letter-spacing: 0.04em;
+      background: var(--gold-dim);
+      color: var(--gold);
+      text-transform: uppercase;
+    }
+
+    .voice-panel-body {
+      display: grid;
+      grid-template-columns: 1fr 300px;
+      min-height: 400px;
+    }
+
+    @media (max-width: 768px) {
+      .voice-panel-body { grid-template-columns: 1fr; }
+    }
+
+    /* Transcript area */
+    .transcript-area {
+      padding: 1.5rem;
+      overflow-y: auto;
+      max-height: 500px;
+      display: flex;
+      flex-direction: column;
+      gap: 1rem;
+    }
+
+    .msg {
+      max-width: 85%;
+      padding: 0.8rem 1rem;
+      border-radius: 12px;
+      font-size: 0.9rem;
+      line-height: 1.5;
+    }
+
+    .msg-user {
+      align-self: flex-end;
+      background: var(--gold-dim);
+      border: 1px solid var(--gold-border);
+      color: var(--text);
+    }
+
+    .msg-ai {
+      align-self: flex-start;
+      background: var(--surface2);
+      border: 1px solid var(--border);
+      color: var(--text);
+    }
+
+    .msg-label {
+      font-size: 0.7rem;
+      color: var(--muted);
+      margin-bottom: 0.2rem;
+      text-transform: uppercase;
+      letter-spacing: 0.04em;
+    }
+
+    /* Right sidebar — score + controls */
+    .voice-sidebar {
+      border-left: 1px solid var(--border);
+      padding: 1.5rem;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 1.5rem;
+      background: var(--surface2);
+    }
+
+    @media (max-width: 768px) {
+      .voice-sidebar { border-left: none; border-top: 1px solid var(--border); }
+    }
+
+    /* Score circle */
+    .score-circle {
+      width: 120px;
+      height: 120px;
+      border-radius: 50%;
+      border: 4px solid var(--border2);
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      transition: border-color 0.4s;
+    }
+
+    .score-circle.hot {
+      border-color: var(--gold);
+      box-shadow: 0 0 20px rgba(212,175,55,0.3);
+      animation: pulse-gold 2s infinite;
+    }
+
+    @keyframes pulse-gold {
+      0%, 100% { box-shadow: 0 0 20px rgba(212,175,55,0.3); }
+      50% { box-shadow: 0 0 30px rgba(212,175,55,0.5); }
+    }
+
+    .score-circle-num {
+      font-family: var(--font-heading);
+      font-size: 2rem;
+      font-weight: 800;
+      color: #111;
+    }
+
+    .score-circle-label {
+      font-size: 0.7rem;
+      color: var(--muted);
+      text-transform: uppercase;
+    }
+
+    /* Hot lead alert */
+    .hot-alert {
+      display: none;
+      background: rgba(212,175,55,0.1);
+      border: 1px solid var(--gold-border);
+      border-radius: 8px;
+      padding: 0.6rem 1rem;
+      font-size: 0.82rem;
+      font-weight: 600;
+      color: var(--gold);
+      text-align: center;
+      animation: pulse-gold 2s infinite;
+    }
+    .hot-alert.active { display: block; }
+
+    /* Mic button */
+    .mic-area {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 0.5rem;
+    }
+
+    .mic-btn {
+      width: 64px;
+      height: 64px;
+      border-radius: 50%;
+      border: 2px solid var(--gold-border);
+      background: var(--gold-dim);
+      color: var(--gold);
+      font-size: 1.5rem;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      transition: all 0.2s;
+    }
+
+    .mic-btn:hover { background: rgba(212,175,55,0.2); }
+
+    .mic-btn.recording {
+      background: rgba(239,68,68,0.2);
+      border-color: var(--red);
+      color: var(--red);
+      animation: pulse-rec 1s infinite;
+    }
+
+    @keyframes pulse-rec {
+      0%, 100% { box-shadow: 0 0 0 0 rgba(239,68,68,0.4); }
+      50% { box-shadow: 0 0 0 12px rgba(239,68,68,0); }
+    }
+
+    .mic-btn:disabled {
+      opacity: 0.4;
+      cursor: not-allowed;
+    }
+
+    .mic-hint {
+      font-size: 0.72rem;
+      color: var(--muted);
+      text-align: center;
+    }
+
+    /* Transfer button */
+    .btn-transfer {
+      background: transparent;
+      border: 1px solid rgba(168,85,247,0.3);
+      color: #a855f7;
+      padding: 0.5rem 1rem;
+      border-radius: 8px;
+      font-size: 0.82rem;
+      font-weight: 500;
+      cursor: pointer;
+      transition: all 0.2s;
+      width: 100%;
+    }
+    .btn-transfer:hover { background: rgba(168,85,247,0.1); }
+
+    /* ── Loading & Toast ─────────────────────────────────────── */
+    .spinner {
+      width: 18px;
+      height: 18px;
+      border: 2px solid var(--border2);
+      border-top-color: var(--gold);
+      border-radius: 50%;
+      animation: spin 0.6s linear infinite;
+      display: inline-block;
+    }
+    @keyframes spin { to { transform: rotate(360deg); } }
+
+    .loading-overlay {
+      display: none;
+      position: fixed;
+      inset: 0;
+      background: rgba(0,0,0,0.5);
+      z-index: 999;
+      align-items: center;
+      justify-content: center;
+    }
+    .loading-overlay.active { display: flex; }
+
+    .toast {
+      position: fixed;
+      bottom: 2rem;
+      right: 2rem;
+      padding: 0.8rem 1.4rem;
+      border-radius: 10px;
+      font-size: 0.88rem;
+      font-weight: 500;
+      z-index: 1000;
+      transform: translateY(100px);
+      opacity: 0;
+      transition: all 0.3s ease;
+    }
+    .toast.show { transform: translateY(0); opacity: 1; }
+    .toast-success { background: rgba(34,197,94,0.15); border: 1px solid rgba(34,197,94,0.3); color: var(--green); }
+    .toast-error { background: rgba(239,68,68,0.15); border: 1px solid rgba(239,68,68,0.3); color: var(--red); }
+
+    /* Empty state */
+    .empty-state {
+      text-align: center;
+      padding: 3rem;
+      color: var(--muted);
+      font-size: 0.95rem;
+    }
+
+    /* Voice status indicator */
+    .voice-status {
+      display: flex;
+      align-items: center;
+      gap: 0.5rem;
+      font-size: 0.78rem;
+      color: var(--muted);
+      text-transform: uppercase;
+      letter-spacing: 0.04em;
+    }
+    .voice-status .dot {
+      width: 8px;
+      height: 8px;
+      border-radius: 50%;
+      background: var(--muted);
+    }
+    .voice-status.listening .dot { background: var(--green); animation: pulse-dot 1.5s infinite; }
+    .voice-status.speaking .dot { background: var(--gold); animation: pulse-dot 1s infinite; }
+    .voice-status.processing .dot { background: var(--yellow); animation: pulse-dot 0.5s infinite; }
+    @keyframes pulse-dot {
+      0%, 100% { opacity: 1; }
+      50% { opacity: 0.3; }
+    }
+
+    /* Live transcript styling */
+    .msg-live {
+      align-self: flex-start;
+      background: var(--surface2);
+      border: 1px dashed var(--border2);
+      color: var(--muted);
+      font-style: italic;
+    }
+
+    /* ── Responsive ──────────────────────────────────────────── */
+    @media (max-width: 640px) {
+      .container { padding: 1rem; }
+      .topbar { padding: 0.8rem 1rem; }
+      .form-grid { grid-template-columns: 1fr; }
+      .lead-table-wrap { overflow-x: auto; }
+      .lead-table { min-width: 700px; }
+    }
+
+    /* ── Dark theme ───────────────────────────────────────────── */
+    body.dark-theme {
+      --ink: #0A0A0A;
+      --surface: #111111;
+      --surface2: #161616;
+      --border: rgba(255,255,255,0.06);
+      --border2: rgba(255,255,255,0.1);
+      --muted: #6B7280;
+      --text: rgba(255,255,255,0.88);
+      background: #0A0A0A;
+    }
+    body.dark-theme::before {
+      background-image:
+        linear-gradient(rgba(212,175,55,0.025) 1px, transparent 1px),
+        linear-gradient(90deg, rgba(212,175,55,0.025) 1px, transparent 1px);
+    }
+    body.dark-theme .topbar { background: rgba(10,10,10,0.9); border-bottom-color: rgba(255,255,255,0.06); }
+    body.dark-theme .logo { color: #fff; }
+    body.dark-theme .section-title { color: #fff; }
+    body.dark-theme .stat-value { color: #fff; }
+    body.dark-theme .score-circle-num { color: #fff; }
+    body.dark-theme .lead-table tr:hover td { background: rgba(255,255,255,0.02); }
+    body.dark-theme .back-link:hover { color: var(--gold); }
+  </style>
+</head>
+<body>
+<script>(function(){var t=localStorage.getItem('raymidi_theme');if(t==='dark')document.body.classList.add('dark-theme')})()</script>
+<div class="page">
+
+  <!-- ── Topbar ──────────────────────────────────────────────── -->
+  <header class="topbar">
+    <a href="/" class="logo">Ray<span>midi</span></a>
+    <div class="topbar-right">
+      <a href="/ev-poc" class="back-link">← Back to POC Hub</a>
+      <button class="btn-logout" onclick="logout()">Logout</button>
+    </div>
+  </header>
+
+  <div class="container">
+
+    <!-- ── Section: Dashboard Stats ──────────────────────────── -->
+    <h2 class="section-title">🎙️ Voice Pod — <span class="gold">Lead Management</span></h2>
+
+    <div class="stats-row" id="statsRow">
+      <div class="stat-card">
+        <div class="stat-label">Total Leads</div>
+        <div class="stat-value" id="statTotal">0</div>
+      </div>
+      <div class="stat-card">
+        <div class="stat-label">Hot Leads (80+)</div>
+        <div class="stat-value gold" id="statHot">0</div>
+      </div>
+      <div class="stat-card">
+        <div class="stat-label">Qualified</div>
+        <div class="stat-value green" id="statQualified">0</div>
+      </div>
+      <div class="stat-card">
+        <div class="stat-label">Avg Score</div>
+        <div class="stat-value" id="statAvg">0</div>
+      </div>
+    </div>
+
+    <!-- ── Section: Add Lead Form ────────────────────────────── -->
+    <div class="lead-form-card">
+      <h3 style="font-family:var(--font-heading);font-size:1rem;font-weight:600;margin-bottom:1rem;">Add New Lead</h3>
+      <form id="leadForm" onsubmit="return createLead(event)">
+        <div class="form-grid">
+          <div class="form-group">
+            <label>Name *</label>
+            <input type="text" id="fName" placeholder="Lead name" required />
+          </div>
+          <div class="form-group">
+            <label>Phone *</label>
+            <input type="tel" id="fPhone" placeholder="+91 98765 43210" required />
+          </div>
+          <div class="form-group">
+            <label>Email</label>
+            <input type="email" id="fEmail" placeholder="email@example.com" />
+          </div>
+          <div class="form-group">
+            <label>Product Interest *</label>
+            <input type="text" id="fProduct" placeholder="Ather 450X, Rizta..." required />
+          </div>
+          <div class="form-group">
+            <label>Source *</label>
+            <select id="fSource" required>
+              <option value="">Select source</option>
+              <option value="website">Website</option>
+              <option value="walk-in">Walk-in</option>
+              <option value="referral">Referral</option>
+              <option value="social-media">Social Media</option>
+              <option value="campaign">Campaign</option>
+              <option value="other">Other</option>
+            </select>
+          </div>
+          <div class="form-group">
+            <label>Priority</label>
+            <select id="fPriority">
+              <option value="low">Low</option>
+              <option value="medium" selected>Medium</option>
+              <option value="high">High</option>
+            </select>
+          </div>
+        </div>
+        <button type="submit" class="btn-primary" id="btnCreateLead">Add Lead</button>
+      </form>
+    </div>
+
+    <!-- ── Section: Voice Conversation Panel ─────────────────── -->
+    <div class="voice-panel" id="voicePanel">
+      <div class="voice-panel-header">
+        <div class="voice-lead-info">
+          <span class="voice-lead-name" id="vpLeadName">—</span>
+          <span class="stage-badge" id="vpStage">Welcome</span>
+          <span class="badge" id="vpStatus">New</span>
+        </div>
+        <div style="display:flex;align-items:center;gap:1rem;">
+          <div class="voice-status" id="voiceStatus"><span class="dot"></span> <span id="voiceStatusText">Ready</span></div>
+          <button class="btn-secondary" onclick="closeVoicePanel()">Close</button>
+        </div>
+      </div>
+      <div class="voice-panel-body">
+        <div class="transcript-area" id="transcriptArea">
+          <div class="empty-state" id="transcriptEmpty">Click the mic button to start the conversation.</div>
+        </div>
+        <div class="voice-sidebar">
+          <div class="score-circle" id="scoreCircle">
+            <div class="score-circle-num" id="scoreNum">10</div>
+            <div class="score-circle-label">Lead Score</div>
+          </div>
+          <div class="hot-alert" id="hotAlert">🔥 Hot Lead Detected!</div>
+          <div class="mic-area">
+            <button class="mic-btn" id="micBtn" onclick="toggleRecording()" disabled>🎤</button>
+            <div class="mic-hint" id="micHint">Click to start recording</div>
+          </div>
+          <button class="btn-transfer" onclick="transferLead()">📞 Transfer to Human</button>
+          <button class="btn-secondary" onclick="endConversation()" style="width:100%;">End Conversation</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- ── Section: Lead List ────────────────────────────────── -->
+    <div class="lead-table-wrap">
+      <table class="lead-table">
+        <thead>
+          <tr>
+            <th>Name</th>
+            <th>Phone</th>
+            <th>Product</th>
+            <th>Source</th>
+            <th>Priority</th>
+            <th>Status</th>
+            <th>Score</th>
+            <th>Stage</th>
+            <th>Actions</th>
+          </tr>
+        </thead>
+        <tbody id="leadTableBody">
+          <tr><td colspan="9" class="empty-state">Loading leads...</td></tr>
+        </tbody>
+      </table>
+    </div>
+
+  </div>
+</div>
+
+<!-- Toast notification -->
+<div class="toast" id="toast"></div>
+
+<!-- Loading overlay -->
+<div class="loading-overlay" id="loadingOverlay">
+  <div style="text-align:center;">
+    <div class="spinner" style="width:40px;height:40px;border-width:3px;"></div>
+    <div style="margin-top:1rem;color:var(--muted);font-size:0.9rem;" id="loadingText">Processing...</div>
+  </div>
+</div>
+
+<script>
+// ── Auth check ────────────────────────────────────────────────────────────
+(function checkAuth() {
+  const exp = parseInt(sessionStorage.getItem('raymidi_exp') || '0', 10);
+  if (!exp || exp < Math.floor(Date.now() / 1000)) {
+    sessionStorage.removeItem('raymidi_exp');
+    sessionStorage.removeItem('raymidi_role');
+    window.location.href = '/login';
+    return;
+  }
+})();
+
+// ── Config ─────────────────────────────────────────────────────────────────
+// Fetch relay host from /api/config (production: separate Render service)
+// Falls back to same-origin for local dev
+let RELAY_HOST = location.host;
+(async () => {
+  try {
+    const resp = await fetch('/api/config');
+    if (resp.ok) {
+      const cfg = await resp.json();
+      if (cfg.relayHost) RELAY_HOST = cfg.relayHost;
+    }
+  } catch { /* local dev fallback — use location.host */ }
+})();
+
+// ── State ──────────────────────────────────────────────────────────────────
+let leads = [];
+let activeLead = null;
+let voiceWs = null;           // WebSocket to relay server
+let audioContext = null;       // for playback
+let micStream = null;          // MediaStream from getUserMedia
+let micProcessor = null;       // ScriptProcessorNode (fallback for AudioWorklet)
+let micSource = null;          // MediaStreamAudioSourceNode
+let isRecording = false;
+let isAISpeaking = false;
+let audioQueue = [];           // queued audio chunks for playback
+let currentSource = null;      // currently playing AudioBufferSourceNode
+let liveAITextEl = null;       // live AI text message element
+
+// ── REST API helper (for lead CRUD — NOT voice) ────────────────────────────
+async function api(method, body) {
+  const opts = {
+    method,
+    headers: { 'Content-Type': 'application/json' },
+    credentials: 'include',
+  };
+
+  let url = '/api/voice';
+  if (method === 'GET' && body) {
+    url += '?' + new URLSearchParams(body).toString();
+  } else if (body) {
+    opts.body = JSON.stringify(body);
+  }
+
+  const resp = await fetch(url, opts);
+
+  if (resp.status === 401) {
+    window.location.href = '/login';
+    throw new Error('Unauthorized');
+  }
+
+  const data = await resp.json();
+  if (!resp.ok) throw new Error(data.error || 'Request failed');
+  return data;
+}
+
+// ── Toast ──────────────────────────────────────────────────────────────────
+function showToast(message, type = 'success') {
+  const toast = document.getElementById('toast');
+  toast.textContent = message;
+  toast.className = `toast toast-${type} show`;
+  setTimeout(() => { toast.classList.remove('show'); }, 3000);
+}
+
+// ── Loading ────────────────────────────────────────────────────────────────
+function showLoading(text = 'Processing...') {
+  document.getElementById('loadingText').textContent = text;
+  document.getElementById('loadingOverlay').classList.add('active');
+}
+function hideLoading() {
+  document.getElementById('loadingOverlay').classList.remove('active');
+}
+
+// ── Voice status indicator ─────────────────────────────────────────────────
+function setVoiceStatus(status, text) {
+  const el = document.getElementById('voiceStatus');
+  const textEl = document.getElementById('voiceStatusText');
+  el.className = 'voice-status ' + status;
+  textEl.textContent = text;
+}
+
+// ── Stats ──────────────────────────────────────────────────────────────────
+function updateStats() {
+  document.getElementById('statTotal').textContent = leads.length;
+  document.getElementById('statHot').textContent = leads.filter(l => l.lead_score >= 80).length;
+  document.getElementById('statQualified').textContent = leads.filter(l => l.status === 'qualified' || l.status === 'converted').length;
+  const avg = leads.length ? Math.round(leads.reduce((s, l) => s + (l.lead_score || 0), 0) / leads.length) : 0;
+  document.getElementById('statAvg').textContent = avg;
+}
+
+// ── Load leads ─────────────────────────────────────────────────────────────
+async function loadLeads() {
+  try {
+    const data = await api('GET', { action: 'list' });
+    leads = data.leads || [];
+    renderLeadTable();
+    updateStats();
+  } catch (e) {
+    showToast('Failed to load leads: ' + e.message, 'error');
+  }
+}
+
+// ── Render lead table ──────────────────────────────────────────────────────
+function renderLeadTable() {
+  const tbody = document.getElementById('leadTableBody');
+  if (!leads.length) {
+    tbody.innerHTML = '<tr><td colspan="9" class="empty-state">No leads yet. Add one above.</td></tr>';
+    return;
+  }
+
+  tbody.innerHTML = leads.map(l => {
+    const scoreColor = l.lead_score >= 80 ? 'var(--gold)' : l.lead_score >= 50 ? 'var(--green)' : l.lead_score >= 25 ? 'var(--yellow)' : 'var(--red)';
+    const statusClass = `badge badge-${l.status || 'new'}`;
+    const priorityClass = `priority-${l.priority || 'medium'}`;
+
+    return `<tr>
+      <td style="font-weight:500;">${esc(l.name)}</td>
+      <td>${esc(l.phone)}</td>
+      <td>${esc(l.product_interest)}</td>
+      <td>${esc(l.source)}</td>
+      <td><span class="${priorityClass}" style="font-weight:600;font-size:0.82rem;text-transform:uppercase;">${esc(l.priority)}</span></td>
+      <td><span class="${statusClass}">${esc(l.status)}</span></td>
+      <td>
+        <div class="score-meter">
+          <div class="score-bar"><div class="score-fill" style="width:${l.lead_score}%;background:${scoreColor}"></div></div>
+          <span class="score-num" style="color:${scoreColor}">${l.lead_score}</span>
+        </div>
+      </td>
+      <td><span class="stage-badge">${esc(l.stage)}</span></td>
+      <td>
+        <div style="display:flex;gap:0.3rem;">
+          <button class="btn-action" onclick="startCall('${l.id}')">🎙️ Call</button>
+        </div>
+      </td>
+    </tr>`;
+  }).join('');
+}
+
+function esc(s) {
+  const d = document.createElement('div');
+  d.textContent = s || '';
+  return d.innerHTML;
+}
+
+// ── Create lead ────────────────────────────────────────────────────────────
+async function createLead(e) {
+  e.preventDefault();
+  const btn = document.getElementById('btnCreateLead');
+  btn.disabled = true;
+  btn.textContent = 'Creating...';
+
+  try {
+    const lead = await api('POST', {
+      action: 'create',
+      name: document.getElementById('fName').value,
+      phone: document.getElementById('fPhone').value,
+      email: document.getElementById('fEmail').value,
+      product_interest: document.getElementById('fProduct').value,
+      source: document.getElementById('fSource').value,
+      priority: document.getElementById('fPriority').value,
+    });
+
+    leads.unshift(lead);
+    renderLeadTable();
+    updateStats();
+    document.getElementById('leadForm').reset();
+    showToast('Lead created successfully!');
+  } catch (e) {
+    showToast('Failed to create lead: ' + e.message, 'error');
+  } finally {
+    btn.disabled = false;
+    btn.textContent = 'Add Lead';
+  }
+}
+
+// ── Get auth token for WebSocket ───────────────────────────────────────────
+// The JWT lives in an httpOnly cookie (invisible to JS). Fetch it via API.
+async function getAuthToken() {
+  try {
+    const resp = await fetch('/api/ws-token', { credentials: 'include' });
+    if (!resp.ok) return '';
+    const data = await resp.json();
+    return data.token || '';
+  } catch {
+    return '';
+  }
+}
+
+// ══════════════════════════════════════════════════════════════════════════
+// ── STREAMING VOICE — WebSocket + AudioWorklet ────────────────────────────
+// ══════════════════════════════════════════════════════════════════════════
+
+// ── Start voice call — open WebSocket to relay ─────────────────────────────
+async function startCall(leadId) {
+  const lead = leads.find(l => l.id === leadId);
+  if (!lead) return;
+
+  activeLead = lead;
+  const panel = document.getElementById('voicePanel');
+  panel.classList.add('active');
+
+  // Set header info
+  document.getElementById('vpLeadName').textContent = lead.name;
+  updateVoicePanelUI(lead);
+
+  // Clear transcript
+  const ta = document.getElementById('transcriptArea');
+  ta.innerHTML = '';
+
+  // Load existing conversation history
+  if (lead.conversation_history && lead.conversation_history.length) {
+    lead.conversation_history.forEach(msg => {
+      appendMessage(msg.role, msg.content);
+    });
+  }
+
+  // Connect WebSocket to relay (runs on same server)
+  showLoading('Connecting to voice server...');
+  setVoiceStatus('processing', 'Connecting...');
+
+  let connectionTimeout = null;
+  let wsReady = false;
+
+  try {
+    const token = await getAuthToken();
+    if (!token) {
+      showToast('Auth token missing — please log in again.', 'error');
+      hideLoading();
+      return;
+    }
+    const relayHost = RELAY_HOST || location.host;
+    const isLocal = relayHost === location.host && location.hostname === 'localhost';
+    const wsProtocol = isLocal ? 'ws' : 'wss';
+    const wsUrl = `${wsProtocol}://${relayHost}/voice?token=${encodeURIComponent(token)}&lead_id=${encodeURIComponent(leadId)}`;
+
+    voiceWs = new WebSocket(wsUrl);
+
+    voiceWs.onopen = () => {
+      console.log('[WS] Connected to relay');
+    };
+
+    voiceWs.onmessage = (event) => {
+      try {
+        const msg = JSON.parse(event.data);
+        if (msg.type === 'ready') wsReady = true;
+        if (connectionTimeout) { clearTimeout(connectionTimeout); connectionTimeout = null; }
+        handleRelayMessage(msg);
+      } catch (err) {
+        console.error('[WS] Parse error:', err);
+      }
+    };
+
+    voiceWs.onerror = (err) => {
+      console.error('[WS] Error:', err);
+      showToast('Voice connection error', 'error');
+      setVoiceStatus('', 'Disconnected');
+      hideLoading();
+      if (connectionTimeout) { clearTimeout(connectionTimeout); connectionTimeout = null; }
+    };
+
+    voiceWs.onclose = (event) => {
+      console.log('[WS] Closed:', event.code, event.reason);
+      stopMicStream();
+      setVoiceStatus('', 'Disconnected');
+      document.getElementById('micBtn').disabled = true;
+      hideLoading();
+      if (connectionTimeout) { clearTimeout(connectionTimeout); connectionTimeout = null; }
+      if (!wsReady && event.reason) {
+        showToast('Connection closed: ' + event.reason, 'error');
+      }
+    };
+
+    // Timeout if relay doesn't send 'ready' within 30 seconds
+    connectionTimeout = setTimeout(() => {
+      if (voiceWs && voiceWs.readyState !== WebSocket.CLOSED) {
+        voiceWs.close();
+      }
+      showToast('Connection timed out — voice server may be starting up. Please try again.', 'error');
+      setVoiceStatus('', 'Disconnected');
+      hideLoading();
+    }, 30000);
+  } catch (e) {
+    showToast('Failed to connect: ' + e.message, 'error');
+    hideLoading();
+  }
+
+  panel.scrollIntoView({ behavior: 'smooth' });
+}
+
+// ── Handle messages from relay server ──────────────────────────────────────
+function handleRelayMessage(msg) {
+  switch (msg.type) {
+    case 'ready':
+      hideLoading();
+      setVoiceStatus('listening', 'Ready');
+      document.getElementById('micBtn').disabled = false;
+      document.getElementById('micHint').textContent = 'Click to start talking';
+      break;
+
+    case 'transcript':
+      handleTranscript(msg);
+      break;
+
+    case 'ai_text':
+      handleAIText(msg);
+      break;
+
+    case 'ai_audio':
+      queueAudioChunk(msg.data);
+      break;
+
+    case 'ai_speaking':
+      isAISpeaking = msg.speaking;
+      if (msg.speaking) {
+        setVoiceStatus('speaking', 'AI Speaking');
+      } else {
+        setVoiceStatus('listening', 'Listening');
+      }
+      break;
+
+    case 'interrupt':
+      // AI was interrupted — clear audio queue
+      clearAudioQueue();
+      isAISpeaking = false;
+      setVoiceStatus('listening', 'Listening');
+      break;
+
+    case 'score':
+      handleScoreUpdate(msg);
+      break;
+
+    case 'error':
+      showToast(msg.message || 'Voice error', 'error');
+      break;
+  }
+}
+
+// ── Transcript handling ────────────────────────────────────────────────────
+let liveTranscriptEl = null;
+
+function handleTranscript(msg) {
+  const ta = document.getElementById('transcriptArea');
+  document.getElementById('transcriptEmpty')?.remove();
+
+  if (!msg.final) {
+    // Live partial transcript — update existing or create new
+    if (!liveTranscriptEl) {
+      liveTranscriptEl = document.createElement('div');
+      liveTranscriptEl.className = 'msg msg-user msg-live';
+      liveTranscriptEl.innerHTML = '<div class="msg-label">Lead (listening...)</div><span class="live-text"></span>';
+      ta.appendChild(liveTranscriptEl);
+    }
+    liveTranscriptEl.querySelector('.live-text').textContent = msg.text;
+    ta.scrollTop = ta.scrollHeight;
+  } else {
+    // Final transcript — replace live element with final
+    if (liveTranscriptEl) {
+      liveTranscriptEl.remove();
+      liveTranscriptEl = null;
+    }
+    appendMessage('user', msg.text);
+    setVoiceStatus('processing', 'Processing...');
+  }
+}
+
+// ── AI text streaming ──────────────────────────────────────────────────────
+function handleAIText(msg) {
+  const ta = document.getElementById('transcriptArea');
+
+  if (!msg.done) {
+    // Streaming tokens — append to live AI message
+    if (!liveAITextEl) {
+      liveAITextEl = document.createElement('div');
+      liveAITextEl.className = 'msg msg-ai';
+      liveAITextEl.innerHTML = '<div class="msg-label">AI Agent</div><span class="live-text"></span>';
+      ta.appendChild(liveAITextEl);
+    }
+    const span = liveAITextEl.querySelector('.live-text');
+    span.textContent += msg.text;
+    ta.scrollTop = ta.scrollHeight;
+  } else {
+    // LLM done — finalize the message
+    if (liveAITextEl) {
+      liveAITextEl.classList.remove('msg-live');
+      liveAITextEl = null;
+    }
+  }
+}
+
+// ── Score update ───────────────────────────────────────────────────────────
+function handleScoreUpdate(msg) {
+  if (!activeLead) return;
+  activeLead.lead_score = msg.score;
+  activeLead.stage = msg.stage;
+  activeLead.turn_count = msg.turnCount;
+
+  if (msg.isHot) {
+    activeLead.status = 'qualified';
+    showToast('🔥 Hot lead detected! Score: ' + msg.score, 'success');
+  }
+
+  updateVoicePanelUI(activeLead);
+  renderLeadTable();
+  updateStats();
+}
+
+// ── Audio playback (chunked streaming via AudioContext) ────────────────────
+function initAudioContext() {
+  if (!audioContext) {
+    audioContext = new (window.AudioContext || window.webkitAudioContext)({ sampleRate: 22050 });
+  }
+  if (audioContext.state === 'suspended') {
+    audioContext.resume();
+  }
+}
+
+function queueAudioChunk(base64Audio) {
+  initAudioContext();
+
+  // Decode base64 to ArrayBuffer
+  const raw = atob(base64Audio);
+  const buffer = new Uint8Array(raw.length);
+  for (let i = 0; i < raw.length; i++) buffer[i] = raw.charCodeAt(i);
+
+  audioQueue.push(buffer.buffer);
+  if (!currentSource) playNextChunk();
+}
+
+async function playNextChunk() {
+  if (!audioQueue.length) {
+    currentSource = null;
+    return;
+  }
+
+  try {
+    const buffer = audioQueue.shift();
+    const audioBuffer = await audioContext.decodeAudioData(buffer.slice(0)); // slice to avoid detached buffer
+    const source = audioContext.createBufferSource();
+    source.buffer = audioBuffer;
+    source.connect(audioContext.destination);
+    source.onended = () => {
+      currentSource = null;
+      playNextChunk();
+    };
+    currentSource = source;
+    source.start();
+  } catch (e) {
+    console.error('[Audio] Decode error:', e);
+    currentSource = null;
+    playNextChunk(); // skip bad chunk
+  }
+}
+
+function clearAudioQueue() {
+  audioQueue = [];
+  if (currentSource) {
+    try { currentSource.stop(); } catch {}
+    currentSource = null;
+  }
+}
+
+// ── Mic streaming (ScriptProcessorNode — widely supported) ─────────────────
+async function toggleRecording() {
+  if (isRecording) {
+    stopMicStream();
+    // Tell relay user stopped speaking
+    if (voiceWs && voiceWs.readyState === WebSocket.OPEN) {
+      voiceWs.send(JSON.stringify({ type: 'stop' }));
+    }
+  } else {
+    // If AI is speaking, interrupt first
+    if (isAISpeaking) {
+      clearAudioQueue();
+      isAISpeaking = false;
+      if (voiceWs && voiceWs.readyState === WebSocket.OPEN) {
+        voiceWs.send(JSON.stringify({ type: 'interrupt' }));
+      }
+    }
+    await startMicStream();
+  }
+}
+
+async function startMicStream() {
+  try {
+    initAudioContext();
+
+    micStream = await navigator.mediaDevices.getUserMedia({
+      audio: {
+        sampleRate: 16000,
+        channelCount: 1,
+        echoCancellation: true,
+        noiseSuppression: true,
+      }
+    });
+
+    // Create a separate AudioContext at 16kHz for mic capture
+    const micCtx = new (window.AudioContext || window.webkitAudioContext)({ sampleRate: 16000 });
+    micSource = micCtx.createMediaStreamSource(micStream);
+
+    // ScriptProcessorNode for raw PCM access (widely supported)
+    micProcessor = micCtx.createScriptProcessor(4096, 1, 1);
+    micProcessor.onaudioprocess = (e) => {
+      if (!isRecording || !voiceWs || voiceWs.readyState !== WebSocket.OPEN) return;
+
+      const input = e.inputBuffer.getChannelData(0);
+      // Convert float32 to int16 PCM
+      const pcm16 = new Int16Array(input.length);
+      for (let i = 0; i < input.length; i++) {
+        pcm16[i] = Math.max(-32768, Math.min(32767, Math.round(input[i] * 32768)));
+      }
+
+      // Convert to base64 and send
+      const bytes = new Uint8Array(pcm16.buffer);
+      let binary = '';
+      for (let i = 0; i < bytes.length; i++) binary += String.fromCharCode(bytes[i]);
+      const base64 = btoa(binary);
+
+      voiceWs.send(JSON.stringify({ type: 'audio', data: base64 }));
+    };
+
+    micSource.connect(micProcessor);
+    micProcessor.connect(micCtx.destination); // needed for ScriptProcessor to work
+
+    // Store context for cleanup
+    micProcessor._micCtx = micCtx;
+
+    isRecording = true;
+    document.getElementById('micBtn').classList.add('recording');
+    document.getElementById('micHint').textContent = 'Recording... Click to stop';
+    setVoiceStatus('listening', 'Listening');
+  } catch (e) {
+    if (e.name === 'NotAllowedError') {
+      showToast('Microphone permission denied. Please allow microphone access.', 'error');
+    } else {
+      showToast('Could not access microphone: ' + e.message, 'error');
+    }
+  }
+}
+
+function stopMicStream() {
+  isRecording = false;
+  document.getElementById('micBtn').classList.remove('recording');
+  document.getElementById('micHint').textContent = 'Click to start talking';
+
+  if (micProcessor) {
+    micProcessor.disconnect();
+    if (micProcessor._micCtx) {
+      micProcessor._micCtx.close().catch(() => {});
+    }
+    micProcessor = null;
+  }
+  if (micSource) {
+    micSource.disconnect();
+    micSource = null;
+  }
+  if (micStream) {
+    micStream.getTracks().forEach(t => t.stop());
+    micStream = null;
+  }
+}
+
+// ── Voice panel UI ─────────────────────────────────────────────────────────
+function updateVoicePanelUI(lead) {
+  document.getElementById('vpStage').textContent = (lead.stage || 'welcome').charAt(0).toUpperCase() + (lead.stage || 'welcome').slice(1);
+  const statusEl = document.getElementById('vpStatus');
+  statusEl.textContent = (lead.status || 'new');
+  statusEl.className = `badge badge-${lead.status || 'new'}`;
+
+  const score = lead.lead_score || 10;
+  document.getElementById('scoreNum').textContent = score;
+
+  const circle = document.getElementById('scoreCircle');
+  const hotAlert = document.getElementById('hotAlert');
+  if (score >= 80) {
+    circle.classList.add('hot');
+    hotAlert.classList.add('active');
+  } else {
+    circle.classList.remove('hot');
+    hotAlert.classList.remove('active');
+  }
+
+  if (score >= 80) circle.style.borderColor = 'var(--gold)';
+  else if (score >= 50) circle.style.borderColor = 'var(--green)';
+  else if (score >= 25) circle.style.borderColor = 'var(--yellow)';
+  else circle.style.borderColor = 'var(--border2)';
+}
+
+function appendMessage(role, content) {
+  const ta = document.getElementById('transcriptArea');
+  document.getElementById('transcriptEmpty')?.remove();
+
+  const div = document.createElement('div');
+  div.className = `msg msg-${role === 'user' ? 'user' : 'ai'}`;
+  div.innerHTML = `<div class="msg-label">${role === 'user' ? 'Lead' : 'AI Agent'}</div>${esc(content)}`;
+  ta.appendChild(div);
+  ta.scrollTop = ta.scrollHeight;
+}
+
+function closeVoicePanel() {
+  // Send end to relay
+  if (voiceWs && voiceWs.readyState === WebSocket.OPEN) {
+    voiceWs.send(JSON.stringify({ type: 'end' }));
+    voiceWs.close();
+  }
+  voiceWs = null;
+
+  stopMicStream();
+  clearAudioQueue();
+
+  document.getElementById('voicePanel').classList.remove('active');
+  activeLead = null;
+  liveAITextEl = null;
+  liveTranscriptEl = null;
+
+  // Reload leads to get latest data from DB
+  loadLeads();
+}
+
+// ── Transfer to human ─────────────────────────────────────────────────────
+async function transferLead() {
+  if (!activeLead) return;
+  try {
+    await api('POST', {
+      action: 'update',
+      id: activeLead.id,
+      status: 'transferred',
+    });
+    activeLead.status = 'transferred';
+    updateVoicePanelUI(activeLead);
+    renderLeadTable();
+    updateStats();
+    showToast('Lead transferred to human agent successfully!');
+    appendMessage('assistant', '📞 This lead has been transferred to a human agent. They will contact the prospect shortly.');
+  } catch (e) {
+    showToast('Transfer failed: ' + e.message, 'error');
+  }
+}
+
+// ── End conversation ──────────────────────────────────────────────────────
+function endConversation() {
+  if (!activeLead) return;
+  stopMicStream();
+  clearAudioQueue();
+
+  if (voiceWs && voiceWs.readyState === WebSocket.OPEN) {
+    voiceWs.send(JSON.stringify({ type: 'end' }));
+  }
+
+  appendMessage('assistant', 'Conversation ended. Thank you!');
+  showToast('Conversation ended.');
+  document.getElementById('micBtn').disabled = true;
+  setVoiceStatus('', 'Ended');
+}
+
+// ── Logout ─────────────────────────────────────────────────────────────────
+async function logout() {
+  if (voiceWs) { try { voiceWs.close(); } catch {} }
+  try {
+    await fetch('/api/auth', { method: 'DELETE', credentials: 'include' });
+  } catch { /* ignore */ }
+  window.location.href = '/login';
+}
+
+// ── Init ───────────────────────────────────────────────────────────────────
+loadLeads();
+</script>
+</body>
+</html>

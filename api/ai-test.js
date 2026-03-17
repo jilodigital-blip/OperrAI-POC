@@ -68,11 +68,13 @@ function extractAuthToken(req) {
 }
 
 module.exports = async (req, res) => {
-  const JWT_SECRET        = process.env.JWT_SECRET        || 'raymidi-poc-secret-change-in-prod';
+  const JWT_SECRET        = process.env.JWT_SECRET        || '';
   const SUPABASE_URL      = process.env.SUPABASE_URL      || '';
   const SUPABASE_ANON_KEY = process.env.SUPABASE_ANON_KEY || '';
 
-  res.setHeader('Access-Control-Allow-Origin', process.env.CORS_ORIGIN || '*');
+  const corsOrigin = process.env.CORS_ORIGIN;
+  if (!corsOrigin) return res.status(500).json({ error: 'CORS origin not configured' });
+  res.setHeader('Access-Control-Allow-Origin', corsOrigin);
   res.setHeader('Access-Control-Allow-Methods', 'GET, POST, OPTIONS');
   res.setHeader('Access-Control-Allow-Headers', 'Content-Type, Authorization');
   res.setHeader('Access-Control-Allow-Credentials', 'true');
@@ -83,13 +85,19 @@ module.exports = async (req, res) => {
   const token = extractAuthToken(req);
   const claims = verifyJWT(token, JWT_SECRET);
   if (!claims) return res.status(401).json({ error: 'Unauthorized' });
-  if (claims.role !== 'admin') return res.status(403).json({ error: 'Admin access required' });
+
+  // Use client from JWT claims (authoritative), fall back to query param
+  const urlParsed = new URL(req.url, `http://${req.headers.host || 'localhost'}`);
+  const effectiveClient = (claims.client && claims.client !== 'admin')
+    ? claims.client
+    : (urlParsed.searchParams.get('client') || '');
+  const tbl = (name) => effectiveClient === 'apb' ? `${name}_apb` : name;
 
   // ── GET: Retrieve past test runs ──────────────────────────────────────────
   if (req.method === 'GET') {
     try {
       const runs = await supabaseFetch(
-        'test_runs?select=*&order=created_at.desc&limit=20',
+        `${tbl('test_runs')}?select=*&order=created_at.desc&limit=20`,
         SUPABASE_URL,
         SUPABASE_ANON_KEY
       );
@@ -141,7 +149,9 @@ module.exports = async (req, res) => {
     };
 
     try {
-      const saved = await supabaseInsert('test_runs', row, SUPABASE_URL, SUPABASE_ANON_KEY);
+      const postClient = effectiveClient || body.client || '';
+      const tblPost = (name) => postClient === 'apb' ? `${name}_apb` : name;
+      const saved = await supabaseInsert(tblPost('test_runs'), row, SUPABASE_URL, SUPABASE_ANON_KEY);
       return res.status(200).json({ success: true, id: saved?.id || null });
     } catch (err) {
       console.error('AI Test POST error:', err);

@@ -41,11 +41,13 @@ function extractAuthToken(req) {
 
 module.exports = async (req, res) => {
   // Read env vars inside handler to avoid stale module-scope cache on Vercel
-  const JWT_SECRET      = process.env.JWT_SECRET      || 'raymidi-poc-secret-change-in-prod';
+  const JWT_SECRET      = process.env.JWT_SECRET      || '';
   const SUPABASE_URL    = process.env.SUPABASE_URL    || '';
   const SUPABASE_ANON_KEY = process.env.SUPABASE_ANON_KEY || '';
 
-  res.setHeader('Access-Control-Allow-Origin', process.env.CORS_ORIGIN || '*');
+  const corsOrigin = process.env.CORS_ORIGIN;
+  if (!corsOrigin) return res.status(500).json({ error: 'CORS origin not configured' });
+  res.setHeader('Access-Control-Allow-Origin', corsOrigin);
   res.setHeader('Access-Control-Allow-Methods', 'GET, OPTIONS');
   res.setHeader('Access-Control-Allow-Headers', 'Content-Type, Authorization');
   res.setHeader('Access-Control-Allow-Credentials', 'true');
@@ -54,12 +56,22 @@ module.exports = async (req, res) => {
   if (req.method !== 'GET') return res.status(405).json({ error: 'Method not allowed' });
 
   const token = extractAuthToken(req);
-  if (!verifyJWT(token, JWT_SECRET)) return res.status(401).json({ error: 'Unauthorized' });
+  const claims = verifyJWT(token, JWT_SECRET);
+  if (!claims) return res.status(401).json({ error: 'Unauthorized' });
 
   try {
-    // Fetch messages with their ratings joined
+    // Use client from JWT claims to scope dashboard data
+    const queryClient = (req.url || '').split('client=')[1]?.split('&')[0] || '';
+    const clientKey = claims.client && claims.client !== 'admin'
+      ? claims.client
+      : decodeURIComponent(queryClient);
+    const tbl = (name) => clientKey === 'apb' ? `${name}_apb` : name;
+    const clientClause = clientKey ? `&client=eq.${encodeURIComponent(clientKey)}` : '';
+
+    // Fetch messages with their ratings joined (uses client-specific tables)
+    const ratingsTable = tbl('ratings');
     const messages = await supabaseFetch(
-      'messages?select=id,question_hash,response_time_ms,sources,created_at,ratings(accuracy_score,accuracy_label)&order=created_at.desc&limit=500',
+      `${tbl('messages')}?select=id,question_hash,response_time_ms,sources,created_at,${ratingsTable}(accuracy_score,accuracy_label)&order=created_at.desc&limit=500${clientClause}`,
       SUPABASE_URL,
       SUPABASE_ANON_KEY
     );
@@ -86,10 +98,12 @@ module.exports = async (req, res) => {
       messages.reduce((sum, m) => sum + (m.response_time_ms || 0), 0) / totalQuestions
     );
 
-    const ratedMessages = messages.filter(m => m.ratings?.length > 0);
+    // PostgREST returns ratings under the table name key (ratings or ratings_apb)
+    const getRatings = (m) => m.ratings || m.ratings_apb || [];
+    const ratedMessages = messages.filter(m => getRatings(m).length > 0);
     const avgAccuracyScore = ratedMessages.length > 0
       ? Math.round(
-          ratedMessages.reduce((sum, m) => sum + (m.ratings[0]?.accuracy_score || 0), 0) /
+          ratedMessages.reduce((sum, m) => sum + (getRatings(m)[0]?.accuracy_score || 0), 0) /
           ratedMessages.length * 100
         ) / 100
       : null;
@@ -97,7 +111,7 @@ module.exports = async (req, res) => {
     // Accuracy label distribution
     const distribution = { Excellent: 0, Good: 0, Acceptable: 0, Poor: 0 };
     ratedMessages.forEach(m => {
-      const label = m.ratings[0]?.accuracy_label;
+      const label = getRatings(m)[0]?.accuracy_label;
       if (label && distribution[label] !== undefined) distribution[label]++;
     });
 
@@ -114,8 +128,8 @@ module.exports = async (req, res) => {
     const recentActivity = messages.slice(0, 10).map(m => ({
       id: m.id,
       responseTimeMs: m.response_time_ms,
-      accuracyScore: m.ratings?.[0]?.accuracy_score ?? null,
-      accuracyLabel: m.ratings?.[0]?.accuracy_label ?? null,
+      accuracyScore: getRatings(m)[0]?.accuracy_score ?? null,
+      accuracyLabel: getRatings(m)[0]?.accuracy_label ?? null,
       createdAt: m.created_at,
     }));
 

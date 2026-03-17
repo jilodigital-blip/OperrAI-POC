@@ -41,13 +41,41 @@ async function readBody(req) {
   });
 }
 
+// ── Multi-tenant client credentials ─────────────────────────────────────────
+// Each client has its own demo user and maps to a unique client key.
+// Admin credentials are shared across all clients.
+function getClientCredentials() {
+  return [
+    {
+      client: 'ather',
+      label: 'Ather Energy',
+      username: process.env.DEMO_USER,
+      password: process.env.DEMO_PASS,
+    },
+    {
+      client: 'apb',
+      label: 'Airtel Payments Bank',
+      username: process.env.APB_DEMO_USER,
+      password: process.env.APB_DEMO_PASS,
+    },
+  ];
+}
+
 module.exports = async (req, res) => {
+  // Validate required env vars — log missing names (never values) for diagnostics
+  const credentialVars = ['DEMO_USER', 'DEMO_PASS', 'ADMIN_USER', 'ADMIN_PASS', 'APB_DEMO_USER', 'APB_DEMO_PASS'];
+  const requiredEnvVars = [...credentialVars, 'JWT_SECRET'];
+  const missing = requiredEnvVars.filter(v => !process.env[v]);
+  if (missing.length > 0) {
+    console.error('[auth] Missing required env vars:', missing.join(', '));
+    return res.status(500).json({ error: `Server credentials not configured. Missing: ${missing.join(', ')}. Ensure env vars are enabled for Preview + Production in Vercel dashboard.` });
+  }
+
   // Read env vars inside handler to avoid stale module-scope cache on Vercel
-  const DEMO_USER   = process.env.DEMO_USER   || 'ather_demo';
-  const DEMO_PASS   = process.env.DEMO_PASS   || 'Ather@Raymidi2024';
-  const ADMIN_USER  = process.env.ADMIN_USER  || 'raymidi_admin';
-  const ADMIN_PASS  = process.env.ADMIN_PASS  || 'Admin@Raymidi2024';
-  const JWT_SECRET  = process.env.JWT_SECRET  || 'raymidi-poc-secret-change-in-prod';
+  const ADMIN_USER  = process.env.ADMIN_USER;
+  const ADMIN_PASS  = process.env.ADMIN_PASS;
+  const JWT_SECRET  = process.env.JWT_SECRET;
+  const clients     = getClientCredentials();
 
   const corsOrigin = process.env.CORS_ORIGIN || '*';
   res.setHeader('Access-Control-Allow-Origin', corsOrigin);
@@ -79,18 +107,37 @@ module.exports = async (req, res) => {
   const body = req.body && typeof req.body === 'object' ? req.body : await readBody(req);
   const { username = '', password = '' } = body;
 
+  // Check admin credentials first
   const isAdmin = safeEqual(username, ADMIN_USER) && safeEqual(password, ADMIN_PASS);
-  const isUser  = safeEqual(username, DEMO_USER)  && safeEqual(password, DEMO_PASS);
 
-  if (!isAdmin && !isUser) {
+  // Check each client's demo credentials
+  let matchedClient = null;
+  if (!isAdmin) {
+    for (const c of clients) {
+      if (safeEqual(username, c.username) && safeEqual(password, c.password)) {
+        matchedClient = c;
+        break;
+      }
+    }
+  }
+
+  if (!isAdmin && !matchedClient) {
+    // Log which env vars are empty to help diagnose misconfigured deployments
+    const emptyVars = credentialVars.filter(v => !process.env[v]);
+    if (emptyVars.length > 0) {
+      console.error('[auth] Login failed — these credential env vars are empty:', emptyVars.join(', '));
+    } else {
+      console.error('[auth] Login failed — credentials did not match (env vars are set)');
+    }
     attempts[ip].push(now);
     return res.status(401).json({ error: 'Invalid credentials' });
   }
 
-  const role = isAdmin ? 'admin' : 'user';
-  const iat  = Math.floor(Date.now() / 1000);
-  const exp  = iat + 8 * 3600; // 8-hour session
-  const token = signJWT({ sub: username, client: 'ev_scooter', role, iat, exp }, JWT_SECRET);
+  const role   = isAdmin ? 'admin' : 'user';
+  const client = isAdmin ? 'admin' : matchedClient.client;
+  const iat    = Math.floor(Date.now() / 1000);
+  const exp    = iat + 8 * 3600; // 8-hour session
+  const token  = signJWT({ sub: username, client, role, iat, exp }, JWT_SECRET);
 
   // Set httpOnly cookie — invisible to JavaScript / browser console
   const isSecure = (req.headers['x-forwarded-proto'] || '').includes('https');
@@ -98,5 +145,5 @@ module.exports = async (req, res) => {
   res.setHeader('Set-Cookie', `raymidi_auth=${token}; ${cookieFlags}`);
 
   // Return session metadata (no token) — frontend uses cookie for auth
-  return res.status(200).json({ expiresAt: exp, role });
+  return res.status(200).json({ expiresAt: exp, role, client });
 };

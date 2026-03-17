@@ -49,11 +49,13 @@ function extractAuthToken(req) {
 }
 
 module.exports = async (req, res) => {
-  const JWT_SECRET        = process.env.JWT_SECRET        || 'raymidi-poc-secret-change-in-prod';
+  const JWT_SECRET        = process.env.JWT_SECRET        || '';
   const SUPABASE_URL      = process.env.SUPABASE_URL      || '';
   const SUPABASE_ANON_KEY = process.env.SUPABASE_ANON_KEY || '';
 
-  res.setHeader('Access-Control-Allow-Origin', process.env.CORS_ORIGIN || '*');
+  const corsOrigin = process.env.CORS_ORIGIN;
+  if (!corsOrigin) return res.status(500).json({ error: 'CORS origin not configured' });
+  res.setHeader('Access-Control-Allow-Origin', corsOrigin);
   res.setHeader('Access-Control-Allow-Methods', 'GET, POST, OPTIONS');
   res.setHeader('Access-Control-Allow-Headers', 'Content-Type, Authorization');
   res.setHeader('Access-Control-Allow-Credentials', 'true');
@@ -89,9 +91,13 @@ module.exports = async (req, res) => {
     const VALID_CATEGORIES = ['accuracy', 'speed', 'ui', 'general', 'other'];
     const safeCategory = VALID_CATEGORIES.includes(category) ? category : 'general';
 
+    // Tag feedback with client from JWT for tenant isolation
+    const feedbackClient = claims.client && claims.client !== 'admin' ? claims.client : 'ather';
+    const tbl = (name) => feedbackClient === 'apb' ? `${name}_apb` : name;
+
     try {
       const rows = await supabaseRequest(
-        'feedbacks',
+        tbl('feedbacks'),
         'POST',
         {
           session_id:  sessionId  || null,
@@ -99,6 +105,7 @@ module.exports = async (req, res) => {
           category:    safeCategory,
           comment:     comment.trim().slice(0, 2000),
           tester_name: (testerName || '').trim().slice(0, 100) || null,
+          client:      feedbackClient,
         },
         SUPABASE_URL,
         SUPABASE_ANON_KEY
@@ -120,8 +127,14 @@ module.exports = async (req, res) => {
     }
 
     try {
+      // Optional client filter for admin (e.g. ?client=apb)
+      const url = new URL(req.url, `https://${req.headers.host || 'localhost'}`);
+      const clientFilter = url.searchParams.get('client') || '';
+      const tblAdmin = (name) => clientFilter === 'apb' ? `${name}_apb` : name;
+      const clientClause = clientFilter ? `&client=eq.${encodeURIComponent(clientFilter)}` : '';
+
       const rows = await supabaseRequest(
-        'feedbacks?select=*&order=created_at.desc&limit=200',
+        `${tblAdmin('feedbacks')}?select=*&order=created_at.desc&limit=200${clientClause}`,
         'GET',
         null,
         SUPABASE_URL,

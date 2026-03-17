@@ -7,13 +7,20 @@ async function readBody(req) {
   });
 }
 
-module.exports = async (req, res) => {
-  const OPENAI_API_KEY    = process.env.OPENAI_API_KEY    || '';
-  const SUPABASE_URL      = process.env.SUPABASE_URL      || '';
-  const SUPABASE_ANON_KEY = process.env.SUPABASE_ANON_KEY || '';
-  const INGEST_SECRET     = process.env.INGEST_SECRET     || '';
+function sanitizeKey(raw) {
+  return raw.replace(/^["']+|["']+$/g, '').replace(/[\r\n]+/g, '')
+    .replace(/[\u200B-\u200D\uFEFF\u00A0]/g, '').trim();
+}
 
-  res.setHeader('Access-Control-Allow-Origin', process.env.CORS_ORIGIN || '*');
+module.exports = async (req, res) => {
+  const OPENAI_API_KEY    = sanitizeKey(process.env.OPENAI_API_KEY || '');
+  const SUPABASE_URL      = (process.env.SUPABASE_URL      || '').trim();
+  const SUPABASE_ANON_KEY = (process.env.SUPABASE_ANON_KEY || '').trim();
+  const INGEST_SECRET     = (process.env.INGEST_SECRET     || '').trim();
+
+  const corsOrigin = process.env.CORS_ORIGIN;
+  if (!corsOrigin) return res.status(500).json({ error: 'CORS origin not configured' });
+  res.setHeader('Access-Control-Allow-Origin', corsOrigin);
   res.setHeader('Access-Control-Allow-Methods', 'POST, OPTIONS');
   res.setHeader('Access-Control-Allow-Headers', 'Content-Type');
 
@@ -22,7 +29,7 @@ module.exports = async (req, res) => {
 
   // Vercel pre-parses JSON bodies onto req.body; fall back to manual read
   const body = req.body && typeof req.body === 'object' ? req.body : await readBody(req);
-  const { secret, doc_id, doc_name, content } = body;
+  const { secret, doc_id, doc_name, content, client } = body;
 
   // Guard with a secret so only you can ingest
   if (!INGEST_SECRET || secret !== INGEST_SECRET) {
@@ -31,6 +38,10 @@ module.exports = async (req, res) => {
   if (!doc_name?.trim() || !content?.trim()) {
     return res.status(400).json({ error: 'doc_name and content are required' });
   }
+
+  // Validate client against allowlist — defaults to 'ather'
+  const VALID_CLIENTS = ['ather', 'apb'];
+  const safeClient = VALID_CLIENTS.includes(client) ? client : 'ather';
 
   // Use provided doc_id or generate a slug from doc_name for upsert deduplication
   const stableDocId = (doc_id?.trim()) ||
@@ -53,8 +64,9 @@ module.exports = async (req, res) => {
   const embedData = await embedResp.json();
   const embedding = embedData.data[0].embedding;
 
-  // Upsert into Supabase — on_conflict=doc_id prevents duplicates when re-ingesting
-  const sbResp = await fetch(`${SUPABASE_URL}/rest/v1/documents?on_conflict=doc_id`, {
+  // Upsert into client-specific table — on_conflict=doc_id prevents duplicates when re-ingesting
+  const tableName = safeClient === 'apb' ? 'documents_apb' : 'documents';
+  const sbResp = await fetch(`${SUPABASE_URL}/rest/v1/${tableName}?on_conflict=doc_id`, {
     method: 'POST',
     headers: {
       'apikey': SUPABASE_ANON_KEY,
@@ -70,5 +82,5 @@ module.exports = async (req, res) => {
   const saved = await sbResp.json();
   const id = Array.isArray(saved) ? saved[0]?.id : saved?.id;
 
-  return res.status(200).json({ success: true, id, doc_id: stableDocId, doc_name: doc_name.trim() });
+  return res.status(200).json({ success: true, id, doc_id: stableDocId, doc_name: doc_name.trim(), client: safeClient });
 };

@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
-  <meta name="theme-color" content="#0A0A0A" />
+  <meta name="theme-color" content="#F4F4F2" />
   <meta name="mobile-web-app-capable" content="yes" />
   <meta name="apple-mobile-web-app-capable" content="yes" />
   <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
@@ -20,10 +20,10 @@
     :root {
       --gold: #D4AF37;
       --gold-dim: rgba(212,175,55,0.12);
-      --ink: #0A0A0A;
-      --card-bg: #111111;
-      --border: rgba(255,255,255,0.07);
-      --muted: #6B7280;
+      --ink: #F4F4F2;
+      --card-bg: #FFFFFF;
+      --border: rgba(0,0,0,0.09);
+      --muted: #555555;
       --font-heading: 'Syne', sans-serif;
       --font-body: 'DM Sans', sans-serif;
     }
@@ -31,7 +31,7 @@
     html, body {
       height: 100%;
       background: var(--ink);
-      color: #fff;
+      color: #111;
       font-family: var(--font-body);
     }
 
@@ -51,8 +51,8 @@
       position: fixed;
       inset: 0;
       background-image:
-        linear-gradient(rgba(212,175,55,0.03) 1px, transparent 1px),
-        linear-gradient(90deg, rgba(212,175,55,0.03) 1px, transparent 1px);
+        linear-gradient(rgba(212,175,55,0.06) 1px, transparent 1px),
+        linear-gradient(90deg, rgba(212,175,55,0.06) 1px, transparent 1px);
       background-size: 60px 60px;
       pointer-events: none;
       z-index: 0;
@@ -72,7 +72,7 @@
       font-family: var(--font-heading);
       font-size: 1.75rem;
       font-weight: 800;
-      color: #fff;
+      color: #111;
       text-decoration: none;
       letter-spacing: -0.02em;
       margin-bottom: 2.5rem;
@@ -129,7 +129,7 @@
       font-size: 0.8rem;
       font-weight: 500;
       letter-spacing: 0.04em;
-      color: rgba(255,255,255,0.6);
+      color: rgba(0,0,0,0.55);
       margin-bottom: 0.5rem;
       text-transform: uppercase;
     }
@@ -137,13 +137,13 @@
     input[type="text"],
     input[type="password"] {
       width: 100%;
-      background: rgba(255,255,255,0.04);
+      background: #F0F0F0;
       border: 1px solid var(--border);
       border-radius: 8px;
       padding: 0.75rem 1rem;
       font-family: var(--font-body);
       font-size: 0.95rem;
-      color: #fff;
+      color: #111;
       outline: none;
       transition: border-color 0.2s;
     }
@@ -153,7 +153,7 @@
       border-color: rgba(212,175,55,0.5);
     }
 
-    input::placeholder { color: rgba(255,255,255,0.2); }
+    input::placeholder { color: rgba(0,0,0,0.3); }
 
     .btn-login {
       width: 100%;
@@ -164,7 +164,7 @@
       font-family: var(--font-heading);
       font-size: 0.95rem;
       font-weight: 700;
-      color: var(--ink);
+      color: #111;
       cursor: pointer;
       transition: opacity 0.2s, transform 0.1s;
       margin-top: 0.5rem;
@@ -203,8 +203,8 @@
       display: inline-block;
       width: 16px;
       height: 16px;
-      border: 2px solid rgba(10,10,10,0.3);
-      border-top-color: var(--ink);
+      border: 2px solid rgba(212,175,55,0.3);
+      border-top-color: var(--gold);
       border-radius: 50%;
       animation: spin 0.7s linear infinite;
       flex-shrink: 0;
@@ -221,14 +221,37 @@
       text-decoration: none;
       transition: color 0.2s;
     }
-    .back-link:hover { color: rgba(255,255,255,0.7); }
+    .back-link:hover { color: var(--gold); }
 
     @media (max-width: 480px) {
       .card { padding: 2rem 1.25rem; }
     }
+
+    /* ── Dark theme ───────────────────────────────────────────── */
+    body.dark-theme {
+      --ink: #0A0A0A;
+      --card-bg: #111111;
+      --border: rgba(255,255,255,0.07);
+      --muted: #6B7280;
+      color: #fff;
+    }
+    body.dark-theme::before {
+      background-image:
+        linear-gradient(rgba(212,175,55,0.03) 1px, transparent 1px),
+        linear-gradient(90deg, rgba(212,175,55,0.03) 1px, transparent 1px);
+    }
+    body.dark-theme .logo { color: #fff; }
+    body.dark-theme label { color: rgba(255,255,255,0.6); }
+    body.dark-theme input[type="text"],
+    body.dark-theme input[type="password"] { background: rgba(255,255,255,0.04); color: #fff; }
+    body.dark-theme input::placeholder { color: rgba(255,255,255,0.2); }
+    body.dark-theme .back-link:hover { color: rgba(255,255,255,0.7); }
+    body.dark-theme .alert.info { color: var(--gold); }
+    body.dark-theme .spinner { border-color: rgba(10,10,10,0.3); border-top-color: #0A0A0A; }
   </style>
 </head>
 <body>
+  <script>(function(){var t=localStorage.getItem('raymidi_theme');if(t==='dark')document.body.classList.add('dark-theme')})()</script>
   <!-- Console warning: deters social engineering / self-XSS attacks -->
   <script>
   (function(){
@@ -275,7 +298,8 @@
     (function () {
       const exp = parseInt(sessionStorage.getItem('raymidi_exp') || '0', 10);
       if (exp > Math.floor(Date.now() / 1000)) {
-        window.location.href = '/ev-poc';
+        const role = sessionStorage.getItem('raymidi_role');
+        window.location.href = role === 'admin' ? '/admin' : '/ev-poc';
       }
     })();
 
@@ -347,13 +371,15 @@
           // Token is now in httpOnly cookie (set by server) — not accessible via JS
           sessionStorage.setItem('raymidi_exp', String(data.expiresAt));
           sessionStorage.setItem('raymidi_role', data.role || 'user');
+          sessionStorage.setItem('raymidi_client', data.client || 'ather');
           showAlert('info', 'Access granted. Redirecting…');
-          setTimeout(() => { window.location.href = '/ev-poc'; }, 600);
+          const dest = data.role === 'admin' ? '/admin' : '/ev-poc';
+          setTimeout(() => { window.location.href = dest; }, 600);
         } else if (resp.status === 429) {
           showAlert('error', data.error || 'Too many attempts. Please wait.');
           submitBtn.disabled = false;
         } else {
-          showAlert('error', 'Invalid credentials. Please try again.');
+          showAlert('error', data.error || 'Invalid credentials. Please try again.');
           document.getElementById('password').value = '';
           submitBtn.disabled = false;
         }
