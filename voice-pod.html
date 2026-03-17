@@ -1103,6 +1103,7 @@ async function startCall(leadId) {
 
     voiceWs.onerror = (err) => {
       console.error('[WS] Error:', err);
+      debugLog('WS ERROR — connection failed');
       showToast('Voice connection error', 'error');
       setVoiceStatus('', 'Disconnected');
       hideLoading();
@@ -1111,6 +1112,7 @@ async function startCall(leadId) {
 
     voiceWs.onclose = (event) => {
       console.log('[WS] Closed:', event.code, event.reason);
+      debugLog('WS CLOSED — code=' + event.code + ' reason=' + (event.reason || 'none'));
       stopMicStream();
       setVoiceStatus('', 'Disconnected');
       document.getElementById('micBtn').disabled = true;
@@ -1379,6 +1381,7 @@ async function startMicStream() {
 
     // ScriptProcessorNode for raw PCM access (widely supported)
     micProcessor = micCtx.createScriptProcessor(4096, 1, 1);
+    let micChunkCount = 0;
     micProcessor.onaudioprocess = (e) => {
       if (!isRecording || !voiceWs || voiceWs.readyState !== WebSocket.OPEN) return;
 
@@ -1395,6 +1398,10 @@ async function startMicStream() {
       for (let i = 0; i < bytes.length; i++) binary += String.fromCharCode(bytes[i]);
       const base64 = btoa(binary);
 
+      micChunkCount++;
+      if (micChunkCount <= 3 || micChunkCount % 100 === 0) {
+        debugLog('Mic chunk #' + micChunkCount + ' sent (' + base64.length + ' chars), WS state=' + voiceWs.readyState);
+      }
       voiceWs.send(JSON.stringify({ type: 'audio', data: base64 }));
     };
 
