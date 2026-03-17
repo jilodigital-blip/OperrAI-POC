@@ -135,6 +135,7 @@ class VoiceSession {
     this.ttsWs = null;
     this.conversationHistory = Array.isArray(lead.conversation_history) ? [...lead.conversation_history] : [];
     this.currentScore = lead.lead_score || 10;
+    this._debugToClient = true; // Send server debug info to client
     this.currentStage = lead.stage || 'welcome';
     this.turnCount = lead.turn_count || 0;
     this.isAISpeaking = false;
@@ -144,6 +145,12 @@ class VoiceSession {
     this.destroyed = false;
     const ck = claims.client && claims.client !== 'admin' ? claims.client : 'ather';
     this.voiceLeadsTable = ck === 'apb' ? 'voice_leads_apb' : 'voice_leads';
+  }
+
+  // Send debug info to client so it shows in the debug panel
+  debugSend(msg) {
+    console.log(`[DEBUG] ${msg}`);
+    this.send({ type: 'server_debug', message: msg });
   }
 
   async init() {
@@ -183,19 +190,20 @@ class VoiceSession {
       });
 
       this.sttWs.on('open', () => {
-        console.log(`[STT] Connected for lead ${this.lead.id}`);
+        this.debugSend('STT WebSocket connected to Sarvam');
         resolve();
       });
 
       this.sttWs.on('message', (data) => {
         try {
           const msg = JSON.parse(data.toString());
+          this.debugSend('STT msg: ' + JSON.stringify(msg).slice(0, 200));
           this.handleSTTMessage(msg);
         } catch { /* ignore non-JSON */ }
       });
 
       this.sttWs.on('error', (err) => {
-        console.error('[STT] Error:', err.message);
+        this.debugSend('STT ERROR: ' + err.message);
         this.send({ type: 'error', message: 'STT connection error' });
       });
 
@@ -211,14 +219,14 @@ class VoiceSession {
           } else {
             diagnosis = 'Sarvam rejected connection';
           }
-          console.error(`[STT] ${diagnosis} (HTTP ${res.statusCode}): ${body.slice(0, 300)}`);
+          this.debugSend('STT REJECTED: ' + diagnosis + ' (HTTP ' + res.statusCode + '): ' + body.slice(0, 200));
           this.send({ type: 'error', message: `STT error: ${diagnosis}`, code: res.statusCode });
           reject(new Error(`${diagnosis} (HTTP ${res.statusCode})`));
         });
       });
 
       this.sttWs.on('close', (code, reason) => {
-        console.log(`[STT] Closed code=${code} reason=${reason || 'none'}`);
+        this.debugSend('STT CLOSED: code=' + code + ' reason=' + (reason || 'none'));
         this.sttWs = null;
         // Don't auto-reconnect — STT will reconnect lazily on next audio chunk.
       });
@@ -261,7 +269,7 @@ class VoiceSession {
       });
 
       this.ttsWs.on('open', () => {
-        console.log(`[TTS] Connected for lead ${this.lead.id}`);
+        this.debugSend('TTS WebSocket connected to Sarvam');
         this.ttsWs.send(JSON.stringify({
           type: 'config',
           data: {
@@ -274,26 +282,27 @@ class VoiceSession {
             audio_codec: 'wav',
           },
         }));
+        this.debugSend('TTS config sent');
         resolve();
       });
 
       this.ttsWs.on('message', (data) => {
         try {
           const msg = JSON.parse(data.toString());
-          console.log('[TTS] JSON msg:', msg.type || msg.event || Object.keys(msg).join(','));
+          this.debugSend('TTS JSON msg: ' + (msg.type || msg.event || JSON.stringify(msg).slice(0, 200)));
           this.handleTTSMessage(msg);
         } catch {
           if (Buffer.isBuffer(data)) {
-            console.log(`[TTS] Binary audio chunk: ${data.length} bytes`);
+            this.debugSend('TTS binary audio: ' + data.length + ' bytes');
             this.send({ type: 'ai_audio', data: data.toString('base64') });
           } else {
-            console.warn('[TTS] Unknown message type:', typeof data);
+            this.debugSend('TTS unknown msg type: ' + typeof data);
           }
         }
       });
 
       this.ttsWs.on('error', (err) => {
-        console.error('[TTS] Error:', err.message);
+        this.debugSend('TTS ERROR: ' + err.message);
       });
 
       this.ttsWs.on('unexpected-response', (req, res) => {
@@ -308,14 +317,14 @@ class VoiceSession {
           } else {
             diagnosis = 'Sarvam rejected connection';
           }
-          console.error(`[TTS] ${diagnosis} (HTTP ${res.statusCode}): ${body.slice(0, 300)}`);
+          this.debugSend('TTS REJECTED: ' + diagnosis + ' (HTTP ' + res.statusCode + '): ' + body.slice(0, 200));
           this.send({ type: 'error', message: `TTS error: ${diagnosis}`, code: res.statusCode });
           reject(new Error(`${diagnosis} (HTTP ${res.statusCode})`));
         });
       });
 
-      this.ttsWs.on('close', () => {
-        console.log('[TTS] Closed');
+      this.ttsWs.on('close', (code, reason) => {
+        this.debugSend('TTS CLOSED: code=' + code + ' reason=' + (reason || 'none'));
         if (!this.destroyed) {
           setTimeout(() => this.connectTTS().catch(() => {}), 1000);
         }
@@ -340,10 +349,10 @@ class VoiceSession {
 
   sendToTTS(text) {
     if (!this.ttsWs || this.ttsWs.readyState !== WebSocket.OPEN) {
-      console.error('[TTS] Cannot send — TTS WebSocket not open (state:', this.ttsWs?.readyState, ')');
+      this.debugSend('TTS Cannot send — WS not open (state=' + (this.ttsWs?.readyState ?? 'null') + ')');
       return;
     }
-    console.log(`[TTS] Sending text (${text.length} chars) to Sarvam`);
+    this.debugSend('TTS sending text (' + text.length + ' chars): ' + text.slice(0, 80) + '...');
     this.isAISpeaking = true;
     this.send({ type: 'ai_speaking', speaking: true });
 
@@ -353,6 +362,7 @@ class VoiceSession {
     }));
 
     this.ttsWs.send(JSON.stringify({ type: 'flush' }));
+    this.debugSend('TTS text+flush sent, waiting for audio response...');
   }
 
   async triggerLLM(userText) {
