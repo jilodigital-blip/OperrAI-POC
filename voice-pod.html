@@ -1034,6 +1034,11 @@ async function startCall(leadId) {
   if (!lead) return;
 
   activeLead = lead;
+
+  // IMPORTANT: Init AudioContext NOW while we're in user-gesture context.
+  // Browsers block AudioContext.resume() outside of click/tap handlers.
+  initAudioContext();
+
   const panel = document.getElementById('voicePanel');
   panel.classList.add('active');
 
