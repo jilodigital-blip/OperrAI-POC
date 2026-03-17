@@ -236,14 +236,19 @@ class VoiceSession {
   }
 
   handleSTTMessage(msg) {
-    if (msg.type === 'speech_start') {
+    // Sarvam STT response: { type: "data", vad_response_type: "speech_start"|"speech_end"|..., data: { transcript: "..." } }
+    const vadType = msg.vad_response_type || '';
+
+    if (vadType === 'speech_start' || msg.type === 'speech_start') {
+      this.debugSend('VAD: speech_start');
       if (this.isAISpeaking) {
         this.handleInterrupt();
       }
       return;
     }
 
-    if (msg.type === 'speech_end') {
+    if (vadType === 'speech_end' || msg.type === 'speech_end') {
+      this.debugSend('VAD: speech_end, transcript: "' + this.sttTranscript.slice(0, 100) + '"');
       if (this.sttTranscript.trim()) {
         this.triggerLLM(this.sttTranscript.trim());
         this.sttTranscript = '';
@@ -254,6 +259,7 @@ class VoiceSession {
     const transcript = msg.data?.transcript || msg.transcript || '';
     if (!transcript) return;
 
+    this.debugSend('STT transcript: "' + transcript.slice(0, 100) + '"');
     this.sttTranscript = transcript;
     this.send({ type: 'transcript', text: transcript, final: false });
   }
@@ -565,8 +571,8 @@ class VoiceSession {
     this.sttWs.send(JSON.stringify({
       audio: {
         data: base64Audio,
-        sample_rate: '16000',
-        encoding: 'pcm_s16le',
+        encoding: 'audio/wav',
+        sample_rate: 16000,
       },
     }));
   }
