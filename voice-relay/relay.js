@@ -274,12 +274,13 @@ class VoiceSession {
           type: 'config',
           data: {
             target_language_code: 'hi-IN',
-            speaker: 'meera',
+            speaker: 'anushka',
             model: 'bulbul:v2',
             pace: 1.0,
             loudness: 1.0,
             enable_preprocessing: true,
-            audio_codec: 'wav',
+            output_audio_codec: 'wav',
+            speech_sample_rate: '22050',
           },
         }));
         this.debugSend('TTS config sent');
@@ -341,9 +342,15 @@ class VoiceSession {
       return;
     }
 
-    if (msg.type === 'completion' || msg.event === 'completion') {
+    if (msg.type === 'completion' || msg.event === 'completion' ||
+        (msg.type === 'event' && msg.data?.event_type === 'final')) {
+      this.debugSend('TTS synthesis complete');
       this.isAISpeaking = false;
       this.send({ type: 'ai_speaking', speaking: false });
+    }
+
+    if (msg.type === 'error') {
+      this.debugSend('TTS ERROR response: ' + JSON.stringify(msg.data || msg).slice(0, 300));
     }
   }
 
@@ -538,12 +545,13 @@ class VoiceSession {
       if (this._sttConnecting) return;
       this._sttConnecting = true;
       try {
-        console.log(`[STT] Lazy-connecting on first audio for lead ${this.lead.id}`);
+        this.debugSend('STT lazy-connecting on first audio chunk...');
         await this.connectSTT();
         this._sttConnecting = false;
+        this.debugSend('STT lazy-connect succeeded');
       } catch (err) {
         this._sttConnecting = false;
-        console.error(`[STT] Lazy-connect failed: ${err.message}`);
+        this.debugSend('STT lazy-connect FAILED: ' + err.message);
         return;
       }
     }
@@ -551,7 +559,7 @@ class VoiceSession {
     if (!this._audioChunkCount) this._audioChunkCount = 0;
     this._audioChunkCount++;
     if (this._audioChunkCount <= 3 || this._audioChunkCount % 50 === 0) {
-      console.log(`[Audio] Chunk #${this._audioChunkCount} forwarded to STT (${base64Audio.length} chars)`);
+      this.debugSend('Audio chunk #' + this._audioChunkCount + ' forwarded to STT (' + base64Audio.length + ' chars)');
     }
 
     this.sttWs.send(JSON.stringify({
