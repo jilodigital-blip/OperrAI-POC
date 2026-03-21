@@ -197,10 +197,10 @@ class VoiceSession {
       const sarvamKey = process.env.SARVAM_API_KEY;
       if (!sarvamKey) return reject(new Error('SARVAM_API_KEY not configured'));
 
-      const sttUrl = `wss://api.sarvam.ai/speech-to-text/ws?language-code=hi-IN&model=saaras:v3&sample_rate=16000&input_audio_codec=pcm_s16le&api-subscription-key=${encodeURIComponent(sarvamKey)}`;
-      this.sttWs = new WebSocket(sttUrl, {
-        headers: { 'api-subscription-key': sarvamKey },
-      });
+      // Match Sarvam's official example: auth via WebSocket subprotocol
+      const sttUrl = 'wss://api.sarvam.ai/speech-to-text/ws?language-code=hi-IN&model=saaras:v3';
+      this.debugSend('STT connecting to: ' + sttUrl);
+      this.sttWs = new WebSocket(sttUrl, [`api-subscription-key.${sarvamKey}`]);
 
       this.sttWs.on('open', () => {
         this.debugSend('STT WebSocket connected to Sarvam');
@@ -288,10 +288,10 @@ class VoiceSession {
       const sarvamKey = process.env.SARVAM_API_KEY;
       if (!sarvamKey) return reject(new Error('SARVAM_API_KEY not configured'));
 
-      const ttsUrl = `wss://api.sarvam.ai/text-to-speech/ws?model=bulbul:v2&send_completion_event=true&api-subscription-key=${encodeURIComponent(sarvamKey)}`;
-      this.ttsWs = new WebSocket(ttsUrl, {
-        headers: { 'api-subscription-key': sarvamKey },
-      });
+      // Auth via WebSocket subprotocol (matching Sarvam's official pattern)
+      const ttsUrl = 'wss://api.sarvam.ai/text-to-speech/ws?model=bulbul:v2&send_completion_event=true';
+      this.debugSend('TTS connecting to: ' + ttsUrl);
+      this.ttsWs = new WebSocket(ttsUrl, [`api-subscription-key.${sarvamKey}`]);
 
       this.ttsWs.on('open', () => {
         this.debugSend('TTS WebSocket connected to Sarvam');
