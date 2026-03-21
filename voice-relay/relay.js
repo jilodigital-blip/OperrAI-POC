@@ -239,8 +239,10 @@ class VoiceSession {
             this._restartSTTStream();
             return;
           }
-          this.debugSend('STT ERROR: ' + err.message);
+          this.debugSend('STT ERROR (code=' + (err.code || 'none') + '): ' + err.message);
           this.send({ type: 'error', message: 'STT error: ' + err.message });
+          // Null the stream so handleAudio triggers a fresh lazy-connect
+          this._sttStream = null;
         });
 
         recognizeStream.on('end', () => {
@@ -276,10 +278,15 @@ class VoiceSession {
     if (this.destroyed) return;
     if (this._sttStream) {
       try { this._sttStream.destroy(); } catch {}
+      this._sttStream = null;
     }
+    // Reset flags so lazy-connect in handleAudio can trigger
+    this._sttConnecting = false;
+    this._sttFailed = false;
     // Reconnect with fresh stream
     this.connectSTT().catch(err => {
       this.debugSend('STT restart failed: ' + err.message);
+      this._sttStream = null;
     });
   }
 
@@ -567,10 +574,11 @@ class VoiceSession {
   }
 
   async handleAudio(base64Audio) {
-    // Lazy-connect STT on first audio chunk
-    if (!this._sttStream) {
+    // Lazy-connect STT on first audio chunk (or reconnect if stream was destroyed)
+    if (!this._sttStream || this._sttStream.destroyed) {
       if (this._sttConnecting) return;
       if (this._sttFailed) return;
+      this._sttStream = null; // ensure null for clean reconnect
       this._sttConnecting = true;
       try {
         this.debugSend('STT lazy-connecting on first audio chunk...');
@@ -595,8 +603,13 @@ class VoiceSession {
 
     // Forward raw PCM audio to Google Cloud Speech stream
     const audioBuffer = Buffer.from(base64Audio, 'base64');
-    if (this._sttStream && !this._sttStream.destroyed) {
-      this._sttStream.write(audioBuffer);
+    try {
+      if (this._sttStream && !this._sttStream.destroyed) {
+        this._sttStream.write(audioBuffer);
+      }
+    } catch (err) {
+      this.debugSend('STT write error: ' + err.message + ' — will reconnect on next chunk');
+      this._sttStream = null;
     }
   }
 
