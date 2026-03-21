@@ -1,7 +1,7 @@
 /**
  * Raymidi Voice Relay — WebSocket streaming pipeline
  *
- * Browser ──wss──► Relay ──wss──► Sarvam STT (streaming)
+ * Browser ──wss──► Relay ──gRPC──► Google Cloud STT (streaming)
  *                    │
  *                transcript
  *                    │
@@ -18,6 +18,7 @@
 const http = require('http');
 const crypto = require('crypto');
 const { WebSocketServer, WebSocket } = require('ws');
+const speech = require('@google-cloud/speech');
 
 const PORT = process.env.PORT || 8080;
 const CORS_ORIGIN = process.env.CORS_ORIGIN || '*';
@@ -147,7 +148,7 @@ class VoiceSession {
     this.ws = clientWs;       // browser WebSocket
     this.claims = claims;     // JWT payload
     this.lead = lead;         // lead record from Supabase
-    this.sttWs = null;        // Sarvam STT WebSocket
+    this._sttStream = null;   // Google Cloud STT stream
     this.ttsWs = null;        // Sarvam TTS WebSocket
     this.conversationHistory = Array.isArray(lead.conversation_history) ? [...lead.conversation_history] : [];
     this.currentScore = lead.lead_score || 10;
@@ -190,99 +191,106 @@ class VoiceSession {
     }
   }
 
-  // ── Sarvam STT WebSocket ──────────────────────────────────────────────
+  // ── Google Cloud Speech-to-Text streaming ────────────────────────────
 
   connectSTT() {
     return new Promise((resolve, reject) => {
-      const sarvamKey = process.env.SARVAM_API_KEY;
-      if (!sarvamKey) return reject(new Error('SARVAM_API_KEY not configured'));
+      this.debugSend('STT connecting to Google Cloud Speech...');
 
-      // Auth: query param + subprotocol + header (belt and suspenders)
-      const sttUrl = `wss://api.sarvam.ai/speech-to-text/ws?language-code=hi-IN&model=saaras:v3&api-subscription-key=${encodeURIComponent(sarvamKey)}`;
-      this.debugSend('STT connecting...');
-      this.sttWs = new WebSocket(sttUrl, [`api-subscription-key.${sarvamKey}`], {
-        headers: { 'api-subscription-key': sarvamKey },
-      });
+      try {
+        const sttClient = new speech.SpeechClient();
 
-      this.sttWs.on('open', () => {
-        this.debugSend('STT WebSocket connected to Sarvam');
-        resolve();
-      });
-
-      this.sttWs.on('message', (data) => {
-        try {
-          const msg = JSON.parse(data.toString());
-          this.debugSend('STT msg: ' + JSON.stringify(msg).slice(0, 200));
-          this.handleSTTMessage(msg);
-        } catch { /* ignore non-JSON */ }
-      });
-
-      this.sttWs.on('error', (err) => {
-        const detail = err.message || String(err);
-        this.debugSend('STT ERROR: ' + detail);
-        this.send({ type: 'error', message: 'STT error: ' + detail });
-      });
-
-      this.sttWs.on('unexpected-response', (req, res) => {
-        let body = '';
-        res.on('data', (chunk) => { body += chunk; });
-        res.on('end', () => {
-          let diagnosis;
-          if (res.statusCode === 403 || res.statusCode === 401) {
-            diagnosis = 'Sarvam API key is missing or invalid';
-          } else if (res.statusCode === 429) {
-            diagnosis = 'Sarvam rate limit exceeded';
-          } else {
-            diagnosis = 'Sarvam rejected connection';
-          }
-          const fullError = `${diagnosis} (HTTP ${res.statusCode}): ${body.slice(0, 200)}`;
-          this.debugSend('STT REJECTED: ' + fullError);
-          this.send({ type: 'error', message: 'STT error: ' + fullError });
-          reject(new Error(fullError));
+        const recognizeStream = sttClient.streamingRecognize({
+          config: {
+            encoding: 'LINEAR16',
+            sampleRateHertz: 16000,
+            languageCode: 'hi-IN',
+            alternativeLanguageCodes: ['en-IN'],
+            enableAutomaticPunctuation: true,
+            model: 'latest_long',
+          },
+          interimResults: true,
+          singleUtterance: false,
         });
-      });
 
-      this.sttWs.on('close', (code, reason) => {
-        this.debugSend('STT CLOSED: code=' + code + ' reason=' + (reason || 'none'));
-        this.sttWs = null;
-      });
+        recognizeStream.on('data', (response) => {
+          if (this.destroyed) return;
 
-      // Timeout on connection
-      setTimeout(() => reject(new Error('STT connection timeout (10s)')), 10000);
+          const result = response.results?.[0];
+          if (!result) return;
+
+          const transcript = result.alternatives?.[0]?.transcript || '';
+          if (!transcript) return;
+
+          if (result.isFinal) {
+            this.debugSend('STT final: "' + transcript.slice(0, 100) + '"');
+            this.sttTranscript += (this.sttTranscript ? ' ' : '') + transcript;
+            this.send({ type: 'transcript', text: this.sttTranscript, final: false });
+
+            // Use a silence timer to detect end of speech turn
+            this._resetSilenceTimer();
+          } else {
+            this.debugSend('STT interim: "' + transcript.slice(0, 80) + '"');
+            // Show interim transcript to user
+            const displayText = this.sttTranscript + (this.sttTranscript ? ' ' : '') + transcript;
+            this.send({ type: 'transcript', text: displayText, final: false });
+
+            // Interrupt AI if user starts speaking
+            if (this.isAISpeaking && transcript.trim().length > 2) {
+              this.handleInterrupt();
+            }
+          }
+        });
+
+        recognizeStream.on('error', (err) => {
+          // Stream timeout (code 11 DEADLINE_EXCEEDED) is normal after ~5 min
+          if (err.code === 11) {
+            this.debugSend('STT stream timed out, restarting...');
+            this._restartSTTStream();
+            return;
+          }
+          this.debugSend('STT ERROR: ' + err.message);
+          this.send({ type: 'error', message: 'STT error: ' + err.message });
+        });
+
+        recognizeStream.on('end', () => {
+          this.debugSend('STT stream ended');
+        });
+
+        this._sttClient = sttClient;
+        this._sttStream = recognizeStream;
+        this._silenceTimer = null;
+
+        this.debugSend('STT Google Cloud Speech connected');
+        resolve();
+      } catch (err) {
+        this.debugSend('STT connection failed: ' + err.message);
+        reject(err);
+      }
     });
   }
 
-  handleSTTMessage(msg) {
-    // Sarvam STT response format:
-    // { type: "data", vad_response_type: "speech_start"|"speech_end"|..., data: { transcript: "..." } }
-    const vadType = msg.vad_response_type || '';
-
-    // VAD: speech_start — interrupt AI if speaking
-    if (vadType === 'speech_start' || msg.type === 'speech_start') {
-      this.debugSend('VAD: speech_start');
-      if (this.isAISpeaking) {
-        this.handleInterrupt();
-      }
-      return;
-    }
-
-    // VAD: speech_end — trigger LLM with accumulated transcript
-    if (vadType === 'speech_end' || msg.type === 'speech_end') {
-      this.debugSend('VAD: speech_end, transcript so far: "' + this.sttTranscript.slice(0, 100) + '"');
+  _resetSilenceTimer() {
+    if (this._silenceTimer) clearTimeout(this._silenceTimer);
+    // After 1.5s of silence following a final result, trigger LLM
+    this._silenceTimer = setTimeout(() => {
       if (this.sttTranscript.trim()) {
+        this.debugSend('Silence detected — triggering LLM with: "' + this.sttTranscript.slice(0, 100) + '"');
         this.triggerLLM(this.sttTranscript.trim());
         this.sttTranscript = '';
       }
-      return;
+    }, 1500);
+  }
+
+  _restartSTTStream() {
+    if (this.destroyed) return;
+    if (this._sttStream) {
+      try { this._sttStream.destroy(); } catch {}
     }
-
-    // Transcript data (type: "data")
-    const transcript = msg.data?.transcript || msg.transcript || '';
-    if (!transcript) return;
-
-    this.debugSend('STT transcript: "' + transcript.slice(0, 100) + '"');
-    this.sttTranscript = transcript;
-    this.send({ type: 'transcript', text: transcript, final: false });
+    // Reconnect with fresh stream
+    this.connectSTT().catch(err => {
+      this.debugSend('STT restart failed: ' + err.message);
+    });
   }
 
   // ── Sarvam TTS WebSocket ──────────────────────────────────────────────
@@ -604,9 +612,9 @@ class VoiceSession {
 
   async handleAudio(base64Audio) {
     // Lazy-connect STT on first audio chunk
-    if (!this.sttWs || this.sttWs.readyState !== WebSocket.OPEN) {
+    if (!this._sttStream) {
       if (this._sttConnecting) return;
-      if (this._sttFailed) return; // Don't retry if already failed
+      if (this._sttFailed) return;
       this._sttConnecting = true;
       try {
         this.debugSend('STT lazy-connecting on first audio chunk...');
@@ -629,21 +637,16 @@ class VoiceSession {
       this.debugSend('Audio chunk #' + this._audioChunkCount + ' forwarded to STT (' + base64Audio.length + ' chars)');
     }
 
-    // Forward audio to Sarvam STT
-    this.sttWs.send(JSON.stringify({
-      audio: {
-        data: base64Audio,
-        encoding: 'audio/wav',
-        sample_rate: 16000,
-      },
-    }));
+    // Forward raw PCM audio to Google Cloud Speech stream
+    const audioBuffer = Buffer.from(base64Audio, 'base64');
+    if (this._sttStream && !this._sttStream.destroyed) {
+      this._sttStream.write(audioBuffer);
+    }
   }
 
   handleStop() {
-    // User explicitly stopped — flush STT
-    if (this.sttWs && this.sttWs.readyState === WebSocket.OPEN) {
-      this.sttWs.send(JSON.stringify({ type: 'flush' }));
-    }
+    // Clear silence timer
+    if (this._silenceTimer) clearTimeout(this._silenceTimer);
 
     // If we have accumulated transcript, trigger LLM
     if (this.sttTranscript.trim()) {
@@ -680,9 +683,14 @@ class VoiceSession {
 
   destroy() {
     this.destroyed = true;
-    if (this.sttWs) {
-      try { this.sttWs.close(); } catch {}
-      this.sttWs = null;
+    if (this._silenceTimer) clearTimeout(this._silenceTimer);
+    if (this._sttStream) {
+      try { this._sttStream.destroy(); } catch {}
+      this._sttStream = null;
+    }
+    if (this._sttClient) {
+      try { this._sttClient.close(); } catch {}
+      this._sttClient = null;
     }
     if (this.ttsWs) {
       try { this.ttsWs.close(); } catch {}
@@ -712,44 +720,21 @@ const server = http.createServer(async (req, res) => {
     return res.end(JSON.stringify({ ok: true, timestamp: Date.now() }));
   }
 
-  // Diagnostic: test Sarvam API key with a simple REST call
+  // Diagnostic: check service health
   if (req.url === '/debug/sarvam') {
     const sarvamKey = process.env.SARVAM_API_KEY;
     const keyPreview = sarvamKey
       ? `${sarvamKey.slice(0, 4)}...${sarvamKey.slice(-4)} (len=${sarvamKey.length})`
       : 'NOT SET';
-    const results = { keyPreview, tests: {} };
+    const results = { sttProvider: 'Google Cloud Speech-to-Text', ttsProvider: 'Sarvam', sarvamKeyPreview: keyPreview, tests: {} };
 
-    // Test REST endpoint with a tiny silent WAV (44-byte header only)
+    // Test Google Cloud STT client
     try {
-      const wavHeader = Buffer.alloc(44);
-      wavHeader.write('RIFF', 0); wavHeader.writeUInt32LE(36, 4);
-      wavHeader.write('WAVE', 8); wavHeader.write('fmt ', 12);
-      wavHeader.writeUInt32LE(16, 16); wavHeader.writeUInt16LE(1, 20);
-      wavHeader.writeUInt16LE(1, 22); wavHeader.writeUInt32LE(16000, 24);
-      wavHeader.writeUInt32LE(32000, 28); wavHeader.writeUInt16LE(2, 32);
-      wavHeader.writeUInt16LE(16, 34); wavHeader.write('data', 36);
-      wavHeader.writeUInt32LE(0, 40);
-
-      const boundary = '----SarvamTest';
-      const body = Buffer.concat([
-        Buffer.from(`--${boundary}\r\nContent-Disposition: form-data; name="file"; filename="test.wav"\r\nContent-Type: audio/wav\r\n\r\n`),
-        wavHeader,
-        Buffer.from(`\r\n--${boundary}\r\nContent-Disposition: form-data; name="model"\r\n\r\nsaaras:v3\r\n--${boundary}--\r\n`),
-      ]);
-
-      const testResp = await fetch('https://api.sarvam.ai/speech-to-text', {
-        method: 'POST',
-        headers: {
-          'api-subscription-key': sarvamKey || '',
-          'Content-Type': `multipart/form-data; boundary=${boundary}`,
-        },
-        body,
-      });
-      const respText = await testResp.text();
-      results.tests.rest = { status: testResp.status, body: respText.slice(0, 500) };
+      const testClient = new speech.SpeechClient();
+      await testClient.close();
+      results.tests.googleSTT = { status: 'ok', message: 'Client initialized successfully (ADC)' };
     } catch (err) {
-      results.tests.rest = { error: err.message };
+      results.tests.googleSTT = { status: 'error', message: err.message };
     }
 
     res.writeHead(200, { 'Content-Type': 'application/json' });
@@ -843,42 +828,24 @@ wss.on('connection', async (ws, req) => {
 
 // ── Start server ────────────────────────────────────────────────────────────
 
-async function validateSarvamKey() {
+async function validateKeys() {
+  // Sarvam key (used for TTS only now)
   const sarvamKey = process.env.SARVAM_API_KEY;
   if (!sarvamKey) {
-    console.error('[STARTUP] SARVAM_API_KEY is not set — STT/TTS will fail');
-    return;
+    console.error('[STARTUP] SARVAM_API_KEY is not set — TTS will fail');
+  } else {
+    const keyPreview = `${sarvamKey.slice(0, 4)}...${sarvamKey.slice(-4)} (len=${sarvamKey.length})`;
+    console.log(`[STARTUP] SARVAM_API_KEY (TTS): ${keyPreview}`);
   }
 
-  const keyPreview = `${sarvamKey.slice(0, 4)}...${sarvamKey.slice(-4)} (len=${sarvamKey.length})`;
-  console.log(`[STARTUP] SARVAM_API_KEY: ${keyPreview}`);
-
+  // Google Cloud STT — uses Application Default Credentials on Cloud Run
   try {
-    const resp = await fetch('https://api.sarvam.ai/translate', {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-        'api-subscription-key': sarvamKey,
-      },
-      body: JSON.stringify({
-        input: 'test',
-        source_language_code: 'en-IN',
-        target_language_code: 'hi-IN',
-        model: 'mayura:v1',
-      }),
-    });
-
-    if (resp.status === 403 || resp.status === 401) {
-      console.error(`[STARTUP] Sarvam API key is INVALID (HTTP ${resp.status}). STT/TTS will fail.`);
-      const body = await resp.text();
-      console.error(`[STARTUP] Response: ${body.slice(0, 300)}`);
-    } else if (resp.ok) {
-      console.log('[STARTUP] Sarvam API key validated successfully');
-    } else {
-      console.warn(`[STARTUP] Sarvam key check returned HTTP ${resp.status} (may still work for WS)`);
-    }
+    const testClient = new speech.SpeechClient();
+    await testClient.close();
+    console.log('[STARTUP] Google Cloud Speech client initialized OK (ADC)');
   } catch (err) {
-    console.warn(`[STARTUP] Could not validate Sarvam API key: ${err.message}`);
+    console.error('[STARTUP] Google Cloud Speech init failed: ' + err.message);
+    console.error('[STARTUP] Ensure Speech-to-Text API is enabled in GCP project');
   }
 }
 
@@ -886,5 +853,5 @@ server.listen(PORT, () => {
   console.log(`Raymidi Voice Relay running on port ${PORT}`);
   console.log(`  Health check: http://localhost:${PORT}/health`);
   console.log(`  WebSocket:    ws://localhost:${PORT}/voice`);
-  validateSarvamKey();
+  validateKeys();
 });
