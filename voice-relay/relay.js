@@ -196,7 +196,6 @@ class VoiceSession {
             sampleRateHertz: 16000,
             languageCode: 'hi-IN',
             enableAutomaticPunctuation: true,
-            model: 'default',
           },
           interimResults: true,
           singleUtterance: false,
