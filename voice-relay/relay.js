@@ -232,6 +232,11 @@ class VoiceSession {
         });
 
         recognizeStream.on('error', (err) => {
+          // Suppress cascading "write after destroyed" errors — just null the stream
+          if (err.code === 'ERR_STREAM_DESTROYED' || (err.message && err.message.includes('stream was destroyed'))) {
+            this._sttStream = null;
+            return;
+          }
           // Stream timeout (code 11 DEADLINE_EXCEEDED) is normal after ~5 min
           if (err.code === 11) {
             this.debugSend('STT stream timed out, restarting...');
@@ -240,12 +245,16 @@ class VoiceSession {
           }
           this.debugSend('STT ERROR (code=' + (err.code || 'none') + '): ' + err.message);
           this.send({ type: 'error', message: 'STT error: ' + err.message });
-          // Null the stream so handleAudio triggers a fresh lazy-connect
           this._sttStream = null;
         });
 
         recognizeStream.on('end', () => {
           this.debugSend('STT stream ended');
+          this._sttStream = null;
+        });
+
+        recognizeStream.on('close', () => {
+          this._sttStream = null;
         });
 
         this._sttClient = sttClient;
@@ -573,8 +582,8 @@ class VoiceSession {
   }
 
   async handleAudio(base64Audio) {
-    // Lazy-connect STT on first audio chunk (or reconnect if stream was destroyed)
-    if (!this._sttStream || this._sttStream.destroyed) {
+    // Lazy-connect STT on first audio chunk (or reconnect if stream died)
+    if (!this._sttStream || !this._sttStream.writable) {
       if (this._sttConnecting) return;
       if (this._sttFailed) return;
       this._sttStream = null; // ensure null for clean reconnect
@@ -601,14 +610,11 @@ class VoiceSession {
     }
 
     // Forward raw PCM audio to Google Cloud Speech stream
+    // Guard with .writable — it goes false before .destroyed, preventing
+    // write-after-destroy errors (which emit async, not throw)
     const audioBuffer = Buffer.from(base64Audio, 'base64');
-    try {
-      if (this._sttStream && !this._sttStream.destroyed) {
-        this._sttStream.write(audioBuffer);
-      }
-    } catch (err) {
-      this.debugSend('STT write error: ' + err.message + ' — will reconnect on next chunk');
-      this._sttStream = null;
+    if (this._sttStream && this._sttStream.writable) {
+      this._sttStream.write(audioBuffer);
     }
   }
 
