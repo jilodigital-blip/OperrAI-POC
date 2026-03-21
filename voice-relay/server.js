@@ -11,7 +11,7 @@
  *                    │
  * Browser ◄──wss── Relay ◄──wss── Sarvam TTS (streaming)
  *
- * Deployed on Render (WebSocket support).
+ * Deployed on Google Cloud Run.
  * Vercel stays for static HTML, auth guard, lead CRUD.
  */
 
@@ -197,10 +197,12 @@ class VoiceSession {
       const sarvamKey = process.env.SARVAM_API_KEY;
       if (!sarvamKey) return reject(new Error('SARVAM_API_KEY not configured'));
 
-      // Match Sarvam's official example: auth via WebSocket subprotocol
-      const sttUrl = 'wss://api.sarvam.ai/speech-to-text/ws?language-code=hi-IN&model=saaras:v3';
-      this.debugSend('STT connecting to: ' + sttUrl);
-      this.sttWs = new WebSocket(sttUrl, [`api-subscription-key.${sarvamKey}`]);
+      // Auth: query param + subprotocol + header (belt and suspenders)
+      const sttUrl = `wss://api.sarvam.ai/speech-to-text/ws?language-code=hi-IN&model=saaras:v3&api-subscription-key=${encodeURIComponent(sarvamKey)}`;
+      this.debugSend('STT connecting...');
+      this.sttWs = new WebSocket(sttUrl, [`api-subscription-key.${sarvamKey}`], {
+        headers: { 'api-subscription-key': sarvamKey },
+      });
 
       this.sttWs.on('open', () => {
         this.debugSend('STT WebSocket connected to Sarvam');
@@ -216,8 +218,9 @@ class VoiceSession {
       });
 
       this.sttWs.on('error', (err) => {
-        this.debugSend('STT ERROR: ' + err.message);
-        this.send({ type: 'error', message: 'STT connection error' });
+        const detail = err.message || String(err);
+        this.debugSend('STT ERROR: ' + detail);
+        this.send({ type: 'error', message: 'STT error: ' + detail });
       });
 
       this.sttWs.on('unexpected-response', (req, res) => {
@@ -232,9 +235,10 @@ class VoiceSession {
           } else {
             diagnosis = 'Sarvam rejected connection';
           }
-          this.debugSend('STT REJECTED: ' + diagnosis + ' (HTTP ' + res.statusCode + '): ' + body.slice(0, 200));
-          this.send({ type: 'error', message: `STT error: ${diagnosis}`, code: res.statusCode });
-          reject(new Error(`${diagnosis} (HTTP ${res.statusCode})`));
+          const fullError = `${diagnosis} (HTTP ${res.statusCode}): ${body.slice(0, 200)}`;
+          this.debugSend('STT REJECTED: ' + fullError);
+          this.send({ type: 'error', message: 'STT error: ' + fullError });
+          reject(new Error(fullError));
         });
       });
 
@@ -244,7 +248,7 @@ class VoiceSession {
       });
 
       // Timeout on connection
-      setTimeout(() => reject(new Error('STT connection timeout')), 10000);
+      setTimeout(() => reject(new Error('STT connection timeout (10s)')), 10000);
     });
   }
 
@@ -288,10 +292,12 @@ class VoiceSession {
       const sarvamKey = process.env.SARVAM_API_KEY;
       if (!sarvamKey) return reject(new Error('SARVAM_API_KEY not configured'));
 
-      // Auth via WebSocket subprotocol (matching Sarvam's official pattern)
-      const ttsUrl = 'wss://api.sarvam.ai/text-to-speech/ws?model=bulbul:v2&send_completion_event=true';
-      this.debugSend('TTS connecting to: ' + ttsUrl);
-      this.ttsWs = new WebSocket(ttsUrl, [`api-subscription-key.${sarvamKey}`]);
+      // Auth: query param + subprotocol + header (belt and suspenders)
+      const ttsUrl = `wss://api.sarvam.ai/text-to-speech/ws?model=bulbul:v2&send_completion_event=true&api-subscription-key=${encodeURIComponent(sarvamKey)}`;
+      this.debugSend('TTS connecting...');
+      this.ttsWs = new WebSocket(ttsUrl, [`api-subscription-key.${sarvamKey}`], {
+        headers: { 'api-subscription-key': sarvamKey },
+      });
 
       this.ttsWs.on('open', () => {
         this.debugSend('TTS WebSocket connected to Sarvam');
@@ -600,6 +606,7 @@ class VoiceSession {
     // Lazy-connect STT on first audio chunk
     if (!this.sttWs || this.sttWs.readyState !== WebSocket.OPEN) {
       if (this._sttConnecting) return;
+      if (this._sttFailed) return; // Don't retry if already failed
       this._sttConnecting = true;
       try {
         this.debugSend('STT lazy-connecting on first audio chunk...');
@@ -608,7 +615,10 @@ class VoiceSession {
         this.debugSend('STT lazy-connect succeeded');
       } catch (err) {
         this._sttConnecting = false;
-        this.debugSend('STT lazy-connect FAILED: ' + err.message);
+        this._sttFailed = true;
+        const msg = 'STT connection failed: ' + err.message;
+        this.debugSend(msg);
+        this.send({ type: 'error', message: msg });
         return;
       }
     }
