@@ -195,7 +195,6 @@ class VoiceSession {
             encoding: 'LINEAR16',
             sampleRateHertz: 16000,
             languageCode: 'hi-IN',
-            alternativeLanguageCodes: ['en-IN'],
             enableAutomaticPunctuation: true,
             model: 'latest_long',
           },
