@@ -195,6 +195,8 @@ class VoiceSession {
 
       this.sttWs.on('open', () => {
         console.log(`[STT] Connected for lead ${this.lead.id}`);
+        this._sttRetries = 0;
+        this._sttErrorSent = false;
         resolve();
       });
 
@@ -206,8 +208,12 @@ class VoiceSession {
       });
 
       this.sttWs.on('error', (err) => {
-        console.error('[STT] Error:', err.message);
-        this.send({ type: 'error', message: 'STT connection error' });
+        // Only send the first error per connection — suppresses write-after-destroy spam
+        if (!this._sttErrorSent) {
+          this._sttErrorSent = true;
+          console.error('[STT] Error:', err.message);
+          this.send({ type: 'error', message: 'STT connection error: ' + err.message });
+        }
       });
 
       this.sttWs.on('unexpected-response', (req, res) => {
@@ -231,9 +237,18 @@ class VoiceSession {
 
       this.sttWs.on('close', (code, reason) => {
         console.log(`[STT] Closed code=${code} reason=${reason || 'none'}`);
-        // Reconnect if session is still active
+        this._sttErrorSent = false;
+        // Reconnect with exponential backoff, max 5 retries
         if (!this.destroyed) {
-          setTimeout(() => this.connectSTT().catch(() => {}), 1000);
+          this._sttRetries = (this._sttRetries || 0) + 1;
+          if (this._sttRetries <= 5) {
+            const delay = Math.min(1000 * Math.pow(2, this._sttRetries - 1), 30000);
+            console.log(`[STT] Reconnecting in ${delay}ms (attempt ${this._sttRetries}/5)`);
+            setTimeout(() => this.connectSTT().catch(() => {}), delay);
+          } else {
+            console.error('[STT] Max retries reached, giving up');
+            this.send({ type: 'error', message: 'STT failed after 5 retries — please rejoin the call' });
+          }
         }
       });
 
@@ -576,13 +591,17 @@ class VoiceSession {
     if (!this.sttWs || this.sttWs.readyState !== WebSocket.OPEN) return;
 
     // Forward audio to Sarvam STT
-    this.sttWs.send(JSON.stringify({
-      audio: {
-        data: base64Audio,
-        sample_rate: '16000',
-        encoding: 'pcm_s16le',
-      },
-    }));
+    try {
+      this.sttWs.send(JSON.stringify({
+        audio: {
+          data: base64Audio,
+          sample_rate: '16000',
+          encoding: 'pcm_s16le',
+        },
+      }));
+    } catch {
+      // WebSocket may have closed between readyState check and send — ignore
+    }
   }
 
   handleStop() {
