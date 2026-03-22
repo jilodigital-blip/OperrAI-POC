@@ -878,8 +878,6 @@ let isRecording = false;
 let isAISpeaking = false;
 let audioQueue = [];           // queued audio chunks for playback
 let currentSource = null;      // currently playing AudioBufferSourceNode
-let audioChunkBuffer = '';     // accumulator for chunked audio reassembly
-let waitingForWelcome = false; // true until welcome greeting finishes playing
 let liveAITextEl = null;       // live AI text message element
 
 // ── REST API helper (for lead CRUD — NOT voice) ────────────────────────────
@@ -1174,11 +1172,16 @@ function handleRelayMessage(msg) {
   switch (msg.type) {
     case 'ready':
       hideLoading();
-      setVoiceStatus('speaking', 'AI Speaking...');
-      document.getElementById('micBtn').disabled = true;
-      document.getElementById('micHint').textContent = 'AI is greeting...';
-      // Mic will auto-start when welcome finishes (ai_speaking: false)
-      waitingForWelcome = true;
+      setVoiceStatus('listening', 'Connecting...');
+      document.getElementById('micBtn').disabled = false;
+      document.getElementById('micHint').textContent = 'Starting...';
+      // Auto-start mic so conversation flows immediately
+      startMicStream().then(() => {
+        setVoiceStatus('listening', 'Call Active');
+        document.getElementById('micHint').textContent = 'Listening...';
+      }).catch(() => {
+        document.getElementById('micHint').textContent = 'Click mic to talk';
+      });
       break;
 
     case 'transcript':
@@ -1199,23 +1202,7 @@ function handleRelayMessage(msg) {
         setVoiceStatus('speaking', 'AI Speaking');
       } else {
         setVoiceStatus('listening', 'Call Active');
-        // Auto-start mic after welcome greeting finishes
-        if (waitingForWelcome) {
-          waitingForWelcome = false;
-          document.getElementById('micBtn').disabled = false;
-          startMicStream().then(() => {
-            document.getElementById('micHint').textContent = 'Listening...';
-          }).catch(() => {
-            document.getElementById('micHint').textContent = 'Click mic to talk';
-          });
-        }
       }
-      break;
-
-    case 'clear_audio':
-      // Server starting new response — stop any old audio to prevent mixing
-      debugLog('Clear audio: new response starting');
-      clearAudioQueue();
       break;
 
     case 'interrupt':
@@ -1327,11 +1314,11 @@ function debugLog(text) {
 
 function initAudioContext() {
   if (!audioContext) {
-    audioContext = new (window.AudioContext || window.webkitAudioContext)();
-    debugLog('AudioContext created, sampleRate: ' + audioContext.sampleRate + ', state: ' + audioContext.state);
+    audioContext = new (window.AudioContext || window.webkitAudioContext)({ sampleRate: 22050 });
+    debugLog('AudioContext created, state: ' + audioContext.state);
   }
   if (audioContext.state === 'suspended') {
-    audioContext.resume().then(() => debugLog('AudioContext resumed'));
+    audioContext.resume();
   }
 }
 
@@ -1354,12 +1341,10 @@ async function playNextChunk() {
     return;
   }
 
-  const chunk = audioQueue.shift();
   try {
-    // Ensure AudioContext is active before decoding
-    if (audioContext.state === 'suspended') await audioContext.resume();
-    debugLog('Playing chunk: ' + chunk.byteLength + ' bytes, queue left: ' + audioQueue.length);
-    const audioBuffer = await audioContext.decodeAudioData(chunk.slice(0));
+    const buffer = audioQueue.shift();
+    debugLog('Playing chunk: ' + buffer.byteLength + ' bytes, queue left: ' + audioQueue.length);
+    const audioBuffer = await audioContext.decodeAudioData(buffer.slice(0)); // slice to avoid detached buffer
     debugLog('Decoded OK: ' + audioBuffer.duration.toFixed(2) + 's @ ' + audioBuffer.sampleRate + 'Hz');
     const source = audioContext.createBufferSource();
     source.buffer = audioBuffer;
@@ -1372,7 +1357,7 @@ async function playNextChunk() {
     source.start();
   } catch (e) {
     console.error('[Audio] Decode error:', e);
-    debugLog('AUDIO DECODE FAILED: ' + e.message + ' (' + chunk.byteLength + ' bytes)');
+    debugLog('AUDIO DECODE FAILED: ' + e.message + ' (chunk: ' + (buffer?.byteLength || '?') + ' bytes)');
     currentSource = null;
     playNextChunk(); // skip bad chunk
   }
@@ -1380,7 +1365,6 @@ async function playNextChunk() {
 
 function clearAudioQueue() {
   audioQueue = [];
-  audioChunkBuffer = '';  // discard any partially received chunked audio
   if (currentSource) {
     try { currentSource.stop(); } catch {}
     currentSource = null;
