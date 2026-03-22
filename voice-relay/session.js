@@ -391,7 +391,7 @@ class VoiceSession {
 
         if (response.audioContent) {
           const audioBase64 = Buffer.from(response.audioContent).toString('base64');
-          this.debugSend('TTS audio received: ' + audioBase64.length + ' b64 chars (MP3)');
+          this.debugSend('TTS audio: ' + audioBase64.length + ' b64 chars (MP3)');
           this.send({ type: 'ai_audio', data: audioBase64 });
         }
       } catch (err) {
