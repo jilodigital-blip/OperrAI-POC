@@ -9,27 +9,6 @@ const crypto = require('crypto');
 const speech = require('@google-cloud/speech');
 const tts = require('@google-cloud/text-to-speech');
 
-// ── WAV header helper (wraps raw LINEAR16 PCM so browsers can decode it) ────
-
-function wrapPCMInWAV(pcmBuffer, sampleRate = 22050, numChannels = 1, bitsPerSample = 16) {
-  const dataSize = pcmBuffer.length;
-  const header = Buffer.alloc(44);
-  header.write('RIFF', 0);                                    // ChunkID
-  header.writeUInt32LE(36 + dataSize, 4);                     // ChunkSize
-  header.write('WAVE', 8);                                    // Format
-  header.write('fmt ', 12);                                   // Subchunk1ID
-  header.writeUInt32LE(16, 16);                               // Subchunk1Size (PCM)
-  header.writeUInt16LE(1, 20);                                // AudioFormat (1 = PCM)
-  header.writeUInt16LE(numChannels, 22);                      // NumChannels
-  header.writeUInt32LE(sampleRate, 24);                       // SampleRate
-  header.writeUInt32LE(sampleRate * numChannels * bitsPerSample / 8, 28); // ByteRate
-  header.writeUInt16LE(numChannels * bitsPerSample / 8, 32);  // BlockAlign
-  header.writeUInt16LE(bitsPerSample, 34);                    // BitsPerSample
-  header.write('data', 36);                                   // Subchunk2ID
-  header.writeUInt32LE(dataSize, 40);                         // Subchunk2Size
-  return Buffer.concat([header, pcmBuffer]);
-}
-
 // ── JWT verification (same as api/guard.js) ─────────────────────────────────
 
 function verifyJWT(token) {
@@ -110,7 +89,6 @@ RULES:
 - Detect language (Hindi/Hinglish/English) and respond in same
 - If prospect seems uninterested, gracefully wrap up
 - Never make up pricing or specs — say "I'll have our team share exact details"
-- CRITICAL: Write plain conversational text only. NEVER spell out punctuation names like पूर्णविराम, अल्पविराम, विस्मयादिबोधक, प्रश्नवाचक, etc. Do not use special symbols or markdown. Write as if you are speaking naturally.
 
 After your response, add a JSON line at the end:
 {"suggested_score_delta": <number>, "suggested_stage": "<stage>", "is_hot": <boolean>}`;
@@ -177,7 +155,6 @@ class VoiceSession {
     this.destroyed = false;
     this._ttsQueue = [];
     this._ttsBusy = false;
-    this._ttsGeneration = 0;  // incremented on each new response to abort stale TTS
     const ck = claims.client && claims.client !== 'admin' ? claims.client : 'ather';
     this.voiceLeadsTable = ck === 'apb' ? 'voice_leads_apb' : 'voice_leads';
   }
@@ -229,7 +206,7 @@ class VoiceSession {
             sampleRateHertz: 16000,
             languageCode: 'hi-IN',
             alternativeLanguageCodes: ['en-IN', 'en-US'],
-            model: 'latest_short',
+            model: 'latest_long',
             enableAutomaticPunctuation: true,
           },
           interimResults: true,
@@ -238,12 +215,6 @@ class VoiceSession {
 
         recognizeStream.on('data', (response) => {
           if (this.destroyed) return;
-
-          // Clear watchdog on first result
-          if (!this._sttGotResult) {
-            this._sttGotResult = true;
-            if (this._sttWatchdog) { clearTimeout(this._sttWatchdog); this._sttWatchdog = null; }
-          }
 
           const result = response.results?.[0];
           if (!result) return;
@@ -302,15 +273,6 @@ class VoiceSession {
         this._sttClient = sttClient;
         this._sttStream = recognizeStream;
         this._silenceTimer = null;
-        this._sttGotResult = false;
-
-        // Watchdog: if we've been sending audio but get no STT result in 8s, restart
-        this._sttWatchdog = setTimeout(() => {
-          if (!this._sttGotResult && this._audioChunkCount > 10) {
-            this.debugSend('STT watchdog: no results after ' + this._audioChunkCount + ' chunks — restarting stream');
-            this._restartSTTStream();
-          }
-        }, 8000);
 
         this.debugSend('STT Google Cloud Speech connected');
         resolve();
@@ -329,12 +291,11 @@ class VoiceSession {
         this.triggerLLM(this.sttTranscript.trim());
         this.sttTranscript = '';
       }
-    }, 1000);
+    }, 1500);
   }
 
   _restartSTTStream() {
     if (this.destroyed) return;
-    if (this._sttWatchdog) { clearTimeout(this._sttWatchdog); this._sttWatchdog = null; }
     if (this._sttStream) {
       try { this._sttStream.destroy(); } catch {}
       this._sttStream = null;
@@ -353,9 +314,6 @@ class VoiceSession {
 
   sendToTTS(text) {
     if (this.destroyed || !text.trim()) return;
-    // Strip punctuation symbols that TTS may read aloud as Hindi words
-    text = text.replace(/[।!?;:""''—–…*#_~`]/g, ' ').replace(/\s+/g, ' ').trim();
-    if (!text) return;
 
     this.debugSend('TTS queuing: "' + text.slice(0, 80) + '"');
     this.isAISpeaking = true;
@@ -368,15 +326,9 @@ class VoiceSession {
   async _processTTSQueue() {
     if (this._ttsBusy || !this._ttsQueue.length) return;
     this._ttsBusy = true;
-    const myGeneration = this._ttsGeneration;
 
     while (this._ttsQueue.length > 0) {
       if (this.destroyed) break;
-      // Abort if a newer response has started
-      if (this._ttsGeneration !== myGeneration) {
-        this.debugSend('TTS aborted: generation changed (' + myGeneration + ' → ' + this._ttsGeneration + ')');
-        break;
-      }
       const text = this._ttsQueue.shift();
 
       try {
@@ -385,20 +337,21 @@ class VoiceSession {
           input: { text },
           voice: {
             languageCode: 'hi-IN',
-            name: 'hi-IN-Wavenet-A',
+            name: 'hi-IN-Neural2-A',
             ssmlGender: 'FEMALE',
           },
           audioConfig: {
-            audioEncoding: 'MP3',
-            speakingRate: 1.1,
+            audioEncoding: 'LINEAR16',
+            sampleRateHertz: 22050,
+            speakingRate: 1.0,
           },
         });
 
-        if (this.destroyed || this._ttsGeneration !== myGeneration) break;
+        if (this.destroyed) break;
 
         if (response.audioContent) {
           const audioBase64 = Buffer.from(response.audioContent).toString('base64');
-          this.debugSend('TTS audio: ' + audioBase64.length + ' b64 chars (MP3)');
+          this.debugSend('TTS audio received: ' + audioBase64.length + ' b64 chars');
           this.send({ type: 'ai_audio', data: audioBase64 });
         }
       } catch (err) {
@@ -435,12 +388,6 @@ class VoiceSession {
       })),
     ];
 
-    // Clear any pending TTS from previous response to prevent voice mixing
-    this._ttsGeneration++;
-    this._ttsQueue = [];
-    this.isAISpeaking = false;
-    this.send({ type: 'clear_audio' });
-
     this.llmBuffer = '';
     this.fullLLMResponse = '';
 
@@ -452,7 +399,7 @@ class VoiceSession {
           'Authorization': `Bearer ${process.env.OPENAI_API_KEY}`,
         },
         body: JSON.stringify({
-          model: 'gpt-4o-mini',
+          model: 'gpt-4o',
           messages,
           temperature: 0.4,
           max_tokens: 300,
@@ -586,8 +533,7 @@ class VoiceSession {
 
   handleInterrupt() {
     this.isAISpeaking = false;
-    // Abort in-flight TTS and clear queue
-    this._ttsGeneration++;
+    // Clear pending TTS queue so interrupted speech doesn't continue
     this._ttsQueue = [];
     this.send({ type: 'interrupt' });
     this.send({ type: 'ai_speaking', speaking: false });
@@ -676,7 +622,6 @@ class VoiceSession {
     this.destroyed = true;
     this._ttsQueue = [];
     if (this._silenceTimer) clearTimeout(this._silenceTimer);
-    if (this._sttWatchdog) { clearTimeout(this._sttWatchdog); this._sttWatchdog = null; }
     if (this._sttStream) {
       try { this._sttStream.destroy(); } catch {}
       this._sttStream = null;
