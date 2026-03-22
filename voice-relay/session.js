@@ -392,7 +392,20 @@ class VoiceSession {
         if (response.audioContent) {
           const audioBase64 = Buffer.from(response.audioContent).toString('base64');
           this.debugSend('TTS audio: ' + audioBase64.length + ' b64 chars (MP3)');
-          this.send({ type: 'ai_audio', data: audioBase64 });
+
+          // Split large audio into 8KB base64 chunks to prevent client crashes
+          const CHUNK_SIZE = 8 * 1024;
+          if (audioBase64.length > CHUNK_SIZE) {
+            const totalChunks = Math.ceil(audioBase64.length / CHUNK_SIZE);
+            for (let i = 0; i < audioBase64.length; i += CHUNK_SIZE) {
+              if (this.destroyed) break;
+              this.send({ type: 'ai_audio_chunk', data: audioBase64.slice(i, i + CHUNK_SIZE) });
+            }
+            this.send({ type: 'ai_audio_chunk_end' });
+            this.debugSend('Sent ' + totalChunks + ' audio chunks');
+          } else {
+            this.send({ type: 'ai_audio', data: audioBase64 });
+          }
         }
       } catch (err) {
         this.debugSend('TTS ERROR: ' + err.message);

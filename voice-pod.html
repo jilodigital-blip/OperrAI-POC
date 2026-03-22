@@ -878,6 +878,7 @@ let isRecording = false;
 let isAISpeaking = false;
 let audioQueue = [];           // queued audio chunks for playback
 let currentSource = null;      // currently playing AudioBufferSourceNode
+let audioChunkBuffer = '';     // accumulator for chunked audio reassembly
 let liveAITextEl = null;       // live AI text message element
 
 // ── REST API helper (for lead CRUD — NOT voice) ────────────────────────────
@@ -1196,6 +1197,20 @@ function handleRelayMessage(msg) {
       queueAudioChunk(msg.data);
       break;
 
+    case 'ai_audio_chunk':
+      // Accumulate chunked audio pieces
+      audioChunkBuffer += msg.data;
+      break;
+
+    case 'ai_audio_chunk_end':
+      // Reassemble and queue the complete audio
+      if (audioChunkBuffer) {
+        debugLog('Reassembled chunked audio: ' + audioChunkBuffer.length + ' b64 chars');
+        queueAudioChunk(audioChunkBuffer);
+        audioChunkBuffer = '';
+      }
+      break;
+
     case 'ai_speaking':
       isAISpeaking = msg.speaking;
       if (msg.speaking) {
@@ -1373,6 +1388,7 @@ async function playNextChunk() {
 
 function clearAudioQueue() {
   audioQueue = [];
+  audioChunkBuffer = '';  // discard any partially received chunked audio
   if (currentSource) {
     try { currentSource.stop(); } catch {}
     currentSource = null;
