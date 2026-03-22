@@ -9,6 +9,27 @@ const crypto = require('crypto');
 const speech = require('@google-cloud/speech');
 const tts = require('@google-cloud/text-to-speech');
 
+// ── WAV header helper (wraps raw LINEAR16 PCM so browsers can decode it) ────
+
+function wrapPCMInWAV(pcmBuffer, sampleRate = 22050, numChannels = 1, bitsPerSample = 16) {
+  const dataSize = pcmBuffer.length;
+  const header = Buffer.alloc(44);
+  header.write('RIFF', 0);                                    // ChunkID
+  header.writeUInt32LE(36 + dataSize, 4);                     // ChunkSize
+  header.write('WAVE', 8);                                    // Format
+  header.write('fmt ', 12);                                   // Subchunk1ID
+  header.writeUInt32LE(16, 16);                               // Subchunk1Size (PCM)
+  header.writeUInt16LE(1, 20);                                // AudioFormat (1 = PCM)
+  header.writeUInt16LE(numChannels, 22);                      // NumChannels
+  header.writeUInt32LE(sampleRate, 24);                       // SampleRate
+  header.writeUInt32LE(sampleRate * numChannels * bitsPerSample / 8, 28); // ByteRate
+  header.writeUInt16LE(numChannels * bitsPerSample / 8, 32);  // BlockAlign
+  header.writeUInt16LE(bitsPerSample, 34);                    // BitsPerSample
+  header.write('data', 36);                                   // Subchunk2ID
+  header.writeUInt32LE(dataSize, 40);                         // Subchunk2Size
+  return Buffer.concat([header, pcmBuffer]);
+}
+
 // ── JWT verification (same as api/guard.js) ─────────────────────────────────
 
 function verifyJWT(token) {
@@ -370,8 +391,10 @@ class VoiceSession {
         if (this.destroyed) break;
 
         if (response.audioContent) {
-          const audioBase64 = Buffer.from(response.audioContent).toString('base64');
-          this.debugSend('TTS audio received: ' + audioBase64.length + ' b64 chars');
+          const pcm = Buffer.from(response.audioContent);
+          const wav = wrapPCMInWAV(pcm, 22050, 1, 16);
+          const audioBase64 = wav.toString('base64');
+          this.debugSend('TTS audio received: ' + audioBase64.length + ' b64 chars (WAV wrapped)');
           this.send({ type: 'ai_audio', data: audioBase64 });
         }
       } catch (err) {
