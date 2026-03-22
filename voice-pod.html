@@ -1031,11 +1031,21 @@ async function createLead(e) {
 // The JWT lives in an httpOnly cookie (invisible to JS). Fetch it via API.
 async function getAuthToken() {
   try {
-    const resp = await fetch('/api/ws-token', { credentials: 'include' });
-    if (!resp.ok) return '';
+    const resp = await fetch('/api/ws-token', { credentials: 'same-origin' });
+    if (!resp.ok) {
+      const errData = await resp.json().catch(() => ({}));
+      console.error('[AUTH] ws-token failed:', resp.status, errData.error || '');
+      // If 401, session expired — redirect to login
+      if (resp.status === 401) {
+        sessionStorage.removeItem('raymidi_exp');
+        window.location.href = '/login';
+      }
+      return '';
+    }
     const data = await resp.json();
     return data.token || '';
-  } catch {
+  } catch (err) {
+    console.error('[AUTH] ws-token fetch error:', err.message);
     return '';
   }
 }
@@ -1085,8 +1095,8 @@ async function startCall(leadId) {
   try {
     const token = await getAuthToken();
     if (!token) {
-      showToast('Auth token missing — please log in again.', 'error');
       hideLoading();
+      // getAuthToken already redirects to /login on 401
       return;
     }
     const relayHost = RELAY_HOST || location.host;
