@@ -19,3 +19,8 @@ services:
         sync: false
       - key: CORS_ORIGIN
         value: https://www.raymidi.com
+      # Google Cloud STT uses Application Default Credentials (ADC).
+      # On Render, set GOOGLE_APPLICATION_CREDENTIALS to the path of
+      # a service account key JSON file, or use Render's GCP integration.
+      - key: GOOGLE_APPLICATION_CREDENTIALS
+        sync: false
