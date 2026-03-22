@@ -382,8 +382,7 @@ class VoiceSession {
             ssmlGender: 'FEMALE',
           },
           audioConfig: {
-            audioEncoding: 'LINEAR16',
-            sampleRateHertz: 22050,
+            audioEncoding: 'MP3',
             speakingRate: 1.1,
           },
         });
@@ -391,10 +390,8 @@ class VoiceSession {
         if (this.destroyed) break;
 
         if (response.audioContent) {
-          const pcm = Buffer.from(response.audioContent);
-          const wav = wrapPCMInWAV(pcm, 22050, 1, 16);
-          const audioBase64 = wav.toString('base64');
-          this.debugSend('TTS audio received: ' + audioBase64.length + ' b64 chars (WAV wrapped)');
+          const audioBase64 = Buffer.from(response.audioContent).toString('base64');
+          this.debugSend('TTS audio received: ' + audioBase64.length + ' b64 chars (MP3)');
           this.send({ type: 'ai_audio', data: audioBase64 });
         }
       } catch (err) {

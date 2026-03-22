@@ -1314,11 +1314,11 @@ function debugLog(text) {
 
 function initAudioContext() {
   if (!audioContext) {
-    audioContext = new (window.AudioContext || window.webkitAudioContext)({ sampleRate: 22050 });
-    debugLog('AudioContext created, state: ' + audioContext.state);
+    audioContext = new (window.AudioContext || window.webkitAudioContext)();
+    debugLog('AudioContext created, sampleRate: ' + audioContext.sampleRate + ', state: ' + audioContext.state);
   }
   if (audioContext.state === 'suspended') {
-    audioContext.resume();
+    audioContext.resume().then(() => debugLog('AudioContext resumed'));
   }
 }
 
@@ -1341,10 +1341,12 @@ async function playNextChunk() {
     return;
   }
 
+  const chunk = audioQueue.shift();
   try {
-    const buffer = audioQueue.shift();
-    debugLog('Playing chunk: ' + buffer.byteLength + ' bytes, queue left: ' + audioQueue.length);
-    const audioBuffer = await audioContext.decodeAudioData(buffer.slice(0)); // slice to avoid detached buffer
+    // Ensure AudioContext is active before decoding
+    if (audioContext.state === 'suspended') await audioContext.resume();
+    debugLog('Playing chunk: ' + chunk.byteLength + ' bytes, queue left: ' + audioQueue.length);
+    const audioBuffer = await audioContext.decodeAudioData(chunk.slice(0));
     debugLog('Decoded OK: ' + audioBuffer.duration.toFixed(2) + 's @ ' + audioBuffer.sampleRate + 'Hz');
     const source = audioContext.createBufferSource();
     source.buffer = audioBuffer;
@@ -1357,7 +1359,7 @@ async function playNextChunk() {
     source.start();
   } catch (e) {
     console.error('[Audio] Decode error:', e);
-    debugLog('AUDIO DECODE FAILED: ' + e.message + ' (chunk: ' + (buffer?.byteLength || '?') + ' bytes)');
+    debugLog('AUDIO DECODE FAILED: ' + e.message + ' (' + chunk.byteLength + ' bytes)');
     currentSource = null;
     playNextChunk(); // skip bad chunk
   }
