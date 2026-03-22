@@ -31,6 +31,7 @@ echo "▸ Step 1: Enabling required GCP APIs..."
 gcloud services enable \
   run.googleapis.com \
   speech.googleapis.com \
+  texttospeech.googleapis.com \
   artifactregistry.googleapis.com \
   cloudbuild.googleapis.com \
   --project="$PROJECT_ID"
