@@ -89,6 +89,7 @@ RULES:
 - Detect language (Hindi/Hinglish/English) and respond in same
 - If prospect seems uninterested, gracefully wrap up
 - Never make up pricing or specs — say "I'll have our team share exact details"
+- CRITICAL: Write plain conversational text only. NEVER spell out punctuation names like पूर्णविराम, अल्पविराम, विस्मयादिबोधक, प्रश्नवाचक, etc. Do not use special symbols or markdown. Write as if you are speaking naturally.
 
 After your response, add a JSON line at the end:
 {"suggested_score_delta": <number>, "suggested_stage": "<stage>", "is_hot": <boolean>}`;
@@ -306,7 +307,7 @@ class VoiceSession {
         this.triggerLLM(this.sttTranscript.trim());
         this.sttTranscript = '';
       }
-    }, 1500);
+    }, 1000);
   }
 
   _restartSTTStream() {
@@ -330,6 +331,9 @@ class VoiceSession {
 
   sendToTTS(text) {
     if (this.destroyed || !text.trim()) return;
+    // Strip punctuation symbols that TTS may read aloud as Hindi words
+    text = text.replace(/[।!?;:""''—–…*#_~`]/g, ' ').replace(/\s+/g, ' ').trim();
+    if (!text) return;
 
     this.debugSend('TTS queuing: "' + text.slice(0, 80) + '"');
     this.isAISpeaking = true;
@@ -353,13 +357,13 @@ class VoiceSession {
           input: { text },
           voice: {
             languageCode: 'hi-IN',
-            name: 'hi-IN-Neural2-A',
+            name: 'hi-IN-Wavenet-A',
             ssmlGender: 'FEMALE',
           },
           audioConfig: {
             audioEncoding: 'LINEAR16',
             sampleRateHertz: 22050,
-            speakingRate: 1.0,
+            speakingRate: 1.1,
           },
         });
 
@@ -415,7 +419,7 @@ class VoiceSession {
           'Authorization': `Bearer ${process.env.OPENAI_API_KEY}`,
         },
         body: JSON.stringify({
-          model: 'gpt-4o',
+          model: 'gpt-4o-mini',
           messages,
           temperature: 0.4,
           max_tokens: 300,
