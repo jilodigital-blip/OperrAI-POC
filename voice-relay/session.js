@@ -196,6 +196,7 @@ class VoiceSession {
             sampleRateHertz: 16000,
             languageCode: 'hi-IN',
             alternativeLanguageCodes: ['en-IN', 'en-US'],
+            model: 'latest_long',
             enableAutomaticPunctuation: true,
           },
           interimResults: true,
@@ -228,6 +229,7 @@ class VoiceSession {
         });
 
         recognizeStream.on('error', (err) => {
+          // Suppress "write after destroyed" spam — stream is already dead
           if (err.code === 'ERR_STREAM_DESTROYED' || (err.message && err.message.includes('stream was destroyed'))) {
             this._sttStream = null;
             return;
@@ -235,6 +237,13 @@ class VoiceSession {
           if (err.code === 11) {
             this.debugSend('STT stream timed out, restarting...');
             this._restartSTTStream();
+            return;
+          }
+          // Invalid model/config errors — restart with clean state
+          if (err.code === 3 || (err.message && err.message.includes('Invalid recognition'))) {
+            this.debugSend('STT config error: ' + err.message + ' — restarting...');
+            this._sttStream = null;
+            this.send({ type: 'error', message: 'STT connection error: ' + err.message });
             return;
           }
           this.debugSend('STT ERROR (code=' + (err.code || 'none') + '): ' + err.message);
@@ -283,9 +292,11 @@ class VoiceSession {
     }
     this._sttConnecting = false;
     this._sttFailed = false;
+    this._audioChunkCount = 0;
     this.connectSTT().catch(err => {
       this.debugSend('STT restart failed: ' + err.message);
       this._sttStream = null;
+      this._sttFailed = true;
     });
   }
 
@@ -587,20 +598,24 @@ class VoiceSession {
   async handleAudio(base64Audio) {
     if (!this._sttStream || !this._sttStream.writable) {
       if (this._sttConnecting) return;
-      if (this._sttFailed) return;
+      // Allow retry after failure (don't permanently block)
       this._sttStream = null;
       this._sttConnecting = true;
       try {
         this.debugSend('STT lazy-connecting on first audio chunk...');
         await this.connectSTT();
         this._sttConnecting = false;
+        this._sttFailed = false;
         this.debugSend('STT lazy-connect succeeded');
       } catch (err) {
         this._sttConnecting = false;
+        // Only send error once, not for every audio chunk
+        if (!this._sttFailed) {
+          const msg = 'STT connection failed: ' + err.message;
+          this.debugSend(msg);
+          this.send({ type: 'error', message: msg });
+        }
         this._sttFailed = true;
-        const msg = 'STT connection failed: ' + err.message;
-        this.debugSend(msg);
-        this.send({ type: 'error', message: msg });
         return;
       }
     }
@@ -612,8 +627,13 @@ class VoiceSession {
     }
 
     const audioBuffer = Buffer.from(base64Audio, 'base64');
-    if (this._sttStream && this._sttStream.writable) {
-      this._sttStream.write(audioBuffer);
+    try {
+      if (this._sttStream && this._sttStream.writable) {
+        this._sttStream.write(audioBuffer);
+      }
+    } catch (err) {
+      // Silently handle write-after-destroy — stream will be reconnected on next chunk
+      this._sttStream = null;
     }
   }
 
