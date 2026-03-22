@@ -177,6 +177,7 @@ class VoiceSession {
     this.destroyed = false;
     this._ttsQueue = [];
     this._ttsBusy = false;
+    this._ttsGeneration = 0;  // incremented on each new response to abort stale TTS
     const ck = claims.client && claims.client !== 'admin' ? claims.client : 'ather';
     this.voiceLeadsTable = ck === 'apb' ? 'voice_leads_apb' : 'voice_leads';
   }
@@ -367,9 +368,15 @@ class VoiceSession {
   async _processTTSQueue() {
     if (this._ttsBusy || !this._ttsQueue.length) return;
     this._ttsBusy = true;
+    const myGeneration = this._ttsGeneration;
 
     while (this._ttsQueue.length > 0) {
       if (this.destroyed) break;
+      // Abort if a newer response has started
+      if (this._ttsGeneration !== myGeneration) {
+        this.debugSend('TTS aborted: generation changed (' + myGeneration + ' → ' + this._ttsGeneration + ')');
+        break;
+      }
       const text = this._ttsQueue.shift();
 
       try {
@@ -387,25 +394,12 @@ class VoiceSession {
           },
         });
 
-        if (this.destroyed) break;
+        if (this.destroyed || this._ttsGeneration !== myGeneration) break;
 
         if (response.audioContent) {
           const audioBase64 = Buffer.from(response.audioContent).toString('base64');
           this.debugSend('TTS audio: ' + audioBase64.length + ' b64 chars (MP3)');
-
-          // Split large audio into 8KB base64 chunks to prevent client crashes
-          const CHUNK_SIZE = 8 * 1024;
-          if (audioBase64.length > CHUNK_SIZE) {
-            const totalChunks = Math.ceil(audioBase64.length / CHUNK_SIZE);
-            for (let i = 0; i < audioBase64.length; i += CHUNK_SIZE) {
-              if (this.destroyed) break;
-              this.send({ type: 'ai_audio_chunk', data: audioBase64.slice(i, i + CHUNK_SIZE) });
-            }
-            this.send({ type: 'ai_audio_chunk_end' });
-            this.debugSend('Sent ' + totalChunks + ' audio chunks');
-          } else {
-            this.send({ type: 'ai_audio', data: audioBase64 });
-          }
+          this.send({ type: 'ai_audio', data: audioBase64 });
         }
       } catch (err) {
         this.debugSend('TTS ERROR: ' + err.message);
@@ -442,6 +436,7 @@ class VoiceSession {
     ];
 
     // Clear any pending TTS from previous response to prevent voice mixing
+    this._ttsGeneration++;
     this._ttsQueue = [];
     this.isAISpeaking = false;
     this.send({ type: 'clear_audio' });
@@ -591,7 +586,8 @@ class VoiceSession {
 
   handleInterrupt() {
     this.isAISpeaking = false;
-    // Clear pending TTS queue so interrupted speech doesn't continue
+    // Abort in-flight TTS and clear queue
+    this._ttsGeneration++;
     this._ttsQueue = [];
     this.send({ type: 'interrupt' });
     this.send({ type: 'ai_speaking', speaking: false });

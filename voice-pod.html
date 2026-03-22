@@ -879,6 +879,7 @@ let isAISpeaking = false;
 let audioQueue = [];           // queued audio chunks for playback
 let currentSource = null;      // currently playing AudioBufferSourceNode
 let audioChunkBuffer = '';     // accumulator for chunked audio reassembly
+let waitingForWelcome = false; // true until welcome greeting finishes playing
 let liveAITextEl = null;       // live AI text message element
 
 // ── REST API helper (for lead CRUD — NOT voice) ────────────────────────────
@@ -1173,16 +1174,11 @@ function handleRelayMessage(msg) {
   switch (msg.type) {
     case 'ready':
       hideLoading();
-      setVoiceStatus('listening', 'Connecting...');
-      document.getElementById('micBtn').disabled = false;
-      document.getElementById('micHint').textContent = 'Starting...';
-      // Auto-start mic so conversation flows immediately
-      startMicStream().then(() => {
-        setVoiceStatus('listening', 'Call Active');
-        document.getElementById('micHint').textContent = 'Listening...';
-      }).catch(() => {
-        document.getElementById('micHint').textContent = 'Click mic to talk';
-      });
+      setVoiceStatus('speaking', 'AI Speaking...');
+      document.getElementById('micBtn').disabled = true;
+      document.getElementById('micHint').textContent = 'AI is greeting...';
+      // Mic will auto-start when welcome finishes (ai_speaking: false)
+      waitingForWelcome = true;
       break;
 
     case 'transcript':
@@ -1197,26 +1193,22 @@ function handleRelayMessage(msg) {
       queueAudioChunk(msg.data);
       break;
 
-    case 'ai_audio_chunk':
-      // Accumulate chunked audio pieces
-      audioChunkBuffer += msg.data;
-      break;
-
-    case 'ai_audio_chunk_end':
-      // Reassemble and queue the complete audio
-      if (audioChunkBuffer) {
-        debugLog('Reassembled chunked audio: ' + audioChunkBuffer.length + ' b64 chars');
-        queueAudioChunk(audioChunkBuffer);
-        audioChunkBuffer = '';
-      }
-      break;
-
     case 'ai_speaking':
       isAISpeaking = msg.speaking;
       if (msg.speaking) {
         setVoiceStatus('speaking', 'AI Speaking');
       } else {
         setVoiceStatus('listening', 'Call Active');
+        // Auto-start mic after welcome greeting finishes
+        if (waitingForWelcome) {
+          waitingForWelcome = false;
+          document.getElementById('micBtn').disabled = false;
+          startMicStream().then(() => {
+            document.getElementById('micHint').textContent = 'Listening...';
+          }).catch(() => {
+            document.getElementById('micHint').textContent = 'Click mic to talk';
+          });
+        }
       }
       break;
 
