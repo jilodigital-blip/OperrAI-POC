@@ -765,6 +765,7 @@
           <span class="badge" id="vpStatus">New</span>
         </div>
         <div style="display:flex;align-items:center;gap:1rem;">
+          <span id="callTimer" style="font-family:monospace;font-size:0.85rem;color:var(--muted);min-width:52px;">00:00</span>
           <div class="voice-status" id="voiceStatus"><span class="dot"></span> <span id="voiceStatusText">Ready</span></div>
           <button class="btn-secondary" onclick="closeVoicePanel()">Close</button>
         </div>
@@ -790,6 +791,20 @@
     </div>
 
     <!-- ── Section: Lead List ────────────────────────────────── -->
+    <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:0.75rem;gap:1rem;flex-wrap:wrap;">
+      <input type="text" id="leadSearch" placeholder="Search leads by name, phone, product..." oninput="filterLeads()" style="flex:1;min-width:200px;padding:0.5rem 0.75rem;border:1px solid var(--border2);border-radius:8px;font-size:0.85rem;background:var(--surface);color:var(--text);font-family:var(--font-body);" />
+      <div style="display:flex;gap:0.5rem;">
+        <select id="filterStatus" onchange="filterLeads()" style="padding:0.5rem 0.75rem;border:1px solid var(--border2);border-radius:8px;font-size:0.85rem;background:var(--surface);color:var(--text);font-family:var(--font-body);">
+          <option value="">All Statuses</option>
+          <option value="new">New</option>
+          <option value="contacted">Contacted</option>
+          <option value="qualified">Qualified</option>
+          <option value="transferred">Transferred</option>
+          <option value="converted">Converted</option>
+        </select>
+        <button class="btn-secondary" onclick="exportLeadsCSV()" style="white-space:nowrap;font-size:0.82rem;padding:0.45rem 0.75rem;">Export CSV</button>
+      </div>
+    </div>
     <div class="lead-table-wrap">
       <table class="lead-table">
         <thead>
@@ -968,6 +983,7 @@ function renderLeadTable() {
       <td>
         <div style="display:flex;gap:0.3rem;">
           <button class="btn-action" onclick="startCall('${l.id}')">🎙️ Call</button>
+          <button class="btn-action" onclick="deleteLead('${l.id}')" style="color:var(--red);font-size:0.78rem;" title="Delete lead">✕</button>
         </div>
       </td>
     </tr>`;
@@ -1015,11 +1031,21 @@ async function createLead(e) {
 // The JWT lives in an httpOnly cookie (invisible to JS). Fetch it via API.
 async function getAuthToken() {
   try {
-    const resp = await fetch('/api/ws-token', { credentials: 'include' });
-    if (!resp.ok) return '';
+    const resp = await fetch('/api/ws-token', { credentials: 'same-origin' });
+    if (!resp.ok) {
+      const errData = await resp.json().catch(() => ({}));
+      console.error('[AUTH] ws-token failed:', resp.status, errData.error || '');
+      // If 401, session expired — redirect to login
+      if (resp.status === 401) {
+        sessionStorage.removeItem('raymidi_exp');
+        window.location.href = '/login';
+      }
+      return '';
+    }
     const data = await resp.json();
     return data.token || '';
-  } catch {
+  } catch (err) {
+    console.error('[AUTH] ws-token fetch error:', err.message);
     return '';
   }
 }
@@ -1042,6 +1068,7 @@ async function startCall(leadId) {
 
   const panel = document.getElementById('voicePanel');
   panel.classList.add('active');
+  startCallTimer();
 
   // Set header info
   document.getElementById('vpLeadName').textContent = lead.name;
@@ -1068,8 +1095,8 @@ async function startCall(leadId) {
   try {
     const token = await getAuthToken();
     if (!token) {
-      showToast('Auth token missing — please log in again.', 'error');
       hideLoading();
+      // getAuthToken already redirects to /login on 401
       return;
     }
     const relayHost = RELAY_HOST || location.host;
@@ -1498,6 +1525,7 @@ function closeVoicePanel() {
 
   stopMicStream();
   clearAudioQueue();
+  stopCallTimer();
 
   document.getElementById('voicePanel').classList.remove('active');
   activeLead = null;
@@ -1533,6 +1561,7 @@ function endConversation() {
   if (!activeLead) return;
   stopMicStream();
   clearAudioQueue();
+  stopCallTimer();
 
   if (voiceWs && voiceWs.readyState === WebSocket.OPEN) {
     voiceWs.send(JSON.stringify({ type: 'end' }));
@@ -1551,6 +1580,87 @@ async function logout() {
     await fetch('/api/auth', { method: 'DELETE', credentials: 'include' });
   } catch { /* ignore */ }
   window.location.href = '/login';
+}
+
+// ── Search & filter leads ─────────────────────────────────────────────────
+function filterLeads() {
+  const query = (document.getElementById('leadSearch').value || '').toLowerCase();
+  const status = document.getElementById('filterStatus').value;
+  const rows = document.querySelectorAll('#leadTableBody tr');
+
+  rows.forEach((row, i) => {
+    const lead = leads[i];
+    if (!lead) return;
+    const matchesSearch = !query ||
+      (lead.name || '').toLowerCase().includes(query) ||
+      (lead.phone || '').toLowerCase().includes(query) ||
+      (lead.product_interest || '').toLowerCase().includes(query);
+    const matchesStatus = !status || lead.status === status;
+    row.style.display = (matchesSearch && matchesStatus) ? '' : 'none';
+  });
+}
+
+// ── Export leads to CSV ──────────────────────────────────────────────────
+function exportLeadsCSV() {
+  if (!leads.length) { showToast('No leads to export', 'error'); return; }
+  const headers = ['Name', 'Phone', 'Email', 'Product Interest', 'Source', 'Priority', 'Status', 'Score', 'Stage', 'Turn Count'];
+  const csvRows = [headers.join(',')];
+  leads.forEach(l => {
+    csvRows.push([
+      '"' + (l.name || '').replace(/"/g, '""') + '"',
+      '"' + (l.phone || '') + '"',
+      '"' + (l.email || '') + '"',
+      '"' + (l.product_interest || '') + '"',
+      l.source || '',
+      l.priority || '',
+      l.status || '',
+      l.lead_score || 0,
+      l.stage || '',
+      l.turn_count || 0,
+    ].join(','));
+  });
+  const blob = new Blob([csvRows.join('\n')], { type: 'text/csv' });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href = url;
+  a.download = 'leads-export-' + new Date().toISOString().slice(0, 10) + '.csv';
+  a.click();
+  URL.revokeObjectURL(url);
+  showToast('Exported ' + leads.length + ' leads to CSV');
+}
+
+// ── Delete lead ─────────────────────────────────────────────────────────
+async function deleteLead(leadId) {
+  if (!confirm('Delete this lead? This cannot be undone.')) return;
+  try {
+    await api('POST', { action: 'delete', id: leadId });
+    leads = leads.filter(l => l.id !== leadId);
+    renderLeadTable();
+    updateStats();
+    showToast('Lead deleted');
+  } catch (e) {
+    showToast('Failed to delete: ' + e.message, 'error');
+  }
+}
+
+// ── Call timer ──────────────────────────────────────────────────────────
+let callTimerInterval = null;
+let callStartTime = null;
+
+function startCallTimer() {
+  callStartTime = Date.now();
+  document.getElementById('callTimer').textContent = '00:00';
+  callTimerInterval = setInterval(() => {
+    const elapsed = Math.floor((Date.now() - callStartTime) / 1000);
+    const mins = String(Math.floor(elapsed / 60)).padStart(2, '0');
+    const secs = String(elapsed % 60).padStart(2, '0');
+    document.getElementById('callTimer').textContent = mins + ':' + secs;
+  }, 1000);
+}
+
+function stopCallTimer() {
+  if (callTimerInterval) { clearInterval(callTimerInterval); callTimerInterval = null; }
+  callStartTime = null;
 }
 
 // ── Init ───────────────────────────────────────────────────────────────────
