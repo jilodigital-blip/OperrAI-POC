@@ -39,12 +39,9 @@ const server = http.createServer(async (req, res) => {
     return res.end(JSON.stringify({ ok: true, timestamp: Date.now() }));
   }
 
-  if (req.url === '/debug/sarvam') {
-    const sarvamKey = process.env.SARVAM_API_KEY;
-    const keyPreview = sarvamKey
-      ? `${sarvamKey.slice(0, 4)}...${sarvamKey.slice(-4)} (len=${sarvamKey.length})`
-      : 'NOT SET';
-    const results = { sttProvider: 'Google Cloud Speech-to-Text', ttsProvider: 'Sarvam', sarvamKeyPreview: keyPreview, tests: {} };
+  if (req.url === '/debug/providers') {
+    const ttsLib = require('@google-cloud/text-to-speech');
+    const results = { sttProvider: 'Google Cloud Speech-to-Text', ttsProvider: 'Google Cloud Text-to-Speech', tests: {} };
 
     try {
       const testClient = new speech.SpeechClient();
@@ -52,6 +49,14 @@ const server = http.createServer(async (req, res) => {
       results.tests.googleSTT = { status: 'ok', message: 'Client initialized successfully (ADC)' };
     } catch (err) {
       results.tests.googleSTT = { status: 'error', message: err.message };
+    }
+
+    try {
+      const testClient = new ttsLib.TextToSpeechClient();
+      await testClient.close();
+      results.tests.googleTTS = { status: 'ok', message: 'Client initialized successfully (ADC)' };
+    } catch (err) {
+      results.tests.googleTTS = { status: 'error', message: err.message };
     }
 
     res.writeHead(200, { 'Content-Type': 'application/json' });

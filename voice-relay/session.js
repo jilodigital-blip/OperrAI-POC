@@ -6,8 +6,8 @@
  */
 
 const crypto = require('crypto');
-const { WebSocket } = require('ws');
 const speech = require('@google-cloud/speech');
+const tts = require('@google-cloud/text-to-speech');
 
 // ── JWT verification (same as api/guard.js) ─────────────────────────────────
 
@@ -127,6 +127,14 @@ function extractScoring(fullText) {
   return { aiText, scoreDelta, suggestedStage, isHot };
 }
 
+// ── Google Cloud TTS client (shared across sessions) ────────────────────────
+
+let _ttsClient = null;
+function getTTSClient() {
+  if (!_ttsClient) _ttsClient = new tts.TextToSpeechClient();
+  return _ttsClient;
+}
+
 // ── Voice Session class ─────────────────────────────────────────────────────
 
 class VoiceSession {
@@ -136,7 +144,6 @@ class VoiceSession {
     this.lead = lead;
     this._sttStream = null;
     this._sttClient = null;
-    this.ttsWs = null;
     this.conversationHistory = Array.isArray(lead.conversation_history) ? [...lead.conversation_history] : [];
     this.currentScore = lead.lead_score || 10;
     this.currentStage = lead.stage || 'welcome';
@@ -146,6 +153,8 @@ class VoiceSession {
     this.llmBuffer = '';
     this.fullLLMResponse = '';
     this.destroyed = false;
+    this._ttsQueue = [];
+    this._ttsBusy = false;
     const ck = claims.client && claims.client !== 'admin' ? claims.client : 'ather';
     this.voiceLeadsTable = ck === 'apb' ? 'voice_leads_apb' : 'voice_leads';
   }
@@ -159,9 +168,10 @@ class VoiceSession {
 
   async init() {
     try {
-      this.debugSend('Connecting TTS...');
-      await this.connectTTS();
-      this.debugSend('TTS connected, sending ready');
+      this.debugSend('Initializing Google Cloud TTS...');
+      // Verify TTS client works
+      getTTSClient();
+      this.debugSend('TTS ready (Google Cloud Text-to-Speech)');
       this.send({ type: 'ready' });
 
       if (this.conversationHistory.length === 0) {
@@ -239,11 +249,11 @@ class VoiceSession {
             this._restartSTTStream();
             return;
           }
-          // Invalid model/config errors — restart with clean state
+          // Invalid model/config errors
           if (err.code === 3 || (err.message && err.message.includes('Invalid recognition'))) {
-            this.debugSend('STT config error: ' + err.message + ' — restarting...');
+            this.debugSend('STT config error: ' + err.message);
             this._sttStream = null;
-            this.send({ type: 'error', message: 'STT connection error: ' + err.message });
+            this.send({ type: 'error', message: 'STT config error: ' + err.message });
             return;
           }
           this.debugSend('STT ERROR (code=' + (err.code || 'none') + '): ' + err.message);
@@ -300,124 +310,63 @@ class VoiceSession {
     });
   }
 
-  // ── Sarvam TTS WebSocket ──────────────────────────────────────────────
-
-  connectTTS() {
-    return new Promise((resolve, reject) => {
-      const sarvamKey = process.env.SARVAM_API_KEY;
-      if (!sarvamKey) return reject(new Error('SARVAM_API_KEY not configured'));
-
-      const ttsUrl = `wss://api.sarvam.ai/text-to-speech/ws?model=bulbul:v2&send_completion_event=true&api-subscription-key=${encodeURIComponent(sarvamKey)}`;
-      this.debugSend('TTS connecting...');
-      this.ttsWs = new WebSocket(ttsUrl, [`api-subscription-key.${sarvamKey}`], {
-        headers: { 'api-subscription-key': sarvamKey },
-      });
-
-      this.ttsWs.on('open', () => {
-        this.debugSend('TTS WebSocket connected to Sarvam');
-        this.ttsWs.send(JSON.stringify({
-          type: 'config',
-          data: {
-            target_language_code: 'hi-IN',
-            speaker: 'anushka',
-            model: 'bulbul:v2',
-            pace: 1.0,
-            loudness: 1.0,
-            enable_preprocessing: true,
-            output_audio_codec: 'wav',
-            speech_sample_rate: '22050',
-          },
-        }));
-        this.debugSend('TTS config sent (speaker=anushka, codec=wav)');
-        resolve();
-      });
-
-      this.ttsWs.on('message', (data) => {
-        try {
-          const msg = JSON.parse(data.toString());
-          this.debugSend('TTS JSON msg: ' + (msg.type || msg.event || JSON.stringify(msg).slice(0, 200)));
-          this.handleTTSMessage(msg);
-        } catch {
-          if (Buffer.isBuffer(data)) {
-            this.debugSend('TTS binary audio: ' + data.length + ' bytes');
-            this.send({ type: 'ai_audio', data: data.toString('base64') });
-          } else {
-            this.debugSend('TTS unknown msg type: ' + typeof data);
-          }
-        }
-      });
-
-      this.ttsWs.on('error', (err) => {
-        this.debugSend('TTS ERROR: ' + err.message);
-      });
-
-      this.ttsWs.on('unexpected-response', (req, res) => {
-        let body = '';
-        res.on('data', (chunk) => { body += chunk; });
-        res.on('end', () => {
-          let diagnosis;
-          if (res.statusCode === 403 || res.statusCode === 401) {
-            diagnosis = 'Sarvam API key is missing or invalid';
-          } else if (res.statusCode === 429) {
-            diagnosis = 'Sarvam rate limit exceeded';
-          } else {
-            diagnosis = 'Sarvam rejected connection';
-          }
-          this.debugSend('TTS REJECTED: ' + diagnosis + ' (HTTP ' + res.statusCode + '): ' + body.slice(0, 200));
-          this.send({ type: 'error', message: `TTS error: ${diagnosis}`, code: res.statusCode });
-          reject(new Error(`${diagnosis} (HTTP ${res.statusCode})`));
-        });
-      });
-
-      this.ttsWs.on('close', (code, reason) => {
-        this.debugSend('TTS CLOSED: code=' + code + ' reason=' + (reason || 'none'));
-        if (!this.destroyed) {
-          setTimeout(() => this.connectTTS().catch(() => {}), 1000);
-        }
-      });
-
-      setTimeout(() => reject(new Error('TTS connection timeout')), 10000);
-    });
-  }
-
-  handleTTSMessage(msg) {
-    if (msg.data?.audio || msg.audio) {
-      const audioBase64 = msg.data?.audio || msg.audio;
-      this.debugSend('TTS audio chunk: ' + audioBase64.length + ' b64 chars');
-      this.send({ type: 'ai_audio', data: audioBase64 });
-      return;
-    }
-
-    if (msg.type === 'completion' || msg.event === 'completion' ||
-        (msg.type === 'event' && msg.data?.event_type === 'final')) {
-      this.debugSend('TTS synthesis complete');
-      this.isAISpeaking = false;
-      this.send({ type: 'ai_speaking', speaking: false });
-    }
-
-    if (msg.type === 'error') {
-      this.debugSend('TTS ERROR response: ' + JSON.stringify(msg.data || msg).slice(0, 300));
-    }
-  }
-
-  // ── Send text to TTS ──────────────────────────────────────────────────
+  // ── Google Cloud Text-to-Speech ────────────────────────────────────────
 
   sendToTTS(text) {
-    if (!this.ttsWs || this.ttsWs.readyState !== WebSocket.OPEN) {
-      this.debugSend('TTS Cannot send — WS not open (state=' + (this.ttsWs?.readyState ?? 'null') + ')');
-      return;
-    }
-    this.debugSend('TTS sending text (' + text.length + ' chars): ' + text.slice(0, 80) + '...');
+    if (this.destroyed || !text.trim()) return;
+
+    this.debugSend('TTS queuing: "' + text.slice(0, 80) + '"');
     this.isAISpeaking = true;
     this.send({ type: 'ai_speaking', speaking: true });
 
-    this.ttsWs.send(JSON.stringify({
-      type: 'text',
-      data: { text },
-    }));
+    this._ttsQueue.push(text);
+    this._processTTSQueue();
+  }
 
-    this.ttsWs.send(JSON.stringify({ type: 'flush' }));
-    this.debugSend('TTS text+flush sent, waiting for audio...');
+  async _processTTSQueue() {
+    if (this._ttsBusy || !this._ttsQueue.length) return;
+    this._ttsBusy = true;
+
+    while (this._ttsQueue.length > 0) {
+      if (this.destroyed) break;
+      const text = this._ttsQueue.shift();
+
+      try {
+        const client = getTTSClient();
+        const [response] = await client.synthesizeSpeech({
+          input: { text },
+          voice: {
+            languageCode: 'hi-IN',
+            name: 'hi-IN-Neural2-A',
+            ssmlGender: 'FEMALE',
+          },
+          audioConfig: {
+            audioEncoding: 'LINEAR16',
+            sampleRateHertz: 22050,
+            speakingRate: 1.0,
+          },
+        });
+
+        if (this.destroyed) break;
+
+        if (response.audioContent) {
+          const audioBase64 = Buffer.from(response.audioContent).toString('base64');
+          this.debugSend('TTS audio received: ' + audioBase64.length + ' b64 chars');
+          this.send({ type: 'ai_audio', data: audioBase64 });
+        }
+      } catch (err) {
+        this.debugSend('TTS ERROR: ' + err.message);
+        this.send({ type: 'error', message: 'TTS error: ' + err.message });
+      }
+    }
+
+    this._ttsBusy = false;
+
+    // Signal speaking done when queue is empty
+    if (this._ttsQueue.length === 0) {
+      this.isAISpeaking = false;
+      this.send({ type: 'ai_speaking', speaking: false });
+    }
   }
 
   // ── OpenAI GPT-4o streaming ───────────────────────────────────────────
@@ -584,11 +533,8 @@ class VoiceSession {
 
   handleInterrupt() {
     this.isAISpeaking = false;
-
-    if (this.ttsWs && this.ttsWs.readyState === WebSocket.OPEN) {
-      this.ttsWs.send(JSON.stringify({ type: 'flush' }));
-    }
-
+    // Clear pending TTS queue so interrupted speech doesn't continue
+    this._ttsQueue = [];
     this.send({ type: 'interrupt' });
     this.send({ type: 'ai_speaking', speaking: false });
   }
@@ -665,7 +611,7 @@ class VoiceSession {
   // ── Send message to browser ───────────────────────────────────────────
 
   send(msg) {
-    if (this.ws.readyState === WebSocket.OPEN) {
+    if (this.ws.readyState === 1) { // WebSocket.OPEN
       this.ws.send(JSON.stringify(msg));
     }
   }
@@ -674,6 +620,7 @@ class VoiceSession {
 
   destroy() {
     this.destroyed = true;
+    this._ttsQueue = [];
     if (this._silenceTimer) clearTimeout(this._silenceTimer);
     if (this._sttStream) {
       try { this._sttStream.destroy(); } catch {}
@@ -682,10 +629,6 @@ class VoiceSession {
     if (this._sttClient) {
       try { this._sttClient.close(); } catch {}
       this._sttClient = null;
-    }
-    if (this.ttsWs) {
-      try { this.ttsWs.close(); } catch {}
-      this.ttsWs = null;
     }
     this.persistToDatabase().catch(() => {});
   }
@@ -768,21 +711,22 @@ async function handleWSConnection(ws, req) {
 // ── Validate API keys on startup ────────────────────────────────────────────
 
 async function validateKeys() {
-  const sarvamKey = process.env.SARVAM_API_KEY;
-  if (!sarvamKey) {
-    console.error('[STARTUP] SARVAM_API_KEY is not set — TTS will fail');
-  } else {
-    const keyPreview = `${sarvamKey.slice(0, 4)}...${sarvamKey.slice(-4)} (len=${sarvamKey.length})`;
-    console.log(`[STARTUP] SARVAM_API_KEY (TTS): ${keyPreview}`);
-  }
-
+  // Check Google Cloud STT
   try {
     const testClient = new speech.SpeechClient();
     await testClient.close();
-    console.log('[STARTUP] Google Cloud Speech client initialized OK (ADC)');
+    console.log('[STARTUP] Google Cloud STT: OK (ADC)');
   } catch (err) {
-    console.error('[STARTUP] Google Cloud Speech init failed: ' + err.message);
-    console.error('[STARTUP] Ensure Speech-to-Text API is enabled in GCP project');
+    console.error('[STARTUP] Google Cloud STT init failed: ' + err.message);
+  }
+
+  // Check Google Cloud TTS
+  try {
+    const testClient = new tts.TextToSpeechClient();
+    await testClient.close();
+    console.log('[STARTUP] Google Cloud TTS: OK (ADC)');
+  } catch (err) {
+    console.error('[STARTUP] Google Cloud TTS init failed: ' + err.message);
   }
 }
 
