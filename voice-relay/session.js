@@ -428,6 +428,11 @@ class VoiceSession {
       })),
     ];
 
+    // Clear any pending TTS from previous response to prevent voice mixing
+    this._ttsQueue = [];
+    this.isAISpeaking = false;
+    this.send({ type: 'clear_audio' });
+
     this.llmBuffer = '';
     this.fullLLMResponse = '';
 

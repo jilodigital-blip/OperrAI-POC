@@ -1205,6 +1205,12 @@ function handleRelayMessage(msg) {
       }
       break;
 
+    case 'clear_audio':
+      // Server starting new response — stop any old audio to prevent mixing
+      debugLog('Clear audio: new response starting');
+      clearAudioQueue();
+      break;
+
     case 'interrupt':
       // AI was interrupted — clear audio queue
       clearAudioQueue();
