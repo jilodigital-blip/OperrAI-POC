@@ -206,7 +206,7 @@ class VoiceSession {
             sampleRateHertz: 16000,
             languageCode: 'hi-IN',
             alternativeLanguageCodes: ['en-IN', 'en-US'],
-            model: 'latest_long',
+            model: 'latest_short',
             enableAutomaticPunctuation: true,
           },
           interimResults: true,
@@ -215,6 +215,12 @@ class VoiceSession {
 
         recognizeStream.on('data', (response) => {
           if (this.destroyed) return;
+
+          // Clear watchdog on first result
+          if (!this._sttGotResult) {
+            this._sttGotResult = true;
+            if (this._sttWatchdog) { clearTimeout(this._sttWatchdog); this._sttWatchdog = null; }
+          }
 
           const result = response.results?.[0];
           if (!result) return;
@@ -273,6 +279,15 @@ class VoiceSession {
         this._sttClient = sttClient;
         this._sttStream = recognizeStream;
         this._silenceTimer = null;
+        this._sttGotResult = false;
+
+        // Watchdog: if we've been sending audio but get no STT result in 8s, restart
+        this._sttWatchdog = setTimeout(() => {
+          if (!this._sttGotResult && this._audioChunkCount > 10) {
+            this.debugSend('STT watchdog: no results after ' + this._audioChunkCount + ' chunks — restarting stream');
+            this._restartSTTStream();
+          }
+        }, 8000);
 
         this.debugSend('STT Google Cloud Speech connected');
         resolve();
@@ -296,6 +311,7 @@ class VoiceSession {
 
   _restartSTTStream() {
     if (this.destroyed) return;
+    if (this._sttWatchdog) { clearTimeout(this._sttWatchdog); this._sttWatchdog = null; }
     if (this._sttStream) {
       try { this._sttStream.destroy(); } catch {}
       this._sttStream = null;
@@ -622,6 +638,7 @@ class VoiceSession {
     this.destroyed = true;
     this._ttsQueue = [];
     if (this._silenceTimer) clearTimeout(this._silenceTimer);
+    if (this._sttWatchdog) { clearTimeout(this._sttWatchdog); this._sttWatchdog = null; }
     if (this._sttStream) {
       try { this._sttStream.destroy(); } catch {}
       this._sttStream = null;
