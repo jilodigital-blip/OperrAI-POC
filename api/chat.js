@@ -205,6 +205,20 @@ const CLIENT_PROMPTS = {
     fallbackContact: 'Please contact Ather support at atherenergy.com or call 7676 600 900.',
     scopeDesc: 'Ather Energy products, services, and support',
     chatChannelName: 'chat',
+    languageRule: 'LANGUAGE RULE: ALWAYS respond in English regardless of what language the customer writes in. Even if the customer writes in Hindi, Hinglish, or any other language, your response MUST be in clear, professional English. Understand the customer\'s question in any language but always draft the reply in English. Keep technical terms, product names, and model names as-is.',
+    languageConsistencyRule: 'LANGUAGE CONSISTENCY: Always respond in English. Maintain professional English throughout all responses.',
+    l2LanguageNote: 'LANGUAGE: The AI must ALWAYS respond in English regardless of the customer\'s language. If the response is not in English, rate as Poor.',
+    emailFormatInstruction: `FORMAT RULES (Email):
+- Structure your response in exactly this order:
+  1. GREETING: A warm, professional greeting addressing the customer.
+  2. PARAPHRASE: Briefly restate the customer's problem or question in your own words to show you understood them.
+  3. SOLUTION: Provide the direct answer or resolution to their specific query using facts from the knowledge base. Use bullet points only when listing multiple items.
+  4. ASSURANCE: A brief reassurance statement (e.g., "We're here to help if you need anything else.").
+  5. SIGNATURE: Sign off as "Ather Support Team".
+- Do NOT add extra sections, disclaimers, or proactive information beyond what was asked.
+- Do NOT use markdown headers (###, ##). Use plain text with line breaks.
+- Keep the tone professional and focused.`,
+    rule21: 'RESPONSE FOCUS: Answer ONLY what the customer specifically asked. Do NOT proactively add related information such as warranty coverage, service intervals, maintenance plans, Ather Care plan details, pricing of other services, or any details the customer did not ask about. A sharp, relevant answer is better than a comprehensive one that includes unrequested details.',
   },
   apb: {
     agentRole: 'an expert customer support agent for Airtel Payments Bank',
@@ -215,10 +229,21 @@ const CLIENT_PROMPTS = {
     fallbackContact: 'Please contact Airtel Payments Bank support at airtel.in/bank or call 400 (toll-free from Airtel).',
     scopeDesc: 'Airtel Payments Bank products, services, accounts, and support',
     chatChannelName: 'ODR',
+    languageRule: `LANGUAGE RULE: Detect the language of the customer's question and ALWAYS reply in the SAME language.
+- If the customer writes in Hindi, reply in Hindi.
+- If the customer writes in Hinglish (mix of Hindi and English), reply in Hinglish.
+- If the customer writes in any other language, reply in that language.
+- If the customer writes in English, reply in English.
+- This rule applies to ALL responses including error acknowledgements, frustration responses (Rule 7), fallback messages (Rule 3), escalation offers (Rule 19), and any other response type. NEVER switch languages mid-conversation.
+The knowledge base context is in English, but you must translate your answer into the customer's language while keeping technical terms (like model names, features, specifications) in English.`,
+    languageConsistencyRule: 'LANGUAGE CONSISTENCY: If conversation started in Hindi/Hinglish, NEVER switch to English mid-conversation. Maintain same language throughout, even in error/fallback/frustration/escalation responses.',
+    l2LanguageNote: 'MULTILINGUAL: The AI may respond in Hindi, Hinglish, or other languages to match the customer\'s language. This is correct behavior — evaluate the factual accuracy of the translated content against the English knowledge base context, not the language used.',
+    rule21: `PROACTIVE COMPLETENESS: When answering a procedural/how-to question for the FIRST TIME on a topic (no prior answer in conversation history), include the complete picture: documents needed, steps, where to do it, and charges. Keep it concise — use bullets, no headers.
+   IMPORTANT: If the conversation history already has a comprehensive answer on the same topic, do NOT repeat it. Rule 18 takes precedence — follow-ups on already-answered topics must add new information only.`,
   },
 };
 
-async function callAgenticPipeline(question, channel, sessionId, clientKey, { openaiKey, supabaseUrl, supabaseKey }) {
+async function callAgenticPipeline(question, channel, sessionId, clientKey, { openaiKey, supabaseUrl, supabaseKey }, temperature = 0.3) {
   const CP = CLIENT_PROMPTS[clientKey] || CLIENT_PROMPTS.ather;
   // ── L0: Embed ──────────────────────────────────────────────────────────────
   if (!openaiKey) throw new Error('OPENAI_API_KEY is not configured');
@@ -315,11 +340,11 @@ async function callAgenticPipeline(question, channel, sessionId, clientKey, { op
 
   // ── L1: OpenAI GPT-4o Worker ────────────────────────────────────────────────
   const formatInstruction = channel === 'email'
-    ? `FORMAT RULES:
+    ? (CP.emailFormatInstruction || `FORMAT RULES:
 - Write a formal professional email response with a warm greeting and sign-off.
 - Be thorough: cover all relevant details from the knowledge base.
 - Use bullet points or numbered lists for multi-part answers.
-- Sign off as "${CP.signOff}".`
+- Sign off as "${CP.signOff}".`)
     : `FORMAT RULES:
 - Be concise and conversational. Keep under 150 words.
 - Use plain bullet points only. Do NOT use markdown headers (###, ##, **heading**) in chat.
@@ -369,18 +394,11 @@ CRITICAL RULES:
    - Same topic continues for more than 4 turns without resolution
    - Customer explicitly asks for human/agent/manager
    SR format: SR-{today's date YYYYMMDD}-{random 5 digits}
-20. LANGUAGE CONSISTENCY: If conversation started in Hindi/Hinglish, NEVER switch to English mid-conversation. Maintain same language throughout, even in error/fallback/frustration/escalation responses.
-21. PROACTIVE COMPLETENESS: When answering a procedural/how-to question for the FIRST TIME on a topic (no prior answer in conversation history), include the complete picture: documents needed, steps, where to do it, and charges. Keep it concise — use bullets, no headers.
-   IMPORTANT: If the conversation history already has a comprehensive answer on the same topic, do NOT repeat it. Rule 18 takes precedence — follow-ups on already-answered topics must add new information only.
+20. ${CP.languageConsistencyRule}
+21. ${CP.rule21}
 22. KNOWLEDGE GAP HANDLING: If the knowledge base confirms a feature or service EXISTS but does not contain the specific detail the customer asked for (e.g., a WhatsApp number, a specific link, a form name), do NOT fall back to listing all support channels again. Instead say explicitly: "Yeh service available hai, lekin [specific detail] ke liye Airtel Thanks App ka Help section ya airtel.in/bank check karein — wahan exact information milegi." Acknowledging the gap with a targeted redirect is more helpful than a generic contact list loop.
 
-LANGUAGE RULE: Detect the language of the customer's question and ALWAYS reply in the SAME language.
-- If the customer writes in Hindi, reply in Hindi.
-- If the customer writes in Hinglish (mix of Hindi and English), reply in Hinglish.
-- If the customer writes in any other language, reply in that language.
-- If the customer writes in English, reply in English.
-- This rule applies to ALL responses including error acknowledgements, frustration responses (Rule 7), fallback messages (Rule 3), escalation offers (Rule 19), and any other response type. NEVER switch languages mid-conversation.
-The knowledge base context is in English, but you must translate your answer into the customer's language while keeping technical terms (like model names, features, specifications) in English.
+${CP.languageRule}
 
 ${formatInstruction}
 ${conversationSection}
@@ -398,7 +416,7 @@ ${context}`;
       body: JSON.stringify({
         model: 'gpt-4o',
         max_tokens: channel === 'email' ? 1024 : 512,
-        temperature: 0.3,
+        temperature: temperature,
         messages: [
           { role: 'system', content: systemPrompt },
           { role: 'user',   content: question },
@@ -422,7 +440,7 @@ ${context}`;
 Evaluate whether the AI answer correctly addresses the customer question.
 Check for: hallucinations, incorrect facts, missing critical info, or off-topic responses.
 IMPORTANT: If the AI answer says it does not have information but the Knowledge Base Context clearly contains relevant information to answer the question, rate this as Poor.
-MULTILINGUAL: The AI may respond in Hindi, Hinglish, or other languages to match the customer's language. This is correct behavior — evaluate the factual accuracy of the translated content against the English knowledge base context, not the language used.
+${CP.l2LanguageNote}
 GUARDRAIL CHECKS — rate as Poor if ANY of these occur:
 - The response makes direct negative comparisons with competitor brands or provides competitor product details not in the knowledge base.
 - The response contains harmful, offensive, or discriminatory content.
@@ -669,18 +687,23 @@ module.exports = async (req, res) => {
 
   // Vercel pre-parses JSON bodies onto req.body; fall back to manual stream read
   const body = req.body && typeof req.body === 'object' ? req.body : await readBody(req);
-  const { question, sessionId, channel: rawChannel, client: rawClient } = body;
+  const { question, sessionId, channel: rawChannel, client: rawClient, temperature: rawTemp } = body;
   const channel = rawChannel === 'email' ? 'email' : 'chat';
   // Use client from JWT claims (authoritative), fall back to request body
   const clientKey = claims.client && claims.client !== 'admin' ? claims.client : (rawClient || 'ather');
   if (!question?.trim()) return res.status(400).json({ error: 'Question is required' });
+
+  // Validate temperature: must be a number between 0.1 and 0.8, default 0.3
+  const temperature = (typeof rawTemp === 'number' && rawTemp >= 0.1 && rawTemp <= 0.8)
+    ? Math.round(rawTemp * 100) / 100
+    : 0.3;
 
   const startTime = Date.now();
   const envVars = { openaiKey: OPENAI_API_KEY, supabaseUrl: SUPABASE_URL, supabaseKey: SUPABASE_ANON_KEY };
 
   let result;
   try {
-    result = await callAgenticPipeline(question.trim(), channel, sessionId, clientKey, envVars);
+    result = await callAgenticPipeline(question.trim(), channel, sessionId, clientKey, envVars, temperature);
   } catch (err) {
     console.error('Pipeline failed:', err.message, err.stack);
 

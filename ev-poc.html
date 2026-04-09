@@ -762,6 +762,43 @@
     /* Email input focus */
     .email-input:focus { border-color: rgba(167,139,250,0.4); }
 
+    /* ── Temperature / tone control ─────────────────────────── */
+    .tone-control {
+      display: flex;
+      align-items: center;
+      gap: 0.75rem;
+      padding: 0.55rem 1.25rem;
+      border-top: 1px solid var(--border);
+      background: var(--surface2);
+    }
+    .tone-label {
+      font-size: 0.72rem;
+      font-weight: 600;
+      letter-spacing: 0.05em;
+      text-transform: uppercase;
+      color: var(--muted);
+      white-space: nowrap;
+    }
+    .tone-select {
+      font-family: var(--font-body);
+      font-size: 0.82rem;
+      padding: 0.32rem 0.65rem;
+      border: 1px solid var(--border2);
+      border-radius: 8px;
+      background: var(--surface);
+      color: var(--text);
+      cursor: pointer;
+      outline: none;
+      transition: border-color 0.2s;
+      -webkit-appearance: none;
+      appearance: none;
+      background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='10' height='6'%3E%3Cpath d='M0 0l5 6 5-6z' fill='%236B7280'/%3E%3C/svg%3E");
+      background-repeat: no-repeat;
+      background-position: right 0.6rem center;
+      padding-right: 1.6rem;
+    }
+    .tone-select:focus { border-color: var(--gold); }
+
     /* ── Dashboard section ───────────────────────────────────── */
     .dashboard-section {
       max-width: 1200px;
@@ -1966,11 +2003,20 @@
         </div>
       </div>
 
+      <div class="tone-control" id="toneControl">
+        <span class="tone-label">Response Tone</span>
+        <select id="toneSelect" class="tone-select">
+          <option value="0.2">Conservative</option>
+          <option value="0.4" selected>Balanced</option>
+          <option value="0.6">Conversational</option>
+        </select>
+      </div>
+
       <div class="chat-input-area">
         <textarea
           id="emailInput"
           class="chat-input email-input"
-          placeholder="Describe your query or issue… (English, Hindi, Hinglish)"
+          placeholder="Describe your query or issue…"
           rows="1"
           maxlength="1000"
         ></textarea>
@@ -2225,26 +2271,27 @@
       label: 'Ather Energy',
       shortLabel: 'Ather',
       icon: '⚡',
-      welcomeTitle: 'Welcome, <span class="gold">Team Ather</span> — Your AI Support Hub is Live!',
-      welcomeDesc: 'Your AI support system is live — grounded in your knowledge base and quality-evaluated on every reply.',
+      emailOnly: true,
+      welcomeTitle: 'Welcome, <span class="gold">Team Ather</span> — Your AI Email Support Hub is Live!',
+      welcomeDesc: 'Your AI email support system is live — grounded in your knowledge base and quality-evaluated on every reply.',
       chatLabel: 'Customer Chat',
       chatBadge: 'Live Chat',
       chatIcon: '💬',
       chatWelcomeIcon: '🛵',
       chatWelcomeTitle: 'Ask anything about your Ather scooter',
-      chatWelcomeDesc: 'Instant answers from your product knowledge base in English, Hindi, or Hinglish. Sourced and accuracy-rated on every reply.',
-      chatChips: ['What is the battery range?', 'How do I claim warranty?', 'Battery kitna chalti hai?', 'Warranty kaise claim karein?'],
+      chatWelcomeDesc: 'Instant answers from your product knowledge base. Sourced and accuracy-rated on every reply.',
+      chatChips: ['What is the battery range?', 'How do I claim warranty?'],
       emailLabel: 'Email Support',
       emailBadge: 'Email Channel',
       emailWelcomeTitle: 'Compose an email query',
-      emailWelcomeDesc: 'Get a fully-formatted, professional email response drafted by AI in your language — ready to review and send.',
-      emailChips: ["What's the warranty coverage?", 'Request service appointment', 'Warranty mein kya cover hota hai?', 'Service appointment book karna hai'],
-      badges: ['✓ RAG-Grounded Answers', '✓ AI Quality Gate', '✓ Chat & Email Ready', '✓ Real-Time Analytics'],
-      pocBox1Title: 'Email & Chat POC',
-      pocBox1Desc: 'Agentic AI handles customer queries across live chat and email, grounded in your product knowledge base.',
+      emailWelcomeDesc: 'Get a fully-formatted, professional email response drafted by AI — ready to review and send.',
+      emailChips: ["What's the warranty coverage?", 'Request service appointment', 'How do I charge my scooter?', 'What accessories are available?'],
+      badges: ['✓ RAG-Grounded Answers', '✓ AI Quality Gate', '✓ Email Support Ready', '✓ Real-Time Analytics'],
+      pocBox1Title: 'Email Support POC',
+      pocBox1Desc: 'Agentic AI handles customer queries via email, grounded in your product knowledge base.',
       pocVoiceTitle: 'Voice Pod — Lead Management',
       pocVoiceDesc: 'AI voice agent for lead qualification, probing, product Q&A, and hot lead detection with real-time scoring.',
-      channelPills: ['Live Chat', 'Email Support', 'AI Quality Assessment'],
+      channelPills: ['Email Support', 'AI Quality Assessment'],
       voiceComingSoon: false,
     },
     apb: {
@@ -2333,6 +2380,25 @@
     document.querySelector('#emailWelcome p').textContent = CC.emailWelcomeDesc;
     const emailChipsEl = document.querySelector('#emailWelcome .suggestion-chips');
     emailChipsEl.innerHTML = CC.emailChips.map(c => `<span class="chip" onclick="sendEmailChip(this)">${c}</span>`).join('');
+
+    // Email-only mode: hide chat card, adjust grid layout
+    if (CC.emailOnly) {
+      document.getElementById('chatCard').style.display = 'none';
+      const mainGrid = document.querySelector('.main-grid');
+      mainGrid.style.gridTemplateColumns = '1fr';
+      mainGrid.style.maxWidth = '700px';
+      mainGrid.style.margin = '0 auto';
+      // Update channel divider label
+      const dividerLabel = document.querySelector('.channel-divider-label');
+      if (dividerLabel) dividerLabel.textContent = 'Email Channel';
+      // POC selector box 1 should scroll to email card instead of chat
+      const pocEmailChat = document.getElementById('pocEmailChat');
+      if (pocEmailChat) {
+        pocEmailChat.onclick = function() {
+          document.getElementById('emailCard').scrollIntoView({behavior:'smooth'});
+        };
+      }
+    }
 
     // Test channel labels
     const chatResultHeader = document.querySelector('#chatResultCard .cr-header');
@@ -2460,7 +2526,7 @@
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         credentials: 'same-origin',
-        body: JSON.stringify({ question, sessionId, channel, client: clientKey }),
+        body: JSON.stringify({ question, sessionId, channel, client: clientKey, temperature: parseFloat(document.getElementById('toneSelect')?.value) || 0.4 }),
       });
 
       typingEl.classList.remove('visible');
